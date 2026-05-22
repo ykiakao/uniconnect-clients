@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav.dart';
@@ -16,10 +17,10 @@ class GradesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final subjects = ref.watch(subjectGradesProvider);
-    final gpa = subjects
-            .map((subject) => subject.finalAverage)
-            .reduce((value, element) => value + element) /
-        subjects.length;
+    final gpa = subjects.isEmpty
+        ? 0.0
+        : subjects.map((subject) => subject.finalAverage).reduce((a, b) => a + b) /
+            subjects.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -28,7 +29,7 @@ class GradesPage extends ConsumerWidget {
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 3),
       body: ListView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           const AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
           AppCard(
@@ -39,37 +40,37 @@ class GradesPage extends ConsumerWidget {
                 Text(
                   'Coeficiente de rendimento',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: .78),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.78),
+                  ),
                 ),
                 Text(
                   '${gpa.toStringAsFixed(1)} / 10.0',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.md),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
                     value: gpa / 10,
                     minHeight: 8,
-                    backgroundColor: Colors.white.withValues(alpha: .18),
+                    backgroundColor: Colors.white.withValues(alpha: 0.18),
                     color: AppColors.secondary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Evolução acadêmica estável neste semestre',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: .78),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.78),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           const SectionHeader(
             title: 'Disciplinas',
             subtitle: 'Notas consolidadas e situação atual',
@@ -89,8 +90,8 @@ class GradesPage extends ConsumerWidget {
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.primarySoft,
@@ -106,35 +107,35 @@ class GradesPage extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
                       Expanded(
                         child: _GradePill(label: 'P1', value: subject.p1),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: _GradePill(label: 'P2', value: subject.p2),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: _GradePill(label: 'Trab.', value: subject.work),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     subject.status,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           const AppCard(child: AverageSimulator()),
         ],
       ),
@@ -151,7 +152,7 @@ class _GradePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(8),
@@ -161,9 +162,9 @@ class _GradePill extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppColors.muted,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           Text(
             value == 0 ? '--' : value.toStringAsFixed(1),

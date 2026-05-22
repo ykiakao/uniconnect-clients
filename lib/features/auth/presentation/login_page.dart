@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
@@ -18,13 +19,54 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController(text: 'aluno@uni.com');
   final _passwordController = TextEditingController(text: '123456');
+  String? _emailError;
+  String? _passwordError;
+  bool _isLoading = false;
+
+  String? _validateEmail(String email) {
+    if (email.isEmpty) {
+      return 'Email é obrigatório';
+    }
+    if (!email.contains('@')) {
+      return 'Email inválido';
+    }
+    if (!email.endsWith('@uni.com')) {
+      return 'Use email institucional (@uni.com)';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String password) {
+    if (password.isEmpty) {
+      return 'Senha é obrigatória';
+    }
+    if (password.length < 6) {
+      return 'Mínimo 6 caracteres';
+    }
+    return null;
+  }
 
   void _login() {
+    final emailError = _validateEmail(_emailController.text);
+    final passwordError = _validatePassword(_passwordController.text);
+
+    setState(() {
+      _emailError = emailError;
+      _passwordError = passwordError;
+    });
+
+    if (emailError != null || passwordError != null) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
     ref.read(authControllerProvider.notifier).login(_emailController.text);
     _goByRole(ref.read(authControllerProvider)!);
   }
 
   void _googleLogin() {
+    setState(() => _isLoading = true);
     ref.read(authControllerProvider.notifier).loginWithGoogleMock();
     _goByRole(ref.read(authControllerProvider)!);
   }
@@ -51,11 +93,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
             child: ListView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                const SizedBox(height: 28),
+                const SizedBox(height: AppSpacing.xl),
                 Container(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(8),
@@ -66,7 +108,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: .14),
+                          color: Colors.white.withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -75,7 +117,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           size: 32,
                         ),
                       ),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,14 +132,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     fontWeight: FontWeight.w900,
                                   ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppSpacing.sm),
                             Text(
                               'Dados acadêmicos em ações claras.',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
-                                    color: Colors.white.withValues(alpha: .84),
+                                    color: Colors.white.withValues(alpha: 0.84),
                                   ),
                             ),
                           ],
@@ -106,14 +148,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: AppSpacing.lg),
                 const AppCard(
                   backgroundColor: AppColors.secondarySoft,
                   child: Row(
                     children: [
                       Icon(Icons.tips_and_updates_outlined,
                           color: AppColors.secondary),
-                      SizedBox(width: 12),
+                      SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           'Use aluno@uni.com ou professor@uni.com para navegar pelo MVP.',
@@ -122,46 +164,68 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
+                  enabled: !_isLoading,
+                  onChanged: (_) {
+                    if (_emailError != null) {
+                      setState(() => _emailError = null);
+                    }
+                  },
+                  decoration: InputDecoration(
                     labelText: 'Email institucional',
-                    prefixIcon: Icon(Icons.email_outlined),
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    errorText: _emailError,
+                    errorMaxLines: 2,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: AppSpacing.lg),
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
                   textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _login(),
-                  decoration: const InputDecoration(
+                  enabled: !_isLoading,
+                  onSubmitted: (_) => _isLoading ? null : _login(),
+                  onChanged: (_) {
+                    if (_passwordError != null) {
+                      setState(() => _passwordError = null);
+                    }
+                  },
+                  decoration: InputDecoration(
                     labelText: 'Senha',
-                    prefixIcon: Icon(Icons.lock_outline),
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    errorText: _passwordError,
+                    errorMaxLines: 2,
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: AppSpacing.xl),
                 ElevatedButton.icon(
-                  onPressed: _login,
-                  icon: const Icon(Icons.login),
-                  label: const Text('Entrar'),
+                  onPressed: _isLoading ? null : _login,
+                  icon: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.login),
+                  label: Text(_isLoading ? 'Entrando...' : 'Entrar'),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 OutlinedButton.icon(
-                  onPressed: _googleLogin,
+                  onPressed: _isLoading ? null : _googleLogin,
                   icon: const Icon(Icons.g_mobiledata),
                   label: const Text('Login Google'),
                 ),
-                const SizedBox(height: 42),
+                const SizedBox(height: AppSpacing.xl * 1.5),
                 Center(
                   child: Text(
                     'Português (Brasil) • Suporte • Privacidade',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                        ),
+                      color: AppColors.muted,
+                    ),
                   ),
                 ),
               ],

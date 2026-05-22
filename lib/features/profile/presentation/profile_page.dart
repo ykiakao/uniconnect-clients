@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav.dart';
@@ -11,6 +12,35 @@ import '../../auth/providers/auth_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
+
+  void _handleLogout(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sair da conta?'),
+        content: const Text(
+          'Você será desconectado e voltará à tela de login.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(authControllerProvider.notifier).logout();
+              Navigator.pop(dialogContext);
+              context.go(AppRoutes.login);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+            ),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,7 +53,7 @@ class ProfilePage extends ConsumerWidget {
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 4),
       body: ListView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           const AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
           AppCard(
@@ -34,49 +64,64 @@ class ProfilePage extends ConsumerWidget {
                   backgroundColor: AppColors.primary,
                   child: Icon(Icons.person, color: Colors.white, size: 34),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user?.name ?? 'Lucas Oliveira',
+                        user?.name ?? 'Usuário',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                      Text(user?.email ?? 'aluno@uni.com'),
+                      Text(
+                        user?.email ?? 'email@uni.com',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
           AppCard(
             child: Column(
               children: [
                 _ProfileInfo(
-                    label: 'Curso',
-                    value: user?.course ?? 'Engenharia de Software'),
+                  label: 'Curso',
+                  value: user?.course ?? 'Engenharia de Software',
+                ),
+                const Divider(height: AppSpacing.lg),
                 _ProfileInfo(
-                    label: 'Matricula',
-                    value: user?.registration ?? '2024021845'),
+                  label: 'Matrícula',
+                  value: user?.registration ?? '2024021845',
+                ),
+                const Divider(height: AppSpacing.lg),
                 _ProfileInfo(
-                    label: 'Semestre', value: '${user?.semester ?? 4}'),
+                  label: 'Semestre',
+                  value: '${user?.semester ?? 4}',
+                ),
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.lg),
           OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.settings_outlined),
-            label: const Text('Configuracoes'),
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton.icon(
             onPressed: () {
-              ref.read(authControllerProvider.notifier).logout();
-              context.go(AppRoutes.login);
+              // TODO: Implementar settings
             },
+            icon: const Icon(Icons.settings_outlined),
+            label: const Text('Configurações'),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ElevatedButton.icon(
+            onPressed: () => _handleLogout(context, ref),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+            ),
             icon: const Icon(Icons.logout),
             label: const Text('Sair'),
           ),
@@ -95,7 +140,7 @@ class _ProfileInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Row(
         children: [
           Expanded(child: Text(label)),
