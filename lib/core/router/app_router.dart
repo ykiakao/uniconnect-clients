@@ -12,6 +12,7 @@ import '../../features/teacher/presentation/create_activity_page.dart';
 import '../../features/teacher/presentation/teacher_dashboard_page.dart';
 import '../../features/teacher/presentation/teacher_grades_page.dart';
 import '../constants/app_routes.dart';
+import 'app_route_transition_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -19,45 +20,73 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => const LoginPage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.fade(
+          key: state.pageKey,
+          child: const LoginPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.studentDashboard,
-        builder: (context, state) => const StudentDashboardPage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: const StudentDashboardPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.activities,
-        builder: (context, state) => const ActivitiesPage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: const ActivitiesPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.activityDetails,
-        builder: (context, state) {
-          return ActivityDetailPage(activityId: state.pathParameters['id']!);
-        },
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromBottom(
+          key: state.pageKey,
+          child: ActivityDetailPage(activityId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: AppRoutes.chat,
-        builder: (context, state) => const ChatPage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: const ChatPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.grades,
-        builder: (context, state) => const GradesPage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: const GradesPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (context, state) => const ProfilePage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: const ProfilePage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.teacherDashboard,
-        builder: (context, state) => const TeacherDashboardPage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: const TeacherDashboardPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.teacherCreateActivity,
-        builder: (context, state) => const CreateActivityPage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromBottom(
+          key: state.pageKey,
+          child: const CreateActivityPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.teacherGrades,
-        builder: (context, state) => const TeacherGradesPage(),
+        pageBuilder: (context, state) => AppRouteTransitionPage.slideFromBottom(
+          key: state.pageKey,
+          child: const TeacherGradesPage(),
+        ),
       ),
     ],
   );
