@@ -24,6 +24,7 @@ class TeacherGradesPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
+          const AppBackAction(fallbackRoute: AppRoutes.teacherDashboard),
           AppCard(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,

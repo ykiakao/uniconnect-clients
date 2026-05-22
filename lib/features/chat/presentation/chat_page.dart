@@ -32,6 +32,10 @@ class ChatPage extends ConsumerWidget {
       bottomNavigationBar: const UniBottomNav(currentIndex: 2),
       body: Column(
         children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(18, 12, 18, 0),
+            child: AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(18),

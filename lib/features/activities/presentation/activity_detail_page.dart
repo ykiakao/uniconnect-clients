@@ -37,6 +37,7 @@ class ActivityDetailPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
+          const AppBackAction(fallbackRoute: AppRoutes.activities),
           Align(
             alignment: Alignment.centerLeft,
             child: PriorityBadge(priority: activity.priority),

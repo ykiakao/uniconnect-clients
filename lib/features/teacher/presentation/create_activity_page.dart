@@ -49,6 +49,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
+          const AppBackAction(fallbackRoute: AppRoutes.teacherDashboard),
           Text(
             'Nova atividade',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(

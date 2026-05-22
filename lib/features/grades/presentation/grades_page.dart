@@ -30,6 +30,7 @@ class GradesPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
+          const AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
           AppCard(
             backgroundColor: AppColors.primary,
             child: Column(

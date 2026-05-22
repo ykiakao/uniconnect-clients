@@ -25,6 +25,7 @@ class ProfilePage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
+          const AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
           AppCard(
             child: Row(
               children: [
