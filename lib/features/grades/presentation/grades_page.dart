@@ -19,7 +19,9 @@ class GradesPage extends ConsumerWidget {
     final subjects = ref.watch(subjectGradesProvider);
     final gpa = subjects.isEmpty
         ? 0.0
-        : subjects.map((subject) => subject.finalAverage).reduce((a, b) => a + b) /
+        : subjects
+                .map((subject) => subject.finalAverage)
+                .reduce((a, b) => a + b) /
             subjects.length;
 
     return Scaffold(
@@ -40,15 +42,15 @@ class GradesPage extends ConsumerWidget {
                 Text(
                   'Coeficiente de rendimento',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.78),
-                  ),
+                        color: Colors.white.withValues(alpha: 0.78),
+                      ),
                 ),
                 Text(
                   '${gpa.toStringAsFixed(1)} / 10.0',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ClipRRect(
@@ -64,8 +66,8 @@ class GradesPage extends ConsumerWidget {
                 Text(
                   'Evolução acadêmica estável neste semestre',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.78),
-                  ),
+                        color: Colors.white.withValues(alpha: 0.78),
+                      ),
                 ),
               ],
             ),
@@ -127,9 +129,9 @@ class GradesPage extends ConsumerWidget {
                   Text(
                     subject.status,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w700,
-                    ),
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ],
               ),
@@ -162,9 +164,9 @@ class _GradePill extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w700,
-            ),
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           Text(
             value == 0 ? '--' : value.toStringAsFixed(1),

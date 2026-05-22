@@ -56,8 +56,8 @@ class _DefaultLoadingWidget extends StatelessWidget {
           Text(
             'Carregando...',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.muted,
-            ),
+                  color: AppColors.muted,
+                ),
           ),
         ],
       ),

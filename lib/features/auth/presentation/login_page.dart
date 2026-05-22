@@ -224,8 +224,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   child: Text(
                     'Português (Brasil) • Suporte • Privacidade',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
+                          color: AppColors.muted,
+                        ),
                   ),
                 ),
               ],

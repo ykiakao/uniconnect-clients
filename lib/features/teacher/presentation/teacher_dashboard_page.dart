@@ -11,6 +11,35 @@ import '../../auth/providers/auth_provider.dart';
 class TeacherDashboardPage extends ConsumerWidget {
   const TeacherDashboardPage({super.key});
 
+  void _confirmLogout(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sair da conta?'),
+        content: const Text(
+          'Você será desconectado e voltará para a tela de login.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+            ),
+            onPressed: () {
+              ref.read(authControllerProvider.notifier).logout();
+              Navigator.pop(dialogContext);
+              context.go(AppRoutes.login);
+            },
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider);
@@ -21,10 +50,7 @@ class TeacherDashboardPage extends ConsumerWidget {
         actions: [
           IconButton(
             tooltip: 'Sair',
-            onPressed: () {
-              ref.read(authControllerProvider.notifier).logout();
-              context.go(AppRoutes.login);
-            },
+            onPressed: () => _confirmLogout(context, ref),
             icon: const Icon(Icons.logout),
           ),
         ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_back_button.dart';
 
 class CreateActivityPage extends StatefulWidget {
@@ -18,6 +19,11 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   final _descriptionController = TextEditingController();
   final _dueController = TextEditingController();
   final _weightController = TextEditingController();
+  String? _subjectError;
+  String? _titleError;
+  String? _descriptionError;
+  String? _dueError;
+  String? _weightError;
 
   @override
   void dispose() {
@@ -30,6 +36,34 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   }
 
   void _publish() {
+    final weight = double.tryParse(_weightController.text.replaceAll(',', '.'));
+
+    setState(() {
+      _subjectError = _subjectController.text.trim().isEmpty
+          ? 'Informe a disciplina'
+          : null;
+      _titleError =
+          _titleController.text.trim().isEmpty ? 'Informe o título' : null;
+      _descriptionError = _descriptionController.text.trim().length < 10
+          ? 'Descreva a atividade com pelo menos 10 caracteres'
+          : null;
+      _dueError = _dueController.text.trim().isEmpty ? 'Informe o prazo' : null;
+      _weightError = weight == null || weight <= 0
+          ? 'Informe um peso maior que zero'
+          : null;
+    });
+
+    if (_subjectError != null ||
+        _titleError != null ||
+        _descriptionError != null ||
+        _dueError != null ||
+        _weightError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Revise os campos destacados.')),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Atividade publicada com sucesso.')),
     );
@@ -47,7 +81,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
         title: const Text('Criar atividade'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           const AppBackAction(fallbackRoute: AppRoutes.teacherDashboard),
           Text(
@@ -63,50 +97,70 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
                   color: AppColors.muted,
                 ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.lg),
           TextField(
             controller: _subjectController,
-            decoration: const InputDecoration(labelText: 'Disciplina'),
+            onChanged: (_) => _clearError(() => _subjectError = null),
+            decoration: InputDecoration(
+              labelText: 'Disciplina',
+              errorText: _subjectError,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Título'),
+            onChanged: (_) => _clearError(() => _titleError = null),
+            decoration: InputDecoration(
+              labelText: 'Título',
+              errorText: _titleError,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _descriptionController,
             minLines: 3,
             maxLines: 5,
-            decoration: const InputDecoration(labelText: 'Descrição'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _dueController,
-            decoration: const InputDecoration(
-              labelText: 'Prazo',
-              prefixIcon: Icon(Icons.event_outlined),
+            onChanged: (_) => _clearError(() => _descriptionError = null),
+            decoration: InputDecoration(
+              labelText: 'Descrição',
+              errorText: _descriptionError,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _dueController,
+            onChanged: (_) => _clearError(() => _dueError = null),
+            decoration: InputDecoration(
+              labelText: 'Prazo',
+              prefixIcon: const Icon(Icons.event_outlined),
+              errorText: _dueError,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _weightController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
+            onChanged: (_) => _clearError(() => _weightError = null),
+            decoration: InputDecoration(
               labelText: 'Peso da nota',
-              prefixIcon: Icon(Icons.percent),
+              prefixIcon: const Icon(Icons.percent),
+              errorText: _weightError,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
           ElevatedButton.icon(
             onPressed: _publish,
             icon: const Icon(Icons.publish_outlined),
             label: const Text('Publicar atividade'),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           const AppBackTextButton(fallbackRoute: AppRoutes.teacherDashboard),
         ],
       ),
     );
+  }
+
+  void _clearError(VoidCallback update) {
+    setState(update);
   }
 }

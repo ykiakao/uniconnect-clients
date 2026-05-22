@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
+import '../../../shared/widgets/help_tooltip.dart';
 import '../../activities/models/academic_activity.dart';
 import '../../activities/providers/activity_provider.dart';
 import '../../activities/widgets/activity_card.dart';
@@ -66,18 +67,19 @@ class StudentDashboardPage extends ConsumerWidget {
                 child: TabBarView(
                   children: [
                     criticalActivities.isEmpty
-                        ? EmptyStateWidget(
+                        ? const EmptyStateWidget(
                             icon: Icons.check_circle,
                             title: 'Nenhuma urgência!',
-                            subtitle: 'Você está em dia com as atividades críticas',
+                            subtitle:
+                                'Você está em dia com as atividades críticas',
                           )
                         : ListView.builder(
                             itemCount: criticalActivities.length,
                             itemBuilder: (context, index) => ActivityCard(
                               activity: criticalActivities[index],
                               compact: true,
-                              onTap: () =>
-                                  context.push('/atividades/${criticalActivities[index].id}'),
+                              onTap: () => context.push(
+                                  '/atividades/${criticalActivities[index].id}'),
                             ),
                           ),
                     ListView.builder(
@@ -126,35 +128,39 @@ class _HeroCard extends StatelessWidget {
           Text(
             'Bem-vindo,',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w800,
-            ),
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w800,
+                ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             user?.name.split(' ').first ?? 'Aluno',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-            ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
           ),
           if (criticalCount > 0) ...[
             const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.red.shade700,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '$criticalCount atividade(s) crítica(s) que precisa(m) de atenção',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
+            HelpTooltip(
+              message:
+                  'Atividades críticas são prazos ou avisos que exigem ação imediata.',
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade700,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$criticalCount atividade(s) crítica(s) que precisa(m) de atenção',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
@@ -191,8 +197,8 @@ class _AcademicSnapshot extends StatelessWidget {
             child: Text(
               '72% das atividades da semana encaminhadas',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.muted,
-              ),
+                    color: AppColors.muted,
+                  ),
             ),
           ),
         ],
@@ -215,9 +221,9 @@ class _Metric extends StatelessWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w900,
-          ),
+                color: AppColors.primary,
+                fontWeight: FontWeight.w900,
+              ),
         ),
         Text(title, style: Theme.of(context).textTheme.bodySmall),
       ],
@@ -262,8 +268,8 @@ class _TimelineItem extends StatelessWidget {
                 Text(
                   '${activity.subject} • ${activity.dueLabel}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
+                        color: AppColors.muted,
+                      ),
                 ),
               ],
             ),

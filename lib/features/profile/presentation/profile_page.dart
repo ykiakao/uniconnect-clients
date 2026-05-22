@@ -72,14 +72,14 @@ class ProfilePage extends ConsumerWidget {
                       Text(
                         user?.name ?? 'Usuário',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
+                              fontWeight: FontWeight.w900,
+                            ),
                       ),
                       Text(
                         user?.email ?? 'email@uni.com',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                        ),
+                              color: AppColors.muted,
+                            ),
                       ),
                     ],
                   ),

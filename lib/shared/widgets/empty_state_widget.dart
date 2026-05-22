@@ -42,8 +42,8 @@ class EmptyStateWidget extends StatelessWidget {
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.muted,
-              ),
+                    color: AppColors.muted,
+                  ),
               textAlign: TextAlign.center,
             ),
             if (action != null && actionLabel != null) ...[

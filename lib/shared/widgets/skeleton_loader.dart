@@ -109,8 +109,8 @@ class CardListSkeleton extends StatelessWidget {
     return Column(
       children: List.generate(
         itemCount,
-        (index) => Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+        (index) => const Padding(
+          padding: EdgeInsets.only(bottom: 10),
           child: ActivityCardSkeleton(),
         ),
       ),
