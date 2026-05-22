@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_back_button.dart';
 
 class CreateActivityPage extends StatefulWidget {
   const CreateActivityPage({super.key});
@@ -40,7 +42,10 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Criar atividade')),
+      appBar: AppBar(
+        leading: const AppBackButton(fallbackRoute: AppRoutes.teacherDashboard),
+        title: const Text('Criar atividade'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
@@ -97,6 +102,8 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
             icon: const Icon(Icons.publish_outlined),
             label: const Text('Publicar atividade'),
           ),
+          const SizedBox(height: 10),
+          const AppBackTextButton(fallbackRoute: AppRoutes.teacherDashboard),
         ],
       ),
     );

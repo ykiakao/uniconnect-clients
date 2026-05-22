@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/section_header.dart';
@@ -18,7 +20,10 @@ class ActivitiesPage extends ConsumerWidget {
     final activities = ref.watch(activitiesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Atividades')),
+      appBar: AppBar(
+        leading: const AppBackButton(fallbackRoute: AppRoutes.studentDashboard),
+        title: const Text('Atividades'),
+      ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 1),
       body: ListView(
         padding: const EdgeInsets.all(18),

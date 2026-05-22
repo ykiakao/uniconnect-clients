@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -16,7 +17,10 @@ class ProfilePage extends ConsumerWidget {
     final user = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil')),
+      appBar: AppBar(
+        leading: const AppBackButton(fallbackRoute: AppRoutes.studentDashboard),
+        title: const Text('Perfil'),
+      ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 4),
       body: ListView(
         padding: const EdgeInsets.all(18),

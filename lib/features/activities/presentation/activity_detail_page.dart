@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../providers/activity_provider.dart';
@@ -18,13 +20,19 @@ class ActivityDetailPage extends ConsumerWidget {
 
     if (activity == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Atividade')),
+        appBar: AppBar(
+          leading: const AppBackButton(fallbackRoute: AppRoutes.activities),
+          title: const Text('Atividade'),
+        ),
         body: const Center(child: Text('Atividade não encontrada.')),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalhes da atividade')),
+      appBar: AppBar(
+        leading: const AppBackButton(fallbackRoute: AppRoutes.activities),
+        title: const Text('Detalhes da atividade'),
+      ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 1),
       body: ListView(
         padding: const EdgeInsets.all(18),
@@ -126,12 +134,15 @@ class ActivityDetailPage extends ConsumerWidget {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text('Atividade marcada como concluída.')),
+                  content: Text('Atividade marcada como concluída.'),
+                ),
               );
             },
             icon: const Icon(Icons.task_alt),
             label: const Text('Marcar como concluída'),
           ),
+          const SizedBox(height: 10),
+          const AppBackTextButton(fallbackRoute: AppRoutes.activities),
         ],
       ),
     );

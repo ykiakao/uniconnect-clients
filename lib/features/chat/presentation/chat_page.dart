@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../models/chat_message.dart';
 import '../providers/chat_provider.dart';
@@ -15,6 +17,7 @@ class ChatPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const AppBackButton(fallbackRoute: AppRoutes.studentDashboard),
         title: const Text('Chat acadêmico'),
         actions: const [
           Padding(

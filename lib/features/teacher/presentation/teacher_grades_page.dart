@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_routes.dart';
+import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/app_card.dart';
 
 class TeacherGradesPage extends StatelessWidget {
@@ -15,7 +17,10 @@ class TeacherGradesPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Lançamento de notas')),
+      appBar: AppBar(
+        leading: const AppBackButton(fallbackRoute: AppRoutes.teacherDashboard),
+        title: const Text('Lançamento de notas'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
@@ -54,6 +59,8 @@ class TeacherGradesPage extends StatelessWidget {
             icon: const Icon(Icons.save_outlined),
             label: const Text('Salvar notas'),
           ),
+          const SizedBox(height: 10),
+          const AppBackTextButton(fallbackRoute: AppRoutes.teacherDashboard),
         ],
       ),
     );
