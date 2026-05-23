@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../../../shared/widgets/help_tooltip.dart';
@@ -55,9 +55,9 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(fallbackRoute: AppRoutes.studentDashboard),
-        title: const Text('Atividades'),
+      appBar: const AppHeader(
+        title: 'Atividades',
+        fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 1),
       body: RefreshIndicator(
@@ -66,9 +66,13 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
           await Future<void>.delayed(const Duration(milliseconds: 350));
         },
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
           children: [
-            const AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
             const ContextualTip(
               title: 'Organizado por prioridade',
               message:

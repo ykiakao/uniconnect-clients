@@ -5,8 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/app_back_button.dart';
+import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -47,15 +48,19 @@ class ProfilePage extends ConsumerWidget {
     final user = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(fallbackRoute: AppRoutes.studentDashboard),
-        title: const Text('Perfil'),
+      appBar: const AppHeader(
+        title: 'Perfil',
+        fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 4),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
         children: [
-          const AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
           AppCard(
             child: Row(
               children: [
@@ -109,12 +114,12 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          OutlinedButton.icon(
+          SecondaryButton(
             onPressed: () {
               // TODO: Implementar settings
             },
-            icon: const Icon(Icons.settings_outlined),
-            label: const Text('Configurações'),
+            icon: Icons.settings_outlined,
+            label: 'Configurações',
           ),
           const SizedBox(height: AppSpacing.md),
           ElevatedButton.icon(

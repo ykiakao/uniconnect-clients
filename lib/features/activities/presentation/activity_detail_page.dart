@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/app_back_button.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
+import '../../../shared/widgets/info_card.dart';
 import '../providers/activity_provider.dart';
+import '../widgets/activity_detail_items.dart';
 import '../widgets/priority_badge.dart';
 
 class ActivityDetailPage extends ConsumerWidget {
@@ -19,133 +23,137 @@ class ActivityDetailPage extends ConsumerWidget {
     final activity = ref.watch(activityByIdProvider(activityId));
 
     if (activity == null) {
-      return Scaffold(
-        appBar: AppBar(
-          leading: const AppBackButton(fallbackRoute: AppRoutes.activities),
-          title: const Text('Atividade'),
+      return const Scaffold(
+        appBar: AppHeader(
+          title: 'Atividade',
+          fallbackRoute: AppRoutes.activities,
         ),
-        body: const Center(child: Text('Atividade não encontrada.')),
+        body: Center(child: Text('Atividade não encontrada.')),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(fallbackRoute: AppRoutes.activities),
-        title: const Text('Detalhes da atividade'),
+      appBar: const AppHeader(
+        title: 'Detalhes da atividade',
+        fallbackRoute: AppRoutes.activities,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 1),
-      body: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          const AppBackAction(fallbackRoute: AppRoutes.activities),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: PriorityBadge(priority: activity.priority),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
           ),
-          const SizedBox(height: 10),
-          Text(
-            activity.title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            activity.subject,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-          const SizedBox(height: 18),
-          AppCard(
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.event, color: AppColors.secondary),
-              title: const Text('Prazo final'),
-              subtitle: Text(activity.dueLabel),
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: PriorityBadge(priority: activity.priority),
             ),
-          ),
-          AppCard(
-            child: Text(activity.description),
-          ),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Critérios',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                ...activity.criteria.map(
-                  (criterion) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle_outline, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(criterion)),
-                      ],
-                    ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              activity.title,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
                   ),
-                ),
-              ],
             ),
-          ),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Anexos',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                if (activity.attachments.isEmpty)
-                  const Text('Nenhum anexo publicado.')
-                else
-                  ...activity.attachments.map(
-                    (attachment) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.attach_file),
-                      title: Text(attachment),
-                    ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              activity.subject,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
                   ),
-              ],
             ),
-          ),
-          AppCard(
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const CircleAvatar(
-                backgroundColor: AppColors.primary,
-                child: Icon(Icons.person_outline, color: Colors.white),
+            const SizedBox(height: AppSpacing.lg),
+            InfoCard(
+              icon: Icons.event_outlined,
+              title: 'Prazo final',
+              subtitle: activity.dueLabel,
+              color: AppColors.secondary,
+            ),
+            AppCard(
+              child: Text(
+                activity.description,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              title: Text(activity.teacher),
-              subtitle: const Text('Professor responsável'),
             ),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Atividade marcada como concluída.'),
-                ),
-              );
-            },
-            icon: const Icon(Icons.task_alt),
-            label: const Text('Marcar como concluída'),
-          ),
-          const SizedBox(height: 10),
-          const AppBackTextButton(fallbackRoute: AppRoutes.activities),
-        ],
+            AppCard(
+              child: _DetailSection(
+                title: 'Critérios',
+                children: activity.criteria
+                    .map((criterion) => CriteriaItem(label: criterion))
+                    .toList(),
+              ),
+            ),
+            AppCard(
+              child: _DetailSection(
+                title: 'Anexos',
+                emptyText: 'Nenhum anexo publicado.',
+                children: activity.attachments
+                    .map((attachment) => AttachmentItem(fileName: attachment))
+                    .toList(),
+              ),
+            ),
+            InfoCard(
+              icon: Icons.person_outline,
+              title: activity.teacher,
+              subtitle: 'Professor responsável',
+              color: AppColors.primary,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            PrimaryButton(
+              icon: Icons.task_alt,
+              label: 'Marcar como concluída',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Atividade marcada como concluída.'),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _DetailSection extends StatelessWidget {
+  const _DetailSection({
+    required this.title,
+    required this.children,
+    this.emptyText,
+  });
+
+  final String title;
+  final List<Widget> children;
+  final String? emptyText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (children.isEmpty)
+          Text(
+            emptyText ?? 'Nenhum item disponível.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
+          )
+        else
+          ...children,
+      ],
     );
   }
 }

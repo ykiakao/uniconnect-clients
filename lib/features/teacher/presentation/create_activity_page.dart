@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/app_back_button.dart';
+import '../../../shared/widgets/app_buttons.dart';
+import '../../../shared/widgets/app_header.dart';
 
 class CreateActivityPage extends StatefulWidget {
   const CreateActivityPage({super.key});
@@ -76,14 +77,18 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(fallbackRoute: AppRoutes.teacherDashboard),
-        title: const Text('Criar atividade'),
+      appBar: const AppHeader(
+        title: 'Criar atividade',
+        fallbackRoute: AppRoutes.teacherDashboard,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
         children: [
-          const AppBackAction(fallbackRoute: AppRoutes.teacherDashboard),
           Text(
             'Nova atividade',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -148,13 +153,11 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          ElevatedButton.icon(
+          PrimaryButton(
             onPressed: _publish,
-            icon: const Icon(Icons.publish_outlined),
-            label: const Text('Publicar atividade'),
+            icon: Icons.publish_outlined,
+            label: 'Publicar atividade',
           ),
-          const SizedBox(height: AppSpacing.sm),
-          const AppBackTextButton(fallbackRoute: AppRoutes.teacherDashboard),
         ],
       ),
     );

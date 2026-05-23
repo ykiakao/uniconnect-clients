@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/app_back_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../providers/grades_provider.dart';
@@ -25,15 +25,19 @@ class GradesPage extends ConsumerWidget {
             subjects.length;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(fallbackRoute: AppRoutes.studentDashboard),
-        title: const Text('Quadro de notas'),
+      appBar: const AppHeader(
+        title: 'Quadro de notas',
+        fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 3),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
         children: [
-          const AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
           AppCard(
             backgroundColor: AppColors.primary,
             child: Column(

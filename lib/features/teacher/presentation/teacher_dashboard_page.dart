@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -45,8 +47,8 @@ class TeacherDashboardPage extends ConsumerWidget {
     final user = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard do professor'),
+      appBar: AppHeader(
+        title: 'Dashboard do professor',
         actions: [
           IconButton(
             tooltip: 'Sair',
@@ -56,7 +58,12 @@ class TeacherDashboardPage extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
         children: [
           AppCard(
             backgroundColor: AppColors.primary,
@@ -97,17 +104,17 @@ class TeacherDashboardPage extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           const Row(
             children: [
               Expanded(child: _TeacherMetric(label: 'Turmas', value: '4')),
-              SizedBox(width: 10),
+              SizedBox(width: AppSpacing.xs),
               Expanded(child: _TeacherMetric(label: 'Alunos', value: '128')),
-              SizedBox(width: 10),
+              SizedBox(width: AppSpacing.xs),
               Expanded(child: _TeacherMetric(label: 'Pendências', value: '7')),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.lg),
           const SectionHeader(
             title: 'Ações rápidas',
             subtitle: 'Ferramentas essenciais para o MVP do professor',
@@ -163,7 +170,7 @@ class _TeacherMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -214,7 +221,7 @@ class _TeacherActionCard extends StatelessWidget {
             ),
             child: Icon(icon, color: color),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +239,7 @@ class _TeacherActionCard extends StatelessWidget {
                         color: AppColors.muted,
                       ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.sm),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(

@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/app_back_button.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../models/chat_message.dart';
 import '../providers/chat_provider.dart';
@@ -16,12 +17,12 @@ class ChatPage extends ConsumerWidget {
     final messages = ref.watch(chatMessagesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(fallbackRoute: AppRoutes.studentDashboard),
-        title: const Text('Chat acadêmico'),
-        actions: const [
+      appBar: const AppHeader(
+        title: 'Chat acadêmico',
+        fallbackRoute: AppRoutes.studentDashboard,
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 12),
+            padding: EdgeInsets.only(right: AppSpacing.sm),
             child: CircleAvatar(
               backgroundColor: AppColors.primary,
               child: Icon(Icons.person_outline, color: Colors.white),
@@ -32,39 +33,51 @@ class ChatPage extends ConsumerWidget {
       bottomNavigationBar: const UniBottomNav(currentIndex: 2),
       body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(18, 12, 18, 0),
-            child: AppBackAction(fallbackRoute: AppRoutes.studentDashboard),
-          ),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
               itemCount: messages.length,
               itemBuilder: (context, index) =>
                   _MessageBubble(message: messages[index]),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-            color: Colors.white,
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.attach_file),
-                ),
-                const Expanded(
-                  child: TextField(
-                    decoration:
-                        InputDecoration(hintText: 'Escreva sua mensagem...'),
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.sm,
+                AppSpacing.sm,
+              ),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Anexar arquivo',
+                    onPressed: () {},
+                    icon: const Icon(Icons.attach_file),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: () {},
-                  icon: const Icon(Icons.send),
-                ),
-              ],
+                  const Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Escreva sua mensagem...',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  IconButton.filled(
+                    tooltip: 'Enviar mensagem',
+                    onPressed: () {},
+                    icon: const Icon(Icons.send),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -83,8 +96,8 @@ class _MessageBubble extends StatelessWidget {
     return Align(
       alignment: message.isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         constraints: const BoxConstraints(maxWidth: 300),
         decoration: BoxDecoration(
           color: message.isMine ? AppColors.primary : Colors.white,
@@ -102,7 +115,7 @@ class _MessageBubble extends StatelessWidget {
                 color: message.isMine ? Colors.white : AppColors.dark,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               message.time,
               style: TextStyle(

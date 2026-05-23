@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_routes.dart';
-import '../../../shared/widgets/app_back_button.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_header.dart';
 
 class TeacherGradesPage extends StatelessWidget {
   const TeacherGradesPage({super.key});
@@ -17,14 +19,18 @@ class TeacherGradesPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(fallbackRoute: AppRoutes.teacherDashboard),
-        title: const Text('Lançamento de notas'),
+      appBar: const AppHeader(
+        title: 'Lançamento de notas',
+        fallbackRoute: AppRoutes.teacherDashboard,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
         children: [
-          const AppBackAction(fallbackRoute: AppRoutes.teacherDashboard),
           AppCard(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -50,18 +56,16 @@ class TeacherGradesPage extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
+          const SizedBox(height: AppSpacing.md),
+          PrimaryButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Notas salvas com sucesso.')),
               );
             },
-            icon: const Icon(Icons.save_outlined),
-            label: const Text('Salvar notas'),
+            icon: Icons.save_outlined,
+            label: 'Salvar notas',
           ),
-          const SizedBox(height: 10),
-          const AppBackTextButton(fallbackRoute: AppRoutes.teacherDashboard),
         ],
       ),
     );
