@@ -5,7 +5,7 @@ class AppBackButton extends StatelessWidget {
   const AppBackButton({
     super.key,
     required this.fallbackRoute,
-    this.tooltip = 'Voltar',
+    this.tooltip = 'Retornar',
   });
 
   final String fallbackRoute;
