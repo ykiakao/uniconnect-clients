@@ -1,6 +1,8 @@
 class SubjectGrade {
   const SubjectGrade({
     required this.subject,
+    required this.code,
+    required this.teacher,
     required this.p1,
     required this.p2,
     required this.work,
@@ -8,6 +10,8 @@ class SubjectGrade {
   });
 
   final String subject;
+  final String code;
+  final String teacher;
   final double p1;
   final double p2;
   final double work;

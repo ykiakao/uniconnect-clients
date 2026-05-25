@@ -69,3 +69,4 @@ app.*.map.json
 
 # Codex local tooling
 .codex-kit/
+.codex_tmp/
