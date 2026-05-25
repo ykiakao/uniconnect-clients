@@ -34,34 +34,13 @@ class GradesPage extends ConsumerWidget {
         child: SafeArea(
           top: false,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.xl,
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             children: [
               _GpaPanel(gpa: gpa),
               const SizedBox(height: AppSpacing.md),
               const _DeanListPanel(),
               const SizedBox(height: AppSpacing.lg),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Semestre Atual',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.filter_list),
-                    label: const Text('Filtrar'),
-                  ),
-                ],
-              ),
+              const _SemesterHeader(),
               const SizedBox(height: AppSpacing.sm),
               for (final subject in subjects)
                 _SubjectGradeCard(subject: subject),
@@ -79,6 +58,33 @@ class GradesPage extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SemesterHeader extends StatelessWidget {
+  const _SemesterHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          'Semestre Atual',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+        ),
+        OutlinedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.filter_list),
+          label: const Text('Filtrar'),
+        ),
+      ],
     );
   }
 }
@@ -104,24 +110,28 @@ class _GpaPanel extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                gpa.toStringAsFixed(1),
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: Text(
-                  ' / 10.0',
-                  style: TextStyle(color: Colors.white70),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  gpa.toStringAsFixed(1),
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
                 ),
-              ),
-            ],
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    ' / 10.0',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           const Text(
@@ -154,30 +164,45 @@ class _DeanListPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _BootstrapPanel(
+    return _BootstrapPanel(
       color: AppColors.successSoft,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.emoji_events_outlined, color: AppColors.success),
-          SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const content = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Lista do Reitor',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+              SizedBox(height: AppSpacing.xxs),
+              Text(
+                'Parabéns! Seu desempenho acadêmico este semestre te coloca entre os top 5%.',
+                style: TextStyle(color: AppColors.muted),
+              ),
+            ],
+          );
+
+          if (constraints.maxWidth < 220) {
+            return const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Lista do Reitor',
-                  style: TextStyle(fontWeight: FontWeight.w900),
-                ),
-                SizedBox(height: AppSpacing.xxs),
-                Text(
-                  'Parabéns! Seu desempenho acadêmico este semestre te coloca entre os top 5%.',
-                  style: TextStyle(color: AppColors.muted),
-                ),
+                Icon(Icons.emoji_events_outlined, color: AppColors.success),
+                SizedBox(height: AppSpacing.sm),
+                content,
               ],
-            ),
-          ),
-        ],
+            );
+          }
+
+          return const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.emoji_events_outlined, color: AppColors.success),
+              SizedBox(width: AppSpacing.md),
+              Expanded(child: content),
+            ],
+          );
+        },
       ),
     );
   }
@@ -196,32 +221,30 @@ class _SubjectGradeCard extends StatelessWidget {
         approved ? AppColors.successSoft : AppColors.secondarySoft;
 
     return _BootstrapPanel(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  subject.subject,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  '${subject.code} • ${subject.teacher}',
-                  style: const TextStyle(color: AppColors.muted),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _Badge(
-                  label: approved ? 'APROVADO' : 'EM CURSO',
-                  color: statusColor,
-                  softColor: statusSoft,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Text(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final info = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                subject.subject,
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                '${subject.code} • ${subject.teacher}',
+                style: const TextStyle(color: AppColors.muted),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _Badge(
+                label: approved ? 'APROVADO' : 'EM CURSO',
+                color: statusColor,
+                softColor: statusSoft,
+              ),
+            ],
+          );
+
+          final grade = Text(
             subject.finalAverage == 0
                 ? '--'
                 : subject.finalAverage.toStringAsFixed(1),
@@ -229,8 +252,27 @@ class _SubjectGradeCard extends StatelessWidget {
                   color: AppColors.primary,
                   fontWeight: FontWeight.w900,
                 ),
-          ),
-        ],
+          );
+
+          if (constraints.maxWidth < 240) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                info,
+                const SizedBox(height: AppSpacing.md),
+                Align(alignment: Alignment.centerRight, child: grade),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: info),
+              const SizedBox(width: AppSpacing.md),
+              grade,
+            ],
+          );
+        },
       ),
     );
   }
@@ -255,9 +297,12 @@ class _EvolutionPanel extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           const Text('Total de Créditos'),
           const SizedBox(height: AppSpacing.xs),
-          const Row(
+          const Wrap(
+            spacing: AppSpacing.lg,
+            runSpacing: AppSpacing.xs,
+            alignment: WrapAlignment.spaceBetween,
             children: [
-              Expanded(child: Text('142 / 180')),
+              Text('142 / 180'),
               Text('22.1   22.2   23.1   24.1'),
             ],
           ),
@@ -318,14 +363,32 @@ class _AverageSimulatorPanelState extends State<_AverageSimulatorPanel> {
             style: TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(child: _GradeField('P1', _p1Controller, _refresh)),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _GradeField('P2', _p2Controller, _refresh)),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _GradeField('Trab.', _workController, _refresh)),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 260) {
+                return Column(
+                  children: [
+                    _GradeField('P1', _p1Controller, _refresh),
+                    const SizedBox(height: AppSpacing.sm),
+                    _GradeField('P2', _p2Controller, _refresh),
+                    const SizedBox(height: AppSpacing.sm),
+                    _GradeField('Trab.', _workController, _refresh),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: _GradeField('P1', _p1Controller, _refresh)),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: _GradeField('P2', _p2Controller, _refresh)),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _GradeField('Trab.', _workController, _refresh),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: AppSpacing.md),
           Container(
@@ -380,24 +443,31 @@ class _BootstrapPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color == Colors.white ? AppColors.border : Colors.transparent,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 14,
-            offset: Offset(0, 6),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tight = constraints.maxWidth < 320;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: EdgeInsets.all(tight ? 14 : 20),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(tight ? 12 : 16),
+            border: Border.all(
+              color:
+                  color == Colors.white ? AppColors.border : Colors.transparent,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 14,
+                offset: Offset(0, 6),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: child,
+          child: child,
+        );
+      },
     );
   }
 }

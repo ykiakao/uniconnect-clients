@@ -7,7 +7,7 @@ import 'package:uniconnect/features/grades/presentation/grades_page.dart';
 void main() {
   testWidgets('renders grades dashboard content', (tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
-    tester.view.physicalSize = const Size(496, 926);
+    tester.view.physicalSize = const Size(264, 1206);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
