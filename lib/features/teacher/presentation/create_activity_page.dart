@@ -4,6 +4,7 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_buttons.dart';
+import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 
 class CreateActivityPage extends StatefulWidget {
@@ -90,74 +91,102 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
         ),
         children: [
           Text(
-            'Nova atividade',
+            'PORTAL DO PROFESSOR',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: .9,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Publicar Nova Atividade Acadêmica',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w900,
+                  height: 1.12,
                 ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
-            'A publicação entra no quadro de prioridades dos alunos.',
+            'Defina os parâmetros, prazos e critérios para sua próxima avaliação. O rigor acadêmico começa no planejamento.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.muted,
+                  height: 1.45,
                 ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          TextField(
-            controller: _subjectController,
-            onChanged: (_) => _clearError(() => _subjectError = null),
-            decoration: InputDecoration(
-              labelText: 'Disciplina',
-              errorText: _subjectError,
+          AppCard(
+            child: Column(
+              children: [
+                TextField(
+                  controller: _subjectController,
+                  onChanged: (_) => _clearError(() => _subjectError = null),
+                  decoration: InputDecoration(
+                    labelText: 'Selecione a Disciplina',
+                    hintText: 'Escolha o curso...',
+                    prefixIcon: const Icon(Icons.menu_book_outlined),
+                    errorText: _subjectError,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _titleController,
+                  onChanged: (_) => _clearError(() => _titleError = null),
+                  decoration: InputDecoration(
+                    labelText: 'Título da Atividade',
+                    hintText: 'Ex: Projeto Semestral de Urbanismo',
+                    prefixIcon: const Icon(Icons.title),
+                    errorText: _titleError,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _descriptionController,
+                  minLines: 4,
+                  maxLines: 6,
+                  onChanged: (_) => _clearError(() => _descriptionError = null),
+                  decoration: InputDecoration(
+                    labelText: 'Descrição e Instruções',
+                    hintText:
+                        'Descreva os objetivos, metodologia e requisitos de entrega...',
+                    prefixIcon: const Icon(Icons.notes_outlined),
+                    errorText: _descriptionError,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _dueController,
+                  onChanged: (_) => _clearError(() => _dueError = null),
+                  decoration: InputDecoration(
+                    labelText: 'Data de Entrega',
+                    hintText: 'mm/dd/yyyy',
+                    prefixIcon: const Icon(Icons.event_outlined),
+                    errorText: _dueError,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _weightController,
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => _clearError(() => _weightError = null),
+                  decoration: InputDecoration(
+                    labelText: 'Valor da Atividade (Pontos)',
+                    hintText: '0.0 - 10.0',
+                    prefixIcon: const Icon(Icons.percent),
+                    errorText: _weightError,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                PrimaryButton(
+                  onPressed: _publish,
+                  icon: Icons.publish_outlined,
+                  label: 'Publicar Atividade',
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _titleController,
-            onChanged: (_) => _clearError(() => _titleError = null),
-            decoration: InputDecoration(
-              labelText: 'Título',
-              errorText: _titleError,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _descriptionController,
-            minLines: 3,
-            maxLines: 5,
-            onChanged: (_) => _clearError(() => _descriptionError = null),
-            decoration: InputDecoration(
-              labelText: 'Descrição',
-              errorText: _descriptionError,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _dueController,
-            onChanged: (_) => _clearError(() => _dueError = null),
-            decoration: InputDecoration(
-              labelText: 'Prazo',
-              prefixIcon: const Icon(Icons.event_outlined),
-              errorText: _dueError,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _weightController,
-            keyboardType: TextInputType.number,
-            onChanged: (_) => _clearError(() => _weightError = null),
-            decoration: InputDecoration(
-              labelText: 'Peso da nota',
-              prefixIcon: const Icon(Icons.percent),
-              errorText: _weightError,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          PrimaryButton(
-            onPressed: _publish,
-            icon: Icons.publish_outlined,
-            label: 'Publicar atividade',
-          ),
+          const _AcademicTip(),
+          const _QuickPreview(),
         ],
       ),
     );
@@ -165,5 +194,81 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
 
   void _clearError(VoidCallback update) {
     setState(update);
+  }
+}
+
+class _AcademicTip extends StatelessWidget {
+  const _AcademicTip();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppCard(
+      backgroundColor: AppColors.secondarySoft,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.lightbulb_outline, color: AppColors.secondary),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              'Dica Acadêmica\nCertifique-se de anexar a rubrica de avaliação. Atividades com critérios claros aumentam o engajamento dos alunos em até 40%.',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickPreview extends StatelessWidget {
+  const _QuickPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'VISUALIZAÇÃO RÁPIDA',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          SizedBox(height: AppSpacing.md),
+          _PreviewLine(
+            title: 'Público-alvo',
+            text:
+                'Todos os alunos matriculados na turma selecionada receberão uma notificação imediata.',
+          ),
+          SizedBox(height: AppSpacing.md),
+          _PreviewLine(
+            title: 'Histórico',
+            text:
+                'Esta atividade será arquivada no portfólio do semestre 2024.1.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewLine extends StatelessWidget {
+  const _PreviewLine({required this.title, required this.text});
+
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(text, style: const TextStyle(color: AppColors.muted)),
+      ],
+    );
   }
 }

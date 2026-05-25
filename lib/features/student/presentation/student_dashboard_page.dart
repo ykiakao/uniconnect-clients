@@ -7,12 +7,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav.dart';
-import '../../../shared/widgets/empty_state_widget.dart';
-import '../../../shared/widgets/help_tooltip.dart';
 import '../../activities/models/academic_activity.dart';
 import '../../activities/providers/activity_provider.dart';
 import '../../activities/widgets/activity_card.dart';
-import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class StudentDashboardPage extends ConsumerWidget {
@@ -28,178 +25,144 @@ class StudentDashboardPage extends ConsumerWidget {
 
     return Scaffold(
       bottomNavigationBar: const UniBottomNav(currentIndex: 0),
-      body: DefaultTabController(
-        length: 2,
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            children: [
-              _HeroCard(user: user, criticalCount: criticalActivities.length),
-              const SizedBox(height: AppSpacing.lg),
-              const _AcademicSnapshot(),
-              const SizedBox(height: AppSpacing.lg),
-              TabBar(
-                tabs: [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.priority_high),
-                        const SizedBox(width: 8),
-                        Text('Críticas (${criticalActivities.length})'),
-                      ],
-                    ),
-                  ),
-                  const Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.schedule),
-                        SizedBox(width: 8),
-                        Text('Próximos'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 300,
-                child: TabBarView(
-                  children: [
-                    criticalActivities.isEmpty
-                        ? const EmptyStateWidget(
-                            icon: Icons.check_circle,
-                            title: 'Nenhuma urgência!',
-                            subtitle:
-                                'Você está em dia com as atividades críticas',
-                          )
-                        : ListView.builder(
-                            itemCount: criticalActivities.length,
-                            itemBuilder: (context, index) => ActivityCard(
-                              activity: criticalActivities[index],
-                              compact: true,
-                              onTap: () => context.push(
-                                  '/atividades/${criticalActivities[index].id}'),
-                            ),
-                          ),
-                    ListView.builder(
-                      itemCount: activities.length,
-                      itemBuilder: (context, index) => _TimelineItem(
-                        activity: activities[index],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Align(
-                alignment: Alignment.center,
-                child: TextButton.icon(
-                  onPressed: () => context.push(AppRoutes.activities),
-                  icon: const Icon(Icons.arrow_forward),
-                  label: const Text('Ver todas as atividades'),
-                ),
-              ),
-            ],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
           ),
+          children: [
+            _WelcomeHeader(name: user?.name.split(' ').first ?? 'Lucas'),
+            const SizedBox(height: AppSpacing.lg),
+            const _PerformanceCard(),
+            const SizedBox(height: AppSpacing.lg),
+            const _SectionTitle('Quadro de Urgências'),
+            const _UrgencyCard(),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                const Expanded(child: _SectionTitle('Atividades Pendentes')),
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.activities),
+                  child: const Text('Ver matriz completa'),
+                ),
+              ],
+            ),
+            ...activities.take(3).map(
+                  (activity) => ActivityCard(
+                    activity: activity,
+                    compact: true,
+                    onTap: () => context.push('/atividades/${activity.id}'),
+                  ),
+                ),
+            const SizedBox(height: AppSpacing.md),
+            const _SectionTitle('Meus Cursos'),
+            const _CourseCard(
+              title: 'Segurança Digital',
+              teacher: 'Prof. Ricardo M.',
+              progress: .85,
+              delta: '+12',
+            ),
+            const _CourseCard(
+              title: 'Hardware & IoT',
+              teacher: 'Profa. Juliana S.',
+              progress: .62,
+              delta: '+8',
+            ),
+            if (criticalActivities.isNotEmpty)
+              const SizedBox(height: AppSpacing.sm),
+          ],
         ),
       ),
     );
   }
 }
 
-class _HeroCard extends StatelessWidget {
-  const _HeroCard({required this.user, required this.criticalCount});
+class _WelcomeHeader extends StatelessWidget {
+  const _WelcomeHeader({required this.name});
 
-  final AppUser? user;
-  final int criticalCount;
+  final String name;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Bem-vindo,',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            user?.name.split(' ').first ?? 'Aluno',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                ),
-          ),
-          if (criticalCount > 0) ...[
-            const SizedBox(height: AppSpacing.md),
-            HelpTooltip(
-              message:
-                  'Atividades críticas são prazos ou avisos que exigem ação imediata.',
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade700,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$criticalCount atividade(s) crítica(s) que precisa(m) de atenção',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'BEM-VINDO DE VOLTA,',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: .8,
+                    ),
               ),
-            ),
-          ],
-        ],
-      ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                name,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        const CircleAvatar(
+          radius: 24,
+          backgroundColor: AppColors.primary,
+          child: Icon(Icons.person, color: Colors.white),
+        ),
+      ],
     );
   }
 }
 
-class _AcademicSnapshot extends StatelessWidget {
-  const _AcademicSnapshot();
+class _PerformanceCard extends StatelessWidget {
+  const _PerformanceCard();
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
+      backgroundColor: AppColors.primary,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Expanded(child: _Metric(title: 'GPA', value: '8.7')),
-              Expanded(child: _Metric(title: 'Semestre', value: '4')),
-              Expanded(child: _Metric(title: 'Urgências', value: '2')),
-            ],
+          Text(
+            'Seu desempenho acadêmico',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: const LinearProgressIndicator(value: .72, minHeight: 8),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '72% das atividades da semana encaminhadas',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
-            ),
+          const Row(
+            children: [
+              Expanded(
+                child: _HeroMetric(
+                  label: 'GPA',
+                  value: '8.7',
+                  icon: Icons.trending_up,
+                ),
+              ),
+              Expanded(
+                child: _HeroMetric(
+                  label: 'ATIVIDADES HOJE',
+                  value: '3',
+                  icon: Icons.assignment_turned_in_outlined,
+                ),
+              ),
+              Expanded(
+                child: _HeroMetric(
+                  label: 'SEMESTRE',
+                  value: '4',
+                  icon: Icons.school_outlined,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -207,74 +170,206 @@ class _AcademicSnapshot extends StatelessWidget {
   }
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({required this.title, required this.value});
+class _HeroMetric extends StatelessWidget {
+  const _HeroMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
 
-  final String title;
+  final String label;
   final String value;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Icon(icon, color: Colors.white70, size: 20),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           value,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: AppColors.primary,
+                color: Colors.white,
                 fontWeight: FontWeight.w900,
               ),
         ),
-        Text(title, style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.white70,
+                fontWeight: FontWeight.w900,
+              ),
+        ),
       ],
     );
   }
 }
 
-class _TimelineItem extends StatelessWidget {
-  const _TimelineItem({required this.activity});
-
-  final AcademicActivity activity;
+class _UrgencyCard extends StatelessWidget {
+  const _UrgencyCard();
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (activity.priority) {
-      ActivityPriority.critical => AppColors.danger,
-      ActivityPriority.medium => AppColors.warning,
-      ActivityPriority.low => AppColors.success,
-    };
-
     return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      accentColor: AppColors.danger,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _StatusLabel(
+            label: 'CRÍTICO (IMEDIATO)',
+            color: AppColors.danger,
+            softColor: AppColors.dangerSoft,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Entrega Projeto Final - IA',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(
+            'Hoje até 23:59',
+            style: TextStyle(color: AppColors.muted),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const _StatusLabel(
+            label: 'PLANEJAMENTO (PRÓXIMOS DIAS)',
+            color: AppColors.secondary,
+            softColor: AppColors.secondarySoft,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          const Text('Estudo Dirigido: Cálculo III'),
+          const Text(
+            'Vence em 3 dias',
+            style: TextStyle(color: AppColors.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CourseCard extends StatelessWidget {
+  const _CourseCard({
+    required this.title,
+    required this.teacher,
+    required this.progress,
+    required this.delta,
+  });
+
+  final String title;
+  final String teacher;
+  final double progress;
+  final String delta;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
       child: Row(
         children: [
-          Container(
-            width: 10,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  activity.title,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
-                  '${activity.subject} • ${activity.dueLabel}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                      ),
+                  teacher,
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    color: AppColors.primary,
+                    backgroundColor: AppColors.primarySoft,
+                  ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: AppSpacing.lg),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${(progress * 100).round()}%',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                    ),
+              ),
+              Text(
+                delta,
+                style: const TextStyle(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
+      ),
+    );
+  }
+}
+
+class _StatusLabel extends StatelessWidget {
+  const _StatusLabel({
+    required this.label,
+    required this.color,
+    required this.softColor,
+  });
+
+  final String label;
+  final Color color;
+  final Color softColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: softColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w900,
+              letterSpacing: .4,
+            ),
       ),
     );
   }

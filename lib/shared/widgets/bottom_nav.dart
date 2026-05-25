@@ -34,23 +34,28 @@ class UniBottomNav extends StatelessWidget {
       destinations: const [
         NavigationDestination(
           icon: Icon(Icons.dashboard_outlined),
-          label: 'Dashboard',
+          selectedIcon: Icon(Icons.dashboard),
+          label: 'DASHBOARD',
         ),
         NavigationDestination(
           icon: Icon(Icons.checklist_outlined),
-          label: 'Atividades',
+          selectedIcon: Icon(Icons.checklist),
+          label: 'TASKS',
         ),
         NavigationDestination(
           icon: Icon(Icons.chat_bubble_outline),
-          label: 'Chat',
+          selectedIcon: Icon(Icons.chat_bubble),
+          label: 'CHAT',
         ),
         NavigationDestination(
           icon: Icon(Icons.school_outlined),
-          label: 'Notas',
+          selectedIcon: Icon(Icons.school),
+          label: 'GRADES',
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),
-          label: 'Perfil',
+          selectedIcon: Icon(Icons.person),
+          label: 'PROFILE',
         ),
       ],
     );

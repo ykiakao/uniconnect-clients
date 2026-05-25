@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
-import '../../../shared/widgets/section_header.dart';
+import '../models/subject_grade.dart';
 import '../providers/grades_provider.dart';
 import '../widgets/average_simulator.dart';
 
@@ -44,140 +45,251 @@ class GradesPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Coeficiente de rendimento',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.78),
-                      ),
-                ),
-                Text(
-                  '${gpa.toStringAsFixed(1)} / 10.0',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
+                  'COEFICIENTE DE RENDIMENTO',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white70,
                         fontWeight: FontWeight.w900,
+                        letterSpacing: .8,
                       ),
                 ),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      gpa.toStringAsFixed(1),
+                      style:
+                          Theme.of(context).textTheme.displayMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        ' / 10.0',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                const Text(
+                  'Progresso do Curso',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: AppSpacing.xs),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: gpa / 10,
-                    minHeight: 8,
-                    backgroundColor: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(999),
+                  child: const LinearProgressIndicator(
+                    value: .75,
+                    minHeight: 10,
+                    backgroundColor: Colors.white24,
                     color: AppColors.secondary,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Evolução acadêmica estável neste semestre',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.78),
-                      ),
+                const SizedBox(height: AppSpacing.xs),
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('75%', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.lg),
-          const SectionHeader(
-            title: 'Disciplinas',
-            subtitle: 'Notas consolidadas e situação atual',
-          ),
-          ...subjects.map(
-            (subject) => AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          AppCard(
+            backgroundColor: AppColors.successSoft,
+            child: Row(
+              children: [
+                const Icon(Icons.emoji_events_outlined,
+                    color: AppColors.success),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          subject.subject,
-                          style: const TextStyle(fontWeight: FontWeight.w900),
-                        ),
+                      const Text(
+                        'Lista do Reitor',
+                        style: TextStyle(fontWeight: FontWeight.w900),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          subject.finalAverage.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                      Text(
+                        'Parabéns! Seu desempenho acadêmico este semestre te coloca entre os top 5%.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _GradePill(label: 'P1', value: subject.p1),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: _GradePill(label: 'P2', value: subject.p2),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: _GradePill(label: 'Trab.', value: subject.work),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    subject.status,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                ],
-              ),
+                ),
+                const _TinyBadge(label: 'DESTAQUE 2024.1'),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Semestre Atual',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.filter_list),
+                label: const Text('Filtrar'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ...subjects.map((subject) => _SubjectGradeCard(subject: subject)),
+          const SizedBox(height: AppSpacing.md),
+          const AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionLabel('EVOLUÇÃO ACADÊMICA'),
+                SizedBox(height: AppSpacing.md),
+                _CreditProgress(),
+              ],
+            ),
+          ),
           const AppCard(child: AverageSimulator()),
+          SecondaryButton(
+            icon: Icons.picture_as_pdf_outlined,
+            label: 'Gerar Histórico (PDF)',
+            onPressed: () {},
+          ),
         ],
       ),
     );
   }
 }
 
-class _GradePill extends StatelessWidget {
-  const _GradePill({required this.label, required this.value});
+class _SubjectGradeCard extends StatelessWidget {
+  const _SubjectGradeCard({required this.subject});
+
+  final SubjectGrade subject;
+
+  @override
+  Widget build(BuildContext context) {
+    final approved = subject.finalAverage >= 7;
+
+    return AppCard(
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  subject.subject,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  'MAT-204 • ${subject.status}',
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _TinyBadge(
+                  label: approved ? 'APROVADO' : 'EM CURSO',
+                  color: approved ? AppColors.success : AppColors.secondary,
+                  softColor: approved
+                      ? AppColors.successSoft
+                      : AppColors.secondarySoft,
+                ),
+              ],
+            ),
+          ),
+          Text(
+            subject.finalAverage == 0
+                ? '--'
+                : subject.finalAverage.toStringAsFixed(1),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CreditProgress extends StatelessWidget {
+  const _CreditProgress();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Total de Créditos'),
+        const SizedBox(height: AppSpacing.xs),
+        const Row(
+          children: [
+            Expanded(child: Text('142 / 180')),
+            Text('22.1   22.2   23.1   24.1'),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: const LinearProgressIndicator(value: .78, minHeight: 8),
+        ),
+      ],
+    );
+  }
+}
+
+class _TinyBadge extends StatelessWidget {
+  const _TinyBadge({
+    required this.label,
+    this.color = AppColors.primary,
+    this.softColor = AppColors.primarySoft,
+  });
 
   final String label;
-  final double value;
+  final Color color;
+  final Color softColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
+        color: softColor,
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          Text(
-            value == 0 ? '--' : value.toStringAsFixed(1),
-            style: const TextStyle(fontWeight: FontWeight.w900),
-          ),
-        ],
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w900,
+            ),
       ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: .8,
+          ),
     );
   }
 }

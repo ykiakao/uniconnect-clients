@@ -12,13 +12,13 @@ class PriorityBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color, icon) = switch (priority) {
       ActivityPriority.critical => (
-          'Crítico',
+          'URGENTE',
           AppColors.danger,
           Icons.priority_high
         ),
-      ActivityPriority.medium => ('Média', AppColors.warning, Icons.schedule),
+      ActivityPriority.medium => ('MÉDIA', AppColors.warning, Icons.schedule),
       ActivityPriority.low => (
-          'Baixa',
+          'BAIXA',
           AppColors.success,
           Icons.check_circle_outline
         ),
@@ -27,7 +27,7 @@ class PriorityBadge extends StatelessWidget {
     return Chip(
       avatar: Icon(icon, color: color, size: 18),
       label: Text(label),
-      labelStyle: TextStyle(color: color, fontWeight: FontWeight.w700),
+      labelStyle: TextStyle(color: color, fontWeight: FontWeight.w900),
       backgroundColor: switch (priority) {
         ActivityPriority.critical => AppColors.dangerSoft,
         ActivityPriority.medium => AppColors.warningSoft,
