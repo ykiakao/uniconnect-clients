@@ -1,4 +1,5 @@
 class AppRoutes {
+  static const authLoading = '/auth/loading';
   static const login = '/';
   static const studentDashboard = '/aluno';
   static const activities = '/atividades';

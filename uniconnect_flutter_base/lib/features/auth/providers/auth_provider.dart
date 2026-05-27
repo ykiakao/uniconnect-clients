@@ -33,7 +33,7 @@ final currentUserProvider = Provider<AppUser?>((ref) {
 
 class AuthController extends StateNotifier<AuthState> {
   AuthController(this._authService, this._sessionStorage)
-      : super(const AuthState.initial());
+      : super(const AuthState.restoring());
 
   final ApiAuthService _authService;
   final SessionStorage _sessionStorage;
@@ -42,45 +42,51 @@ class AuthController extends StateNotifier<AuthState> {
   String? get accessToken => _accessToken;
 
   Future<void> restoreSession() async {
+    state = const AuthState.restoring();
+    await _sessionStorage.clearLegacyCredentials();
+
     final storedSession = await _sessionStorage.read();
 
     if (storedSession == null) {
-      state = const AuthState(user: null, isRestoring: false);
+      state = const AuthState.unauthenticated();
       return;
     }
 
     try {
       final user = await _authService.me(storedSession.accessToken);
       _accessToken = storedSession.accessToken;
-      state = AuthState(user: user, isRestoring: false);
+      state = AuthState.authenticated(user);
     } catch (_) {
       await _sessionStorage.clear();
       _accessToken = null;
-      state = const AuthState(user: null, isRestoring: false);
+      state = const AuthState.unauthenticated();
     }
   }
 
   Future<AppUser> login({
     required String email,
     required String password,
+    required bool rememberSession,
   }) async {
     final session = await _authService.login(
       email: email,
       password: password,
     );
-    await _sessionStorage.save(session);
-    _accessToken = session.accessToken;
-    state = AuthState(user: session.user, isRestoring: false);
-    return session.user;
-  }
 
-  Future<AppUser> loginWithGoogleMock() {
-    return login(email: 'aluno@uni.com', password: '123456');
+    if (rememberSession) {
+      await _sessionStorage.save(session);
+    } else {
+      await _sessionStorage.clear();
+    }
+
+    _accessToken = session.accessToken;
+    state = AuthState.authenticated(session.user);
+    return session.user;
   }
 
   Future<void> logout() async {
     await _sessionStorage.clear();
     _accessToken = null;
-    state = const AuthState(user: null, isRestoring: false);
+    state = const AuthState.unauthenticated();
   }
 }

@@ -22,7 +22,7 @@ class ApiClient {
         baseUrl = baseUrl ??
             const String.fromEnvironment(
               'API_BASE_URL',
-              defaultValue: 'http://localhost:3333/api/v1',
+              defaultValue: 'http://10.0.2.2:3333/api/v1',
             );
 
   final http.Client _httpClient;
@@ -69,7 +69,7 @@ class ApiClient {
           .timeout(const Duration(seconds: 12));
     } on TimeoutException {
       throw const ApiException(
-        'A API demorou para responder. Tente novamente em instantes.',
+        'Não foi possível conectar à API. Verifique sua conexão ou tente novamente.',
       );
     } on http.ClientException {
       throw const ApiException(

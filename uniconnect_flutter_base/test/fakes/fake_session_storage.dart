@@ -6,9 +6,14 @@ class FakeSessionStorage extends SessionStorage {
   FakeSessionStorage() : super(const FlutterSecureStorage());
 
   StoredAuthSession? _session;
+  bool hasLegacyPassword = false;
+  int saveCount = 0;
+  int clearCount = 0;
+  int legacyClearCount = 0;
 
   @override
   Future<void> save(AuthSession session) async {
+    saveCount++;
     _session = StoredAuthSession(
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,
@@ -21,6 +26,14 @@ class FakeSessionStorage extends SessionStorage {
 
   @override
   Future<void> clear() async {
+    clearCount++;
     _session = null;
+    await clearLegacyCredentials();
+  }
+
+  @override
+  Future<void> clearLegacyCredentials() async {
+    legacyClearCount++;
+    hasLegacyPassword = false;
   }
 }

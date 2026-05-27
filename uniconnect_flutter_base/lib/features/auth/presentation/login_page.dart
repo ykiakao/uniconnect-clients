@@ -19,31 +19,31 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _emailController = TextEditingController(text: 'aluno@uni.com');
-  final _passwordController = TextEditingController(text: '123456');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   String? _emailError;
   String? _passwordError;
   String? _authError;
   bool _isLoading = false;
-  bool _rememberMe = true;
+  bool _rememberMe = false;
+  bool _obscurePassword = true;
 
   String? _validateEmail(String email) {
-    if (email.isEmpty) return 'Email é obrigatório';
-    if (!email.contains('@')) return 'Email inválido';
-    if (!email.endsWith('@uni.com')) {
-      return 'Use email institucional (@uni.com)';
-    }
+    if (email.isEmpty) return 'Informe seu e-mail.';
+    if (!email.contains('@')) return 'Informe um e-mail válido.';
     return null;
   }
 
   String? _validatePassword(String password) {
-    if (password.isEmpty) return 'Senha é obrigatória';
-    if (password.length < 6) return 'Mínimo 6 caracteres';
+    if (password.isEmpty) return 'Informe sua senha.';
     return null;
   }
 
   Future<void> _login() async {
-    final emailError = _validateEmail(_emailController.text);
+    if (_isLoading) return;
+
+    final email = _emailController.text.trim().toLowerCase();
+    final emailError = _validateEmail(email);
     final passwordError = _validatePassword(_passwordController.text);
 
     setState(() {
@@ -54,14 +54,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (emailError != null || passwordError != null) return;
 
-    setState(() {
-      _isLoading = true;
-      _authError = null;
-    });
+    setState(() => _isLoading = true);
+
     try {
       final user = await ref.read(authControllerProvider.notifier).login(
-            email: _emailController.text,
+            email: email,
             password: _passwordController.text,
+            rememberSession: _rememberMe,
           );
       if (!mounted) return;
       _goByRole(user);
@@ -74,21 +73,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  Future<void> _googleLogin() async {
-    setState(() {
-      _isLoading = true;
-      _authError = null;
-    });
-    try {
-      final user =
-          await ref.read(authControllerProvider.notifier).loginWithGoogleMock();
-      if (!mounted) return;
-      _goByRole(user);
-    } catch (error) {
-      if (!mounted) return;
+  void _clearErrorsOnEdit() {
+    if (_emailError != null || _passwordError != null || _authError != null) {
       setState(() {
-        _isLoading = false;
-        _authError = _loginErrorMessage(error);
+        _emailError = null;
+        _passwordError = null;
+        _authError = null;
       });
     }
   }
@@ -98,17 +88,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return switch (error.statusCode) {
         401 =>
           'E-mail ou senha incorretos. Confira os dados e tente novamente.',
-        403 =>
-          'Seu usuário ainda não está vinculado a esta instituição. Fale com a coordenação.',
-        404 =>
-          'Instituição não encontrada. Verifique o código da instituição e tente novamente.',
-        500 =>
-          'Serviço temporariamente indisponível. Tente novamente em alguns instantes.',
-        _ => error.message,
+        403 => 'Usuário não vinculado à instituição.',
+        404 => 'Instituição não encontrada.',
+        500 => 'Serviço indisponível no momento. Tente novamente em instantes.',
+        null =>
+          'Não foi possível conectar à API. Verifique sua conexão ou tente novamente.',
+        _ => 'Não foi possível entrar. Tente novamente em instantes.',
       };
     }
 
-    return 'Não foi possível entrar agora. Verifique sua conexão e tente novamente.';
+    return 'Não foi possível conectar à API. Verifique sua conexão ou tente novamente.';
   }
 
   void _goByRole(AppUser user) {
@@ -173,16 +162,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         enabled: !_isLoading,
-                        onChanged: (_) {
-                          if (_emailError != null || _authError != null) {
-                            setState(() {
-                              _emailError = null;
-                              _authError = null;
-                            });
-                          }
-                        },
+                        onChanged: (_) => _clearErrorsOnEdit(),
                         decoration: InputDecoration(
-                          labelText: 'Email Institucional',
+                          labelText: 'E-mail institucional',
                           prefixIcon: const Icon(Icons.email_outlined),
                           errorText: _emailError,
                           errorMaxLines: 2,
@@ -191,21 +173,33 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const SizedBox(height: AppSpacing.md),
                       TextField(
                         controller: _passwordController,
-                        obscureText: true,
+                        obscureText: _obscurePassword,
                         textInputAction: TextInputAction.done,
                         enabled: !_isLoading,
-                        onSubmitted: (_) => _isLoading ? null : _login(),
-                        onChanged: (_) {
-                          if (_passwordError != null || _authError != null) {
-                            setState(() {
-                              _passwordError = null;
-                              _authError = null;
-                            });
-                          }
+                        onSubmitted: (_) {
+                          if (!_isLoading) _login();
                         },
+                        onChanged: (_) => _clearErrorsOnEdit(),
                         decoration: InputDecoration(
                           labelText: 'Senha',
                           prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? 'Mostrar senha'
+                                : 'Ocultar senha',
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                          ),
                           errorText: _passwordError,
                           errorMaxLines: 2,
                         ),
@@ -222,9 +216,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             children: [
                               Checkbox(
                                 value: _rememberMe,
-                                onChanged: (value) {
-                                  setState(() => _rememberMe = value ?? false);
-                                },
+                                onChanged: _isLoading
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          _rememberMe = value ?? false;
+                                        });
+                                      },
                               ),
                               const Expanded(child: Text('Lembrar de mim')),
                             ],
@@ -243,23 +241,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onPressed: _isLoading ? null : _login,
                         icon: Icons.login,
                         label: _isLoading ? 'Entrando...' : 'Entrar',
+                        isLoading: _isLoading,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       const _DividerLabel(label: 'OU ENTRE COM'),
                       const SizedBox(height: AppSpacing.md),
-                      Row(
+                      const Row(
                         children: [
                           Expanded(
                             child: SecondaryButton(
-                              onPressed: _isLoading ? null : _googleLogin,
+                              onPressed: null,
                               icon: Icons.g_mobiledata,
                               label: 'Google',
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.sm),
+                          SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: SecondaryButton(
-                              onPressed: _isLoading ? null : _login,
+                              onPressed: null,
                               icon: Icons.verified_user_outlined,
                               label: 'SSO',
                             ),
@@ -271,7 +270,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 const Text(
-                  'Use aluno@uni.com ou professor@uni.com para navegar pelo tenant demo.',
+                  'Use as credenciais institucionais para acessar sua rotina acadêmica.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.muted),
                 ),

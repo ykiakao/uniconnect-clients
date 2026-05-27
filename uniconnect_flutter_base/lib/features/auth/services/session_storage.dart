@@ -21,6 +21,13 @@ class SessionStorage {
   static const _accessTokenKey = 'auth.accessToken';
   static const _refreshTokenKey = 'auth.refreshToken';
   static const _expiresAtKey = 'auth.expiresAt';
+  static const _legacyPasswordKeys = [
+    'auth.password',
+    'auth.senha',
+    'password',
+    'senha',
+    'login.password',
+  ];
 
   final FlutterSecureStorage _storage;
 
@@ -36,6 +43,8 @@ class SessionStorage {
   }
 
   Future<StoredAuthSession?> read() async {
+    await clearLegacyCredentials();
+
     final accessToken = await _storage.read(key: _accessTokenKey);
     final refreshToken = await _storage.read(key: _refreshTokenKey);
 
@@ -55,18 +64,40 @@ class SessionStorage {
       _storage.delete(key: _accessTokenKey),
       _storage.delete(key: _refreshTokenKey),
       _storage.delete(key: _expiresAtKey),
+      clearLegacyCredentials(),
+    ]);
+  }
+
+  Future<void> clearLegacyCredentials() {
+    return Future.wait([
+      for (final key in _legacyPasswordKeys) _storage.delete(key: key),
     ]);
   }
 }
 
+enum AuthStatus {
+  restoring,
+  unauthenticated,
+  authenticated,
+}
+
 class AuthState {
   const AuthState({
-    required this.user,
-    required this.isRestoring,
+    required this.status,
+    this.user,
   });
 
-  const AuthState.initial() : this(user: null, isRestoring: true);
+  const AuthState.restoring() : this(status: AuthStatus.restoring);
 
+  const AuthState.unauthenticated() : this(status: AuthStatus.unauthenticated);
+
+  const AuthState.authenticated(AppUser user)
+      : this(status: AuthStatus.authenticated, user: user);
+
+  final AuthStatus status;
   final AppUser? user;
-  final bool isRestoring;
+
+  bool get isRestoring => status == AuthStatus.restoring;
+  bool get isAuthenticated =>
+      status == AuthStatus.authenticated && user != null;
 }

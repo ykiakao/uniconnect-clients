@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/activities/presentation/activities_page.dart';
 import '../../features/activities/presentation/activity_detail_page.dart';
+import '../../features/auth/presentation/auth_loading_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/services/session_storage.dart';
@@ -23,18 +24,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: AppRoutes.authLoading,
     refreshListenable: notifier,
     redirect: (context, state) {
       final authState = ref.read(authControllerProvider);
-      if (authState.isRestoring) return null;
+      final isLoading = state.matchedLocation == AppRoutes.authLoading;
+      if (authState.isRestoring) {
+        return isLoading ? null : AppRoutes.authLoading;
+      }
 
       final isLogin = state.matchedLocation == AppRoutes.login;
       final user = authState.user;
 
       if (user == null) return isLogin ? null : AppRoutes.login;
 
-      if (isLogin) {
+      if (isLogin || isLoading) {
         return user.role == UserRole.teacher
             ? AppRoutes.teacherDashboard
             : AppRoutes.studentDashboard;
@@ -43,6 +47,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: AppRoutes.authLoading,
+        pageBuilder: (context, state) => AppRouteTransitionPage.fade(
+          key: state.pageKey,
+          child: const AuthLoadingPage(),
+        ),
+      ),
       GoRoute(
         path: AppRoutes.login,
         pageBuilder: (context, state) => AppRouteTransitionPage.fade(
