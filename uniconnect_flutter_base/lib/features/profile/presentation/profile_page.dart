@@ -28,8 +28,9 @@ class ProfilePage extends ConsumerWidget {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              ref.read(authControllerProvider.notifier).logout();
+            onPressed: () async {
+              await ref.read(authControllerProvider.notifier).logout();
+              if (!context.mounted) return;
               Navigator.pop(dialogContext);
               context.go(AppRoutes.login);
             },
@@ -103,7 +104,7 @@ class ProfilePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authControllerProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: const AppHeader(

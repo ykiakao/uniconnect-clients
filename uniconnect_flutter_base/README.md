@@ -38,6 +38,8 @@ O aplicativo já possui contexto de instituição, preparando a experiência par
 * Material Design 3
 * Google Fonts
 * Intl
+* HTTP
+* Flutter Secure Storage
 
 ---
 
@@ -95,6 +97,12 @@ Rodar como servidor web:
 flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080
 ```
 
+Rodar apontando para uma API específica:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://localhost:3333/api/v1
+```
+
 ---
 
 ## Integração com a API
@@ -111,7 +119,7 @@ URL local prevista:
 http://localhost:3333/api/v1
 ```
 
-Enquanto a integração real não é feita, o app usa `MockAuthService`.
+O login já consome a API por meio do `ApiAuthService`.
 
 ---
 
@@ -168,9 +176,6 @@ dart format lib test
 
 ## Próximos Passos
 
-* Criar cliente HTTP para a API
-* Trocar `MockAuthService` por chamadas reais
-* Persistir sessão local
 * Adicionar seleção ou descoberta de instituição
 * Implementar push notifications
 * Preparar builds Android e iOS

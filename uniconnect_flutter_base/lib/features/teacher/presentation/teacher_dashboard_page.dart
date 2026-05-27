@@ -31,8 +31,9 @@ class TeacherDashboardPage extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
             ),
-            onPressed: () {
-              ref.read(authControllerProvider.notifier).logout();
+            onPressed: () async {
+              await ref.read(authControllerProvider.notifier).logout();
+              if (!context.mounted) return;
               Navigator.pop(dialogContext);
               context.go(AppRoutes.login);
             },
@@ -45,7 +46,7 @@ class TeacherDashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authControllerProvider);
+    final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
 
     return Scaffold(

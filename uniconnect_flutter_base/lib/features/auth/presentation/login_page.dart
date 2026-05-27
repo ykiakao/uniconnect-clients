@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_routes.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_buttons.dart';
@@ -22,6 +23,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _passwordController = TextEditingController(text: '123456');
   String? _emailError;
   String? _passwordError;
+  String? _authError;
   bool _isLoading = false;
   bool _rememberMe = true;
 
@@ -40,26 +42,73 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return null;
   }
 
-  void _login() {
+  Future<void> _login() async {
     final emailError = _validateEmail(_emailController.text);
     final passwordError = _validatePassword(_passwordController.text);
 
     setState(() {
       _emailError = emailError;
       _passwordError = passwordError;
+      _authError = null;
     });
 
     if (emailError != null || passwordError != null) return;
 
-    setState(() => _isLoading = true);
-    ref.read(authControllerProvider.notifier).login(_emailController.text);
-    _goByRole(ref.read(authControllerProvider)!);
+    setState(() {
+      _isLoading = true;
+      _authError = null;
+    });
+    try {
+      final user = await ref.read(authControllerProvider.notifier).login(
+            email: _emailController.text,
+            password: _passwordController.text,
+          );
+      if (!mounted) return;
+      _goByRole(user);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _authError = _loginErrorMessage(error);
+      });
+    }
   }
 
-  void _googleLogin() {
-    setState(() => _isLoading = true);
-    ref.read(authControllerProvider.notifier).loginWithGoogleMock();
-    _goByRole(ref.read(authControllerProvider)!);
+  Future<void> _googleLogin() async {
+    setState(() {
+      _isLoading = true;
+      _authError = null;
+    });
+    try {
+      final user =
+          await ref.read(authControllerProvider.notifier).loginWithGoogleMock();
+      if (!mounted) return;
+      _goByRole(user);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _authError = _loginErrorMessage(error);
+      });
+    }
+  }
+
+  String _loginErrorMessage(Object error) {
+    if (error is ApiException) {
+      return switch (error.statusCode) {
+        401 =>
+          'E-mail ou senha incorretos. Confira os dados e tente novamente.',
+        403 =>
+          'Seu usuário ainda não está vinculado a esta instituição. Fale com a coordenação.',
+        404 =>
+          'Instituição não encontrada. Verifique o código da instituição e tente novamente.',
+        500 =>
+          'Serviço temporariamente indisponível. Tente novamente em alguns instantes.',
+        _ => error.message,
+      };
+    }
+
+    return 'Não foi possível entrar agora. Verifique sua conexão e tente novamente.';
   }
 
   void _goByRole(AppUser user) {
@@ -125,8 +174,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         textInputAction: TextInputAction.next,
                         enabled: !_isLoading,
                         onChanged: (_) {
-                          if (_emailError != null) {
-                            setState(() => _emailError = null);
+                          if (_emailError != null || _authError != null) {
+                            setState(() {
+                              _emailError = null;
+                              _authError = null;
+                            });
                           }
                         },
                         decoration: InputDecoration(
@@ -144,8 +196,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         enabled: !_isLoading,
                         onSubmitted: (_) => _isLoading ? null : _login(),
                         onChanged: (_) {
-                          if (_passwordError != null) {
-                            setState(() => _passwordError = null);
+                          if (_passwordError != null || _authError != null) {
+                            setState(() {
+                              _passwordError = null;
+                              _authError = null;
+                            });
                           }
                         },
                         decoration: InputDecoration(
@@ -155,19 +210,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           errorMaxLines: 2,
                         ),
                       ),
+                      if (_authError != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        _LoginErrorBanner(message: _authError!),
+                      ],
                       const SizedBox(height: AppSpacing.sm),
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: (value) {
-                              setState(() => _rememberMe = value ?? false);
-                            },
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() => _rememberMe = value ?? false);
+                                },
+                              ),
+                              const Expanded(child: Text('Lembrar de mim')),
+                            ],
                           ),
-                          const Expanded(child: Text('Lembrar de mim')),
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text('Esqueci minha senha'),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _isLoading ? null : () {},
+                              child: const Text('Esqueci minha senha'),
+                            ),
                           ),
                         ],
                       ),
@@ -257,6 +324,48 @@ class _BrandMark extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+}
+
+class _LoginErrorBanner extends StatelessWidget {
+  const _LoginErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.dangerSoft,
+          border: Border.all(color: AppColors.danger),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: AppColors.danger,
+              size: 20,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.danger,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

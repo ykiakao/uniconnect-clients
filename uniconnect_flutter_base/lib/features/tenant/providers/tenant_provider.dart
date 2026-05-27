@@ -4,5 +4,5 @@ import '../../auth/providers/auth_provider.dart';
 import '../models/tenant_context.dart';
 
 final currentTenantProvider = Provider<TenantContext?>((ref) {
-  return ref.watch(authControllerProvider)?.tenant;
+  return ref.watch(currentUserProvider)?.tenant;
 });

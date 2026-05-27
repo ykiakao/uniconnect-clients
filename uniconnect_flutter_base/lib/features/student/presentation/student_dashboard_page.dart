@@ -18,7 +18,7 @@ class StudentDashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authControllerProvider);
+    final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
     final activities = ref.watch(activitiesProvider);
     final criticalActivities = activities

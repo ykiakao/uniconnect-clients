@@ -1,31 +1,86 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../core/network/api_client.dart';
 import '../models/app_user.dart';
-import '../services/mock_auth_service.dart';
+import '../services/api_auth_service.dart';
+import '../services/session_storage.dart';
 
-final mockAuthServiceProvider = Provider<MockAuthService>((ref) {
-  return MockAuthService();
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient();
+});
+
+final apiAuthServiceProvider = Provider<ApiAuthService>((ref) {
+  return ApiAuthService(ref.watch(apiClientProvider));
+});
+
+final sessionStorageProvider = Provider<SessionStorage>((ref) {
+  const storage = FlutterSecureStorage();
+  return const SessionStorage(storage);
 });
 
 final authControllerProvider =
-    StateNotifierProvider<AuthController, AppUser?>((ref) {
-  return AuthController(ref.watch(mockAuthServiceProvider));
+    StateNotifierProvider<AuthController, AuthState>((ref) {
+  return AuthController(
+    ref.watch(apiAuthServiceProvider),
+    ref.watch(sessionStorageProvider),
+  )..restoreSession();
 });
 
-class AuthController extends StateNotifier<AppUser?> {
-  AuthController(this._authService) : super(null);
+final currentUserProvider = Provider<AppUser?>((ref) {
+  return ref.watch(authControllerProvider).user;
+});
 
-  final MockAuthService _authService;
+class AuthController extends StateNotifier<AuthState> {
+  AuthController(this._authService, this._sessionStorage)
+      : super(const AuthState.initial());
 
-  void login(String email) {
-    state = _authService.login(email);
+  final ApiAuthService _authService;
+  final SessionStorage _sessionStorage;
+  String? _accessToken;
+
+  String? get accessToken => _accessToken;
+
+  Future<void> restoreSession() async {
+    final storedSession = await _sessionStorage.read();
+
+    if (storedSession == null) {
+      state = const AuthState(user: null, isRestoring: false);
+      return;
+    }
+
+    try {
+      final user = await _authService.me(storedSession.accessToken);
+      _accessToken = storedSession.accessToken;
+      state = AuthState(user: user, isRestoring: false);
+    } catch (_) {
+      await _sessionStorage.clear();
+      _accessToken = null;
+      state = const AuthState(user: null, isRestoring: false);
+    }
   }
 
-  void loginWithGoogleMock() {
-    state = _authService.login('aluno@uni.com');
+  Future<AppUser> login({
+    required String email,
+    required String password,
+  }) async {
+    final session = await _authService.login(
+      email: email,
+      password: password,
+    );
+    await _sessionStorage.save(session);
+    _accessToken = session.accessToken;
+    state = AuthState(user: session.user, isRestoring: false);
+    return session.user;
   }
 
-  void logout() {
-    state = null;
+  Future<AppUser> loginWithGoogleMock() {
+    return login(email: 'aluno@uni.com', password: '123456');
+  }
+
+  Future<void> logout() async {
+    await _sessionStorage.clear();
+    _accessToken = null;
+    state = const AuthState(user: null, isRestoring: false);
   }
 }

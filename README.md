@@ -5,6 +5,7 @@ Plataforma acadêmica mobile-first estruturada como SaaS para instituições de 
 ![Flutter](https://img.shields.io/badge/Flutter-Mobile-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-API-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Backend-blue)
+![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3ECF8E)
 ![SaaS](https://img.shields.io/badge/Architecture-SaaS-purple)
 
 ---
@@ -33,7 +34,7 @@ A proposta é entregar uma plataforma contratada por assinatura, onde cada insti
 | Camada | Tecnologias |
 | ------ | ----------- |
 | Mobile | Flutter, Dart, Riverpod, GoRouter, Material Design 3, Google Fonts, Intl |
-| Backend | Node.js, TypeScript, Express, Zod, Helmet, CORS, Dotenv, TSX |
+| Backend | Node.js, TypeScript, Express, Zod, Supabase Auth, Supabase Postgres, Helmet, CORS, Dotenv, TSX |
 | Painel Web | React ou Next.js, TypeScript, Tailwind CSS, TanStack Query, React Hook Form, Zod |
 | Arquitetura | Monorepo, REST API, multi-tenant, SaaS mobile-first |
 
@@ -53,6 +54,7 @@ Principais pastas:
 | ----- | ---------- |
 | `api_backend/src` | Código-fonte da API |
 | `api_backend/src/modules` | Módulos de domínio da API |
+| `api_backend/supabase` | SQL de schema e seed do Supabase |
 | `uniconnect_flutter_base/lib/features` | Funcionalidades do app Flutter |
 | `uniconnect_flutter_base/lib/core` | Rotas, tema e constantes do app |
 | `painel_web` | Documentação e futuro scaffold do painel |
@@ -68,6 +70,7 @@ Antes de executar o projeto, instale:
 * Dart SDK
 * Node.js
 * npm
+* Conta/projeto Supabase
 
 ---
 
@@ -145,12 +148,24 @@ Tenant demo:
 
 ## Roadmap Técnico
 
-* Conectar o Flutter à API
-* Persistir sessão local no app
-* Adicionar PostgreSQL
-* Implementar JWT e refresh token
+### Concluído
+
+* Estrutura monorepo
+* App Flutter mobile-first
+* API Node/Express
+* Supabase Auth e Postgres configurados
+* Login real via API
+* Mensagens de erro no login
+* Sessão local persistida no app
+* `/auth/me` validando Bearer token
+
+### Pendente
+
+* Evoluir o schema Supabase com dados acadêmicos reais
+* Criar endpoints de atividades, notas, turmas e chat
 * Criar cadastro de instituições, cursos, turmas e usuários
-* Adicionar permissões por perfil
+* Adicionar seleção ou descoberta de instituição no app
+* Adicionar permissões por perfil nas rotas
 * Criar módulo de assinaturas
 * Evoluir o painel web administrativo
 

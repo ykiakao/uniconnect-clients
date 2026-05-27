@@ -23,10 +23,35 @@ class AppUser {
   final String? registration;
   final int? semester;
 
+  factory AppUser.fromJson(
+    Map<String, dynamic> json, {
+    required TenantContext tenant,
+  }) {
+    return AppUser(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      email: json['email'] as String,
+      role: UserRoleX.fromApi(json['role'] as String),
+      tenant: tenant,
+      course: json['course'] as String?,
+      registration: json['registration'] as String?,
+      semester: json['semester'] as int?,
+    );
+  }
+
   String get roleLabel {
     return switch (role) {
       UserRole.student => 'Aluno',
       UserRole.teacher => 'Professor',
+    };
+  }
+}
+
+extension UserRoleX on UserRole {
+  static UserRole fromApi(String value) {
+    return switch (value) {
+      'teacher' => UserRole.teacher,
+      _ => UserRole.student,
     };
   }
 }
