@@ -103,6 +103,12 @@ Rodar apontando para uma API específica:
 flutter run --dart-define=API_BASE_URL=http://localhost:3333/api/v1
 ```
 
+Por padrão, o app aponta para a API publicada no Railway:
+
+```text
+https://api-production-db5a.up.railway.app/api/v1
+```
+
 ---
 
 ## Integração com a API
@@ -117,6 +123,12 @@ URL local prevista:
 
 ```text
 http://localhost:3333/api/v1
+```
+
+URL de produção:
+
+```text
+https://api-production-db5a.up.railway.app/api/v1
 ```
 
 O login já consome a API por meio do `ApiAuthService`.

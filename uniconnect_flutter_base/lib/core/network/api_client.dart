@@ -22,7 +22,7 @@ class ApiClient {
         baseUrl = baseUrl ??
             const String.fromEnvironment(
               'API_BASE_URL',
-              defaultValue: 'http://10.0.2.2:3333/api/v1',
+              defaultValue: 'https://api-production-db5a.up.railway.app/api/v1',
             );
 
   final http.Client _httpClient;
