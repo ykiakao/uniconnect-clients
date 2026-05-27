@@ -9,6 +9,7 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../tenant/providers/tenant_provider.dart';
 
 class TeacherDashboardPage extends ConsumerWidget {
   const TeacherDashboardPage({super.key});
@@ -45,6 +46,7 @@ class TeacherDashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider);
+    final tenant = ref.watch(currentTenantProvider);
 
     return Scaffold(
       appBar: AppHeader(
@@ -83,7 +85,9 @@ class TeacherDashboardPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Publique, priorize e acompanhe suas turmas.',
+                        tenant == null
+                            ? 'Publique, priorize e acompanhe suas turmas.'
+                            : '${tenant.name} • ${tenant.planLabel}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: .82),
                             ),

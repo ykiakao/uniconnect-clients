@@ -96,7 +96,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'PORTAL ACADÊMICO',
+                        'SAAS ACADÊMICO MOBILE-FIRST',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w900,
@@ -113,7 +113,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Insira suas credenciais para acessar sua conta.',
+                        'Acesse sua instituição, turmas e rotina acadêmica.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: AppColors.muted,
                             ),
@@ -204,7 +204,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 const Text(
-                  'Use aluno@uni.com ou professor@uni.com para navegar pelo MVP.',
+                  'Use aluno@uni.com ou professor@uni.com para navegar pelo tenant demo.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.muted),
                 ),

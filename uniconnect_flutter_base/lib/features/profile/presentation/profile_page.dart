@@ -43,6 +43,64 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
+  void _showSettings(BuildContext context) {
+    var notificationsEnabled = true;
+    var remindersEnabled = true;
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Configurações',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const Icon(Icons.notifications_outlined),
+                  title: const Text('Notificações'),
+                  value: notificationsEnabled,
+                  onChanged: (value) {
+                    setState(() => notificationsEnabled = value);
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const Icon(Icons.event_available_outlined),
+                  title: const Text('Lembretes de atividades'),
+                  value: remindersEnabled,
+                  onChanged: (value) {
+                    setState(() => remindersEnabled = value);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                PrimaryButton(
+                  onPressed: () => Navigator.pop(sheetContext),
+                  label: 'Concluir',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider);
@@ -93,9 +151,59 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
+          if (user != null) ...[
+            AppCard(
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: AppColors.secondarySoft,
+                    child: Text(
+                      user.tenant.initials,
+                      style: const TextStyle(
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.tenant.name,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          '${user.tenant.planLabel} • ${user.tenant.statusLabel}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.muted,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           AppCard(
             child: Column(
               children: [
+                if (user != null) ...[
+                  _ProfileInfo(
+                    label: 'Perfil',
+                    value: user.roleLabel,
+                  ),
+                  const Divider(height: AppSpacing.lg),
+                ],
                 _ProfileInfo(
                   label: 'Curso',
                   value: user?.course ?? 'Engenharia de Software',
@@ -115,9 +223,7 @@ class ProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           SecondaryButton(
-            onPressed: () {
-              // TODO: Implementar settings
-            },
+            onPressed: () => _showSettings(context),
             icon: Icons.settings_outlined,
             label: 'Configurações',
           ),

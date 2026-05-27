@@ -11,6 +11,7 @@ import '../../activities/models/academic_activity.dart';
 import '../../activities/providers/activity_provider.dart';
 import '../../activities/widgets/activity_card.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../tenant/providers/tenant_provider.dart';
 
 class StudentDashboardPage extends ConsumerWidget {
   const StudentDashboardPage({super.key});
@@ -18,6 +19,7 @@ class StudentDashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider);
+    final tenant = ref.watch(currentTenantProvider);
     final activities = ref.watch(activitiesProvider);
     final criticalActivities = activities
         .where((activity) => activity.priority == ActivityPriority.critical)
@@ -34,7 +36,10 @@ class StudentDashboardPage extends ConsumerWidget {
             AppSpacing.xl,
           ),
           children: [
-            _WelcomeHeader(name: user?.name.split(' ').first ?? 'Lucas'),
+            _WelcomeHeader(
+              name: user?.name.split(' ').first ?? 'Lucas',
+              institution: tenant?.name ?? 'Universidade Norte',
+            ),
             const SizedBox(height: AppSpacing.lg),
             const _PerformanceCard(),
             const SizedBox(height: AppSpacing.lg),
@@ -81,9 +86,10 @@ class StudentDashboardPage extends ConsumerWidget {
 }
 
 class _WelcomeHeader extends StatelessWidget {
-  const _WelcomeHeader({required this.name});
+  const _WelcomeHeader({required this.name, required this.institution});
 
   final String name;
+  final String institution;
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +100,7 @@ class _WelcomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'BEM-VINDO DE VOLTA,',
+                institution.toUpperCase(),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColors.muted,
                       fontWeight: FontWeight.w900,
