@@ -6,8 +6,10 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/status_banner.dart';
 import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
 
@@ -206,34 +208,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       if (_authError != null) ...[
                         const SizedBox(height: AppSpacing.md),
-                        _LoginErrorBanner(message: _authError!),
+                        StatusBanner(
+                          title: 'Falha ao entrar',
+                          message: _authError!,
+                          tone: AppBadgeTone.danger,
+                        ),
                       ],
                       const SizedBox(height: AppSpacing.sm),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _rememberMe,
-                                onChanged: _isLoading
-                                    ? null
-                                    : (value) {
-                                        setState(() {
-                                          _rememberMe = value ?? false;
-                                        });
-                                      },
-                              ),
-                              const Expanded(child: Text('Lembrar de mim')),
-                            ],
+                          Checkbox(
+                            value: _rememberMe,
+                            onChanged: _isLoading
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      _rememberMe = value ?? false;
+                                    });
+                                  },
                           ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: _isLoading ? null : () {},
-                              child: const Text('Esqueci minha senha'),
-                            ),
-                          ),
+                          const Expanded(child: Text('Lembrar de mim')),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -242,28 +236,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         icon: Icons.login,
                         label: _isLoading ? 'Entrando...' : 'Entrar',
                         isLoading: _isLoading,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      const _DividerLabel(label: 'OU ENTRE COM'),
-                      const SizedBox(height: AppSpacing.md),
-                      const Row(
-                        children: [
-                          Expanded(
-                            child: SecondaryButton(
-                              onPressed: null,
-                              icon: Icons.g_mobiledata,
-                              label: 'Google',
-                            ),
-                          ),
-                          SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: SecondaryButton(
-                              onPressed: null,
-                              icon: Icons.verified_user_outlined,
-                              label: 'SSO',
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -322,75 +294,6 @@ class _BrandMark extends StatelessWidget {
                 fontWeight: FontWeight.w900,
               ),
         ),
-      ],
-    );
-  }
-}
-
-class _LoginErrorBanner extends StatelessWidget {
-  const _LoginErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.dangerSoft,
-          border: Border.all(color: AppColors.danger),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              color: AppColors.danger,
-              size: 20,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.danger,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DividerLabel extends StatelessWidget {
-  const _DividerLabel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(child: Divider()),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .8,
-                ),
-          ),
-        ),
-        const Expanded(child: Divider()),
       ],
     );
   }

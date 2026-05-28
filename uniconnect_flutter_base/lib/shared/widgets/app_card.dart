@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_tokens.dart';
+
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(AppSpacing.cardPadding),
     this.onTap,
     this.accentColor,
     this.backgroundColor,
@@ -21,7 +24,7 @@ class AppCard extends StatelessWidget {
     return Card(
       color: backgroundColor,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: Stack(
           children: [
@@ -34,7 +37,7 @@ class AppCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: accentColor,
                       borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(16),
+                        left: Radius.circular(AppRadius.lg),
                       ),
                     ),
                   ),

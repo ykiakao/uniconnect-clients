@@ -229,13 +229,10 @@ class ProfilePage extends ConsumerWidget {
             label: 'Configurações',
           ),
           const SizedBox(height: AppSpacing.md),
-          ElevatedButton.icon(
+          DestructiveButton(
             onPressed: () => _handleLogout(context, ref),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-            ),
-            icon: const Icon(Icons.logout),
-            label: const Text('Sair'),
+            icon: Icons.logout,
+            label: 'Sair',
           ),
         ],
       ),

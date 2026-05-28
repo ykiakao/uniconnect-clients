@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/status_banner.dart';
 
 class CreateActivityPage extends StatefulWidget {
   const CreateActivityPage({super.key});
@@ -185,7 +187,13 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
               ],
             ),
           ),
-          const _AcademicTip(),
+          const StatusBanner(
+            title: 'Dica acadêmica',
+            message:
+                'Certifique-se de anexar a rubrica de avaliação. Atividades com critérios claros aumentam o engajamento dos alunos.',
+            tone: AppBadgeTone.warning,
+            icon: Icons.lightbulb_outline,
+          ),
           const _QuickPreview(),
         ],
       ),
@@ -194,29 +202,6 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
 
   void _clearError(VoidCallback update) {
     setState(update);
-  }
-}
-
-class _AcademicTip extends StatelessWidget {
-  const _AcademicTip();
-
-  @override
-  Widget build(BuildContext context) {
-    return const AppCard(
-      backgroundColor: AppColors.secondarySoft,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.lightbulb_outline, color: AppColors.secondary),
-          SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(
-              'Dica Acadêmica\nCertifique-se de anexar a rubrica de avaliação. Atividades com critérios claros aumentam o engajamento dos alunos em até 40%.',
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

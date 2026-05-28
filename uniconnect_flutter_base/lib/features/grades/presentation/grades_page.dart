@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_buttons.dart';
+import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../models/subject_grade.dart';
@@ -216,9 +218,6 @@ class _SubjectGradeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final approved = subject.finalAverage >= 7;
-    final statusColor = approved ? AppColors.success : AppColors.secondary;
-    final statusSoft =
-        approved ? AppColors.successSoft : AppColors.secondarySoft;
 
     return _BootstrapPanel(
       child: LayoutBuilder(
@@ -236,10 +235,9 @@ class _SubjectGradeCard extends StatelessWidget {
                 style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: AppSpacing.sm),
-              _Badge(
+              AppBadge(
                 label: approved ? 'APROVADO' : 'EM CURSO',
-                color: statusColor,
-                softColor: statusSoft,
+                tone: approved ? AppBadgeTone.success : AppBadgeTone.warning,
               ),
             ],
           );
@@ -447,60 +445,12 @@ class _BootstrapPanel extends StatelessWidget {
       builder: (context, constraints) {
         final tight = constraints.maxWidth < 320;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-          padding: EdgeInsets.all(tight ? 14 : 20),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(tight ? 12 : 16),
-            border: Border.all(
-              color:
-                  color == Colors.white ? AppColors.border : Colors.transparent,
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 14,
-                offset: Offset(0, 6),
-              ),
-            ],
-          ),
+        return AppCard(
+          backgroundColor: color,
+          padding: EdgeInsets.all(tight ? 14 : AppSpacing.cardPadding),
           child: child,
         );
       },
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge({
-    required this.label,
-    required this.color,
-    required this.softColor,
-  });
-
-  final String label;
-  final Color color;
-  final Color softColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: softColor,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w900,
-            ),
-      ),
     );
   }
 }

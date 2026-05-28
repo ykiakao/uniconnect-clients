@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../activities/models/academic_activity.dart';
@@ -223,10 +224,9 @@ class _UrgencyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _StatusLabel(
+          const AppBadge(
             label: 'CRÍTICO (IMEDIATO)',
-            color: AppColors.danger,
-            softColor: AppColors.dangerSoft,
+            tone: AppBadgeTone.danger,
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -241,10 +241,9 @@ class _UrgencyCard extends StatelessWidget {
             style: TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: AppSpacing.md),
-          const _StatusLabel(
+          const AppBadge(
             label: 'PLANEJAMENTO (PRÓXIMOS DIAS)',
-            color: AppColors.secondary,
-            softColor: AppColors.secondarySoft,
+            tone: AppBadgeTone.warning,
           ),
           const SizedBox(height: AppSpacing.sm),
           const Text('Estudo Dirigido: Cálculo III'),
@@ -341,40 +340,6 @@ class _SectionTitle extends StatelessWidget {
         title,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w900,
-            ),
-      ),
-    );
-  }
-}
-
-class _StatusLabel extends StatelessWidget {
-  const _StatusLabel({
-    required this.label,
-    required this.color,
-    required this.softColor,
-  });
-
-  final String label;
-  final Color color;
-  final Color softColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: softColor,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w900,
-              letterSpacing: .4,
             ),
       ),
     );

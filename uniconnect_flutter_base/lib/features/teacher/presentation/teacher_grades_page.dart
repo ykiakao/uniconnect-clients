@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
@@ -245,9 +246,10 @@ class _StudentGradeRow extends StatelessWidget {
           Expanded(child: Text(row.$5, textAlign: TextAlign.center)),
           Expanded(
             flex: 2,
-            child: _StatusBadge(
+            child: AppBadge(
               label: row.$6,
-              warning: warning,
+              tone: warning ? AppBadgeTone.warning : AppBadgeTone.primary,
+              compact: true,
             ),
           ),
         ],
@@ -270,37 +272,6 @@ class _HeaderCell extends StatelessWidget {
             color: AppColors.muted,
             fontWeight: FontWeight.w900,
           ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.label, required this.warning});
-
-  final String label;
-  final bool warning;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = warning ? AppColors.secondary : AppColors.primary;
-    final soft = warning ? AppColors.secondarySoft : AppColors.primarySoft;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: soft,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w900,
-            ),
-      ),
     );
   }
 }

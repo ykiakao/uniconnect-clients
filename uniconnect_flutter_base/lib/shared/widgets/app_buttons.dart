@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
+
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -61,6 +63,41 @@ class SecondaryButton extends StatelessWidget {
         ? OutlinedButton(onPressed: onPressed, child: Text(label))
         : OutlinedButton.icon(
             onPressed: onPressed,
+            icon: Icon(icon),
+            label: Text(label),
+          );
+
+    return SizedBox(width: double.infinity, child: button);
+  }
+}
+
+class DestructiveButton extends StatelessWidget {
+  const DestructiveButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = ElevatedButton.styleFrom(
+      backgroundColor: AppColors.danger,
+      foregroundColor: Colors.white,
+    );
+    final button = icon == null
+        ? ElevatedButton(
+            onPressed: onPressed,
+            style: style,
+            child: Text(label),
+          )
+        : ElevatedButton.icon(
+            onPressed: onPressed,
+            style: style,
             icon: Icon(icon),
             label: Text(label),
           );

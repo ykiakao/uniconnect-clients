@@ -35,3 +35,14 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local AI/Codex helper kits
+**/.codex-kit/
+**/.tmp-scripts/
+**/AGENTS.md
+**/CLAUDE.md
+**/.instructions.md
+**/bootstrap-project.sh
+**/bootstrap-project.ps1
+**/verify-kit.sh
+**/verify-kit.ps1

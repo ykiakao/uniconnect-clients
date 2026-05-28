@@ -35,12 +35,12 @@ class UniBottomNav extends StatelessWidget {
         NavigationDestination(
           icon: Icon(Icons.dashboard_outlined),
           selectedIcon: Icon(Icons.dashboard),
-          label: 'DASHBOARD',
+          label: 'INICIO',
         ),
         NavigationDestination(
           icon: Icon(Icons.checklist_outlined),
           selectedIcon: Icon(Icons.checklist),
-          label: 'TASKS',
+          label: 'ATIVIDADES',
         ),
         NavigationDestination(
           icon: Icon(Icons.chat_bubble_outline),
@@ -50,12 +50,12 @@ class UniBottomNav extends StatelessWidget {
         NavigationDestination(
           icon: Icon(Icons.school_outlined),
           selectedIcon: Icon(Icons.school),
-          label: 'GRADES',
+          label: 'NOTAS',
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),
           selectedIcon: Icon(Icons.person),
-          label: 'PROFILE',
+          label: 'PERFIL',
         ),
       ],
     );

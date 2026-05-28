@@ -105,6 +105,18 @@ Rodar apontando para uma API específica:
 flutter run --dart-define=API_BASE_URL=http://localhost:3333/api/v1
 ```
 
+Para testes no emulador Android, o app usa por padrão:
+
+```text
+http://10.0.2.2:3333/api/v1
+```
+
+Esse endereço aponta do emulador para a máquina host. Para celular físico, use o IP local do computador:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://SEU_IP_LOCAL:3333/api/v1
+```
+
 ---
 
 ## Integração com a API
