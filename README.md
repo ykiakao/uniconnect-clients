@@ -1,80 +1,25 @@
-# UniConnect
+# UniConnect Clients
 
-Plataforma acadêmica mobile-first estruturada como SaaS para instituições de ensino.
+Repositorio dos clientes do UniConnect. Ele contem o app Flutter mobile-first e a base reservada para o futuro painel web administrativo.
 
-![Flutter](https://img.shields.io/badge/Flutter-Mobile-blue)
-![Node.js](https://img.shields.io/badge/Node.js-API-green)
-![TypeScript](https://img.shields.io/badge/TypeScript-Backend-blue)
-![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3ECF8E)
-![SaaS](https://img.shields.io/badge/Architecture-SaaS-purple)
+A API Node.js/TypeScript fica em outro repositorio: `uniconnect-api`.
 
----
+## Projetos
 
-## Sobre o Projeto
+| Caminho | Descricao |
+| --- | --- |
+| `uniconnect_flutter_base/` | App Flutter usado por alunos e professores |
+| `painel_web/` | Base documentada para o futuro painel administrativo |
 
-O UniConnect centraliza a rotina acadêmica de alunos, professores e gestores em um ecossistema único composto por aplicativo mobile, API backend e futuro painel web administrativo.
+## Tecnologias
 
-A proposta é entregar uma plataforma contratada por assinatura, onde cada instituição opera como um tenant isolado, com seus próprios usuários, cursos, turmas, atividades, notas e configurações.
+| Frente | Stack |
+| --- | --- |
+| App mobile | Flutter, Dart, Riverpod, GoRouter, Material Design 3, HTTP, Flutter Secure Storage |
+| Painel web | React ou Next.js, TypeScript, Tailwind CSS, TanStack Query, React Hook Form, Zod |
+| Integracao | API REST externa do repositorio `uniconnect-api` |
 
----
-
-## Responsabilidades da Plataforma
-
-* Disponibilizar um app mobile para alunos e professores
-* Centralizar atividades, notas, chat e perfil acadêmico
-* Suportar múltiplas instituições no modelo multi-tenant
-* Expor uma API REST para autenticação e dados acadêmicos
-* Preparar um painel web para gestão institucional
-* Evoluir para assinatura por instituição, curso ou usuários ativos
-
----
-
-## Tecnologias Utilizadas
-
-| Camada | Tecnologias |
-| ------ | ----------- |
-| Mobile | Flutter, Dart, Riverpod, GoRouter, Material Design 3, Google Fonts, Intl |
-| Backend | Node.js, TypeScript, Express, Zod, Supabase Auth, Supabase Postgres, Helmet, CORS, Dotenv, TSX |
-| Painel Web | React ou Next.js, TypeScript, Tailwind CSS, TanStack Query, React Hook Form, Zod |
-| Arquitetura | Monorepo, REST API, multi-tenant, SaaS mobile-first |
-
----
-
-## Estrutura do Repositório
-
-| Serviço | Pasta | Descrição |
-| ------- | ----- | --------- |
-| App Mobile | `uniconnect_flutter_base/` | Aplicativo Flutter usado por alunos e professores |
-| API Backend | `api_backend/` | Backend REST inicial do SaaS |
-| Painel Web | `painel_web/` | Base reservada para o painel administrativo |
-
-Principais pastas:
-
-| Pasta | Finalidade |
-| ----- | ---------- |
-| `api_backend/src` | Código-fonte da API |
-| `api_backend/src/modules` | Módulos de domínio da API |
-| `api_backend/supabase` | SQL de schema e seed do Supabase |
-| `uniconnect_flutter_base/lib/features` | Funcionalidades do app Flutter |
-| `uniconnect_flutter_base/lib/core` | Rotas, tema e constantes do app |
-| `painel_web` | Documentação e futuro scaffold do painel |
-
----
-
-## Requisitos
-
-Antes de executar o projeto, instale:
-
-* Git
-* Flutter
-* Dart SDK
-* Node.js
-* npm
-* Conta/projeto Supabase
-
----
-
-## Executando o App Mobile
+## Rodando o App Flutter
 
 ```bash
 cd uniconnect_flutter_base
@@ -82,109 +27,44 @@ flutter pub get
 flutter run
 ```
 
-Para rodar no navegador como servidor web:
+Rodar como servidor web:
 
 ```bash
 flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080
 ```
 
----
+## Configurando a URL da API
 
-## Executando a API
+O app usa `lib/core/config/api_config.dart` como ponto central de configuracao.
 
-```bash
-cd api_backend
-npm install
-copy .env.example .env
-npm run dev
-```
-
-A API ficará disponível em:
+URL local padrao:
 
 ```text
 http://localhost:3333/api/v1
 ```
 
----
+Para trocar em tempo de execucao:
 
-## Login de Teste
+```bash
+flutter run --dart-define=API_BASE_URL=http://localhost:3333/api/v1
+```
 
-| Perfil | E-mail | Senha |
-| ------ | ------ | ----- |
-| Aluno | `aluno@uni.com` | `123456` |
-| Professor | `professor@uni.com` | `123456` |
+Quando houver URL de producao, use o mesmo `--dart-define` ou ajuste o pipeline de build para injetar `API_BASE_URL`.
 
-Tenant demo:
+## Validacao
 
-| Campo | Valor |
-| ----- | ----- |
-| Nome | Universidade Norte |
-| Slug | `universidade-norte` |
-| Plano | Growth |
-| Status | Teste ativo |
+```bash
+cd uniconnect_flutter_base
+flutter analyze
+flutter test
+```
 
----
+## Painel Web
 
-## Rotas Iniciais da API
+`painel_web/` ainda e uma base reservada. Quando for implementado, ele deve consumir a mesma API REST do repositorio `uniconnect-api`.
 
-| Método | Endpoint | Descrição |
-| ------ | -------- | --------- |
-| GET | `/api/v1/health` | Verifica a disponibilidade da API |
-| GET | `/api/v1/tenants/current` | Retorna o tenant atual |
-| POST | `/api/v1/auth/login` | Realiza login mockado |
-| GET | `/api/v1/auth/me` | Retorna usuário e tenant atuais |
+## Separacao de Responsabilidades
 
----
+Este repositorio nao deve conter backend Node/Express, scripts Supabase ou dependencias internas da API.
 
-## Fluxo Principal
-
-1. O usuário acessa o app mobile.
-2. O app autentica o usuário no tenant da instituição.
-3. A API retorna usuário, perfil e contexto institucional.
-4. O app direciona o usuário para o dashboard correto.
-5. Alunos e professores consomem atividades, notas, chat e perfil.
-
----
-
-## Roadmap Técnico
-
-### Concluído
-
-* Estrutura monorepo
-* App Flutter mobile-first
-* API Node/Express
-* Supabase Auth e Postgres configurados
-* Login real via API
-* Mensagens de erro no login
-* Sessão local persistida no app
-* `/auth/me` validando Bearer token
-
-### Pendente
-
-* Evoluir o schema Supabase com dados acadêmicos reais
-* Criar endpoints de atividades, notas, turmas e chat
-* Criar cadastro de instituições, cursos, turmas e usuários
-* Adicionar seleção ou descoberta de instituição no app
-* Adicionar permissões por perfil nas rotas
-* Criar módulo de assinaturas
-* Evoluir o painel web administrativo
-
----
-
-## Arquivos da Entrega
-
-Este repositório contém:
-
-* `README.md`
-* `.gitignore`
-* `api_backend/`
-* `painel_web/`
-* `uniconnect_flutter_base/`
-
-As pastas `node_modules/`, `build/`, `.dart_tool/` e arquivos `.env` locais não devem ser enviados para o GitHub.
-
----
-
-## Contato
-
-Projeto acadêmico em evolução para validação de uma plataforma SaaS mobile-first voltada à gestão e experiência acadêmica.
+O app Flutter e o painel web devem consumir a API somente via HTTP.

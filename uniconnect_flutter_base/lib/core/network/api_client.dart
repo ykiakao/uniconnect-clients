@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../config/api_config.dart';
+
 class ApiException implements Exception {
   const ApiException(this.message, {this.statusCode});
 
@@ -19,11 +21,7 @@ class ApiClient {
     String? baseUrl,
     this.tenantSlug = 'universidade-norte',
   })  : _httpClient = httpClient ?? http.Client(),
-        baseUrl = baseUrl ??
-            const String.fromEnvironment(
-              'API_BASE_URL',
-              defaultValue: 'https://api-production-db5a.up.railway.app/api/v1',
-            );
+        baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final http.Client _httpClient;
   final String baseUrl;

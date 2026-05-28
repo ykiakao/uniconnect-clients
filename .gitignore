@@ -1,22 +1,37 @@
-# Node
-node_modules/
-dist/
-npm-debug.log*
-
 # Flutter/Dart
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/build/
+**/.pub-cache/
+**/.packages
+
+# Flutter platform generated/local files
+uniconnect_flutter_base/android/.gradle/
+uniconnect_flutter_base/ios/Flutter/Generated.xcconfig
+uniconnect_flutter_base/ios/Flutter/flutter_export_environment.sh
+uniconnect_flutter_base/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Future web panel
+**/node_modules/
+**/dist/
+**/.next/
+**/out/
+**/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Environment
 .env
 .env.*
 !.env.example
 
-# IDE
+# IDE and OS
 .idea/
 .vscode/
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
