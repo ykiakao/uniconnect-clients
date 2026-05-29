@@ -2,6 +2,8 @@
 
 Aplicativo Flutter mobile-first responsável pela experiência principal de alunos e professores no SaaS acadêmico UniConnect.
 
+O app mobile é o cliente Flutter de um SaaS acadêmico multi-tenant. Suporta múltiplas instituições através de contexto de tenant isolado.
+
 ![Flutter](https://img.shields.io/badge/Flutter-Mobile-blue)
 ![Dart](https://img.shields.io/badge/Dart-%3E%3D3.4-blue)
 ![Riverpod](https://img.shields.io/badge/State-Riverpod-purple)
@@ -37,7 +39,7 @@ O aplicativo consome a API do repositório `uniconnect-api` via HTTP e mantém a
 * Riverpod
 * GoRouter
 * Material Design 3
-* Google Fonts
+* Fonte Inter local
 * Intl
 * HTTP
 * Flutter Secure Storage
@@ -52,6 +54,7 @@ O aplicativo consome a API do repositório `uniconnect-api` via HTTP e mantém a
 | `lib/core/constants` | Constantes de rotas |
 | `lib/core/network` | Cliente HTTP |
 | `lib/core/router` | Configuração de navegação |
+| `lib/core/tenant` | Configuração do tenant ativo |
 | `lib/core/theme` | Tema, cores e espaçamentos |
 | `lib/features/activities` | Atividades acadêmicas |
 | `lib/features/auth` | Login e usuário atual |
@@ -197,7 +200,7 @@ dart format lib test
 * Adicionar seleção ou descoberta de instituição
 * Implementar push notifications
 * Preparar builds Android e iOS
-* Criar testes para fluxos críticos
+* Expandir cobertura de autenticação, guards de perfil e contexto multi-tenant
 * Configurar URL de produção por pipeline de build
 
 ---

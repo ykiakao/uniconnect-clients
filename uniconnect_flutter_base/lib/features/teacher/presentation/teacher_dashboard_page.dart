@@ -60,107 +60,113 @@ class TeacherDashboardPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.xl,
-        ),
-        children: [
-          AppCard(
-            backgroundColor: AppColors.primary,
-            child: Row(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
+          children: [
+            AppCard(
+              backgroundColor: AppColors.primary,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Olá, ${user?.name.split(' ').first ?? 'Marina'}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          tenant == null
+                              ? 'Publique, priorize e acompanhe suas turmas.'
+                              : '${tenant.name} • ${tenant.planLabel}',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: .82),
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.workspace_premium_outlined,
+                        color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const Row(
               children: [
+                Expanded(child: _TeacherMetric(label: 'Turmas', value: '4')),
+                SizedBox(width: AppSpacing.xs),
+                Expanded(child: _TeacherMetric(label: 'Alunos', value: '128')),
+                SizedBox(width: AppSpacing.xs),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Olá, ${user?.name.split(' ').first ?? 'Marina'}',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        tenant == null
-                            ? 'Publique, priorize e acompanhe suas turmas.'
-                            : '${tenant.name} • ${tenant.planLabel}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: .82),
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .14),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.workspace_premium_outlined,
-                      color: Colors.white),
-                ),
+                    child: _TeacherMetric(label: 'Pendências', value: '7')),
               ],
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const Row(
-            children: [
-              Expanded(child: _TeacherMetric(label: 'Turmas', value: '4')),
-              SizedBox(width: AppSpacing.xs),
-              Expanded(child: _TeacherMetric(label: 'Alunos', value: '128')),
-              SizedBox(width: AppSpacing.xs),
-              Expanded(child: _TeacherMetric(label: 'Pendências', value: '7')),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const SectionHeader(
-            title: 'Ações rápidas',
-            subtitle: 'Ferramentas essenciais para o MVP do professor',
-          ),
-          _TeacherActionCard(
-            icon: Icons.add_task,
-            color: AppColors.primary,
-            title: 'Criar atividade',
-            description: 'Publique prazo, peso e instruções para uma turma.',
-            buttonLabel: 'Publicar atividade',
-            onTap: () => context.push(AppRoutes.teacherCreateActivity),
-          ),
-          _TeacherActionCard(
-            icon: Icons.groups_outlined,
-            color: AppColors.success,
-            title: 'Visualizar turmas',
-            description: 'Acompanhe Engenharia 4A, Sistemas 2B e ADS 1C.',
-            buttonLabel: 'Abrir turmas',
-            onTap: () {},
-          ),
-          _TeacherActionCard(
-            icon: Icons.grade_outlined,
-            color: AppColors.secondary,
-            title: 'Lançar notas',
-            description: 'Atualize P1, P2 e situação dos estudantes.',
-            buttonLabel: 'Abrir notas',
-            onTap: () => context.push(AppRoutes.teacherGrades),
-          ),
-          _TeacherActionCard(
-            icon: Icons.campaign_outlined,
-            color: AppColors.info,
-            title: 'Enviar comunicados',
-            description: 'Informe mudanças de sala, material novo ou avisos.',
-            buttonLabel: 'Novo comunicado',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Comunicado mockado enviado.')),
-              );
-            },
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            const SectionHeader(
+              title: 'Ações rápidas',
+              subtitle: 'Ferramentas essenciais para o MVP do professor',
+            ),
+            _TeacherActionCard(
+              icon: Icons.add_task,
+              color: AppColors.primary,
+              title: 'Criar atividade',
+              description: 'Publique prazo, peso e instruções para uma turma.',
+              buttonLabel: 'Publicar atividade',
+              onTap: () => context.push(AppRoutes.teacherCreateActivity),
+            ),
+            _TeacherActionCard(
+              icon: Icons.groups_outlined,
+              color: AppColors.success,
+              title: 'Visualizar turmas',
+              description: 'Acompanhe Engenharia 4A, Sistemas 2B e ADS 1C.',
+              buttonLabel: 'Abrir turmas',
+              onTap: () {},
+            ),
+            _TeacherActionCard(
+              icon: Icons.grade_outlined,
+              color: AppColors.secondary,
+              title: 'Lançar notas',
+              description: 'Atualize P1, P2 e situação dos estudantes.',
+              buttonLabel: 'Abrir notas',
+              onTap: () => context.push(AppRoutes.teacherGrades),
+            ),
+            _TeacherActionCard(
+              icon: Icons.campaign_outlined,
+              color: AppColors.info,
+              title: 'Enviar comunicados',
+              description: 'Informe mudanças de sala, material novo ou avisos.',
+              buttonLabel: 'Novo comunicado',
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Comunicado mockado enviado.')),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

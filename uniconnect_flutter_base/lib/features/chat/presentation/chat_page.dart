@@ -23,44 +23,46 @@ class ChatPage extends ConsumerWidget {
         fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 2),
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.sm,
-            ),
-            child: Column(
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Buscar mensagens...',
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                ),
-                SizedBox(height: AppSpacing.md),
-                _ConversationStrip(),
-              ],
-            ),
-          ),
-          const _ChatHeader(),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
                 AppSpacing.lg,
                 AppSpacing.md,
                 AppSpacing.lg,
-                AppSpacing.lg,
+                AppSpacing.sm,
               ),
-              itemCount: messages.length,
-              itemBuilder: (context, index) =>
-                  _MessageBubble(message: messages[index]),
+              child: Column(
+                children: [
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar mensagens...',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  _ConversationStrip(),
+                ],
+              ),
             ),
-          ),
-          const _Composer(),
-        ],
+            const _ChatHeader(),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                ),
+                itemCount: messages.length,
+                itemBuilder: (context, index) =>
+                    _MessageBubble(message: messages[index]),
+              ),
+            ),
+            const _Composer(),
+          ],
+        ),
       ),
     );
   }

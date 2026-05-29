@@ -25,64 +25,67 @@ class TeacherGradesPage extends StatelessWidget {
         title: 'Lançamento de notas',
         fallbackRoute: AppRoutes.teacherDashboard,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.xl,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
+          children: [
+            Text(
+              'GESTÃO ACADÊMICA',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: .9,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Lançamento de Notas',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            const Text(
+              'Disciplina: Engenharia de Software II (Turma A)',
+              style: TextStyle(color: AppColors.muted),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const _DistributionCard(),
+            const SizedBox(height: AppSpacing.md),
+            const TextField(
+              decoration: InputDecoration(
+                hintText: 'Buscar aluno...',
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            PrimaryButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Notas publicadas com sucesso.')),
+                );
+              },
+              icon: Icons.cloud_upload_outlined,
+              label: 'Publicar Notas',
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppCard(
+              child: Column(
+                children: [
+                  const _TableHeader(),
+                  const Divider(height: AppSpacing.lg),
+                  ...rows.map((row) => _StudentGradeRow(row: row)),
+                ],
+              ),
+            ),
+          ],
         ),
-        children: [
-          Text(
-            'GESTÃO ACADÊMICA',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .9,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Lançamento de Notas',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(
-            'Disciplina: Engenharia de Software II (Turma A)',
-            style: TextStyle(color: AppColors.muted),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const _DistributionCard(),
-          const SizedBox(height: AppSpacing.md),
-          const TextField(
-            decoration: InputDecoration(
-              hintText: 'Buscar aluno...',
-              prefixIcon: Icon(Icons.search),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          PrimaryButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notas publicadas com sucesso.')),
-              );
-            },
-            icon: Icons.cloud_upload_outlined,
-            label: 'Publicar Notas',
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          AppCard(
-            child: Column(
-              children: [
-                const _TableHeader(),
-                const Divider(height: AppSpacing.lg),
-                ...rows.map((row) => _StudentGradeRow(row: row)),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

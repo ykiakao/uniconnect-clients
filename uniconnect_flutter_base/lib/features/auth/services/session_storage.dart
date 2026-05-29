@@ -79,25 +79,39 @@ enum AuthStatus {
   restoring,
   unauthenticated,
   authenticated,
+  error,
 }
 
 class AuthState {
   const AuthState({
     required this.status,
     this.user,
+    this.accessToken,
+    this.errorMessage,
   });
 
   const AuthState.restoring() : this(status: AuthStatus.restoring);
 
   const AuthState.unauthenticated() : this(status: AuthStatus.unauthenticated);
 
-  const AuthState.authenticated(AppUser user)
-      : this(status: AuthStatus.authenticated, user: user);
+  const AuthState.authenticated(AppUser user, {required String accessToken})
+      : this(
+          status: AuthStatus.authenticated,
+          user: user,
+          accessToken: accessToken,
+        );
+
+  const AuthState.error(String message)
+      : this(status: AuthStatus.error, errorMessage: message);
 
   final AuthStatus status;
   final AppUser? user;
+  final String? accessToken;
+  final String? errorMessage;
 
   bool get isRestoring => status == AuthStatus.restoring;
   bool get isAuthenticated =>
       status == AuthStatus.authenticated && user != null;
+  UserRole? get role => user?.role;
+  String? get tenantSlug => user?.tenant.slug;
 }

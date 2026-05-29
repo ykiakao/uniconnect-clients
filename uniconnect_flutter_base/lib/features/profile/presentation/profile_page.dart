@@ -112,76 +112,37 @@ class ProfilePage extends ConsumerWidget {
         fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 4),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.xl,
-        ),
-        children: [
-          AppCard(
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 32,
-                  backgroundColor: AppColors.primary,
-                  child: Icon(Icons.person, color: Colors.white, size: 34),
-                ),
-                const SizedBox(width: AppSpacing.lg),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.name ?? 'Usuário',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                      Text(
-                        user?.email ?? 'email@uni.com',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.muted,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
           ),
-          const SizedBox(height: AppSpacing.md),
-          if (user != null) ...[
+          children: [
             AppCard(
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppColors.secondarySoft,
-                    child: Text(
-                      user.tenant.initials,
-                      style: const TextStyle(
-                        color: AppColors.secondary,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                  const CircleAvatar(
+                    radius: 32,
+                    backgroundColor: AppColors.primary,
+                    child: Icon(Icons.person, color: Colors.white, size: 34),
                   ),
-                  const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user.tenant.name,
+                          user?.name ?? 'Usuário',
                           style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
                         ),
-                        const SizedBox(height: AppSpacing.xxs),
                         Text(
-                          '${user.tenant.planLabel} • ${user.tenant.statusLabel}',
+                          user?.email ?? 'email@uni.com',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.muted,
@@ -194,47 +155,92 @@ class ProfilePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-          ],
-          AppCard(
-            child: Column(
-              children: [
-                if (user != null) ...[
+            if (user != null) ...[
+              AppCard(
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppColors.secondarySoft,
+                      child: Text(
+                        user.tenant.initials,
+                        style: const TextStyle(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.tenant.name,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            '${user.tenant.planLabel} • ${user.tenant.statusLabel}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.muted,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            AppCard(
+              child: Column(
+                children: [
+                  if (user != null) ...[
+                    _ProfileInfo(
+                      label: 'Perfil',
+                      value: user.roleLabel,
+                    ),
+                    const Divider(height: AppSpacing.lg),
+                  ],
                   _ProfileInfo(
-                    label: 'Perfil',
-                    value: user.roleLabel,
+                    label: 'Curso',
+                    value: user?.course ?? 'Engenharia de Software',
                   ),
                   const Divider(height: AppSpacing.lg),
+                  _ProfileInfo(
+                    label: 'Matrícula',
+                    value: user?.registration ?? '2024021845',
+                  ),
+                  const Divider(height: AppSpacing.lg),
+                  _ProfileInfo(
+                    label: 'Semestre',
+                    value: '${user?.semester ?? 4}',
+                  ),
                 ],
-                _ProfileInfo(
-                  label: 'Curso',
-                  value: user?.course ?? 'Engenharia de Software',
-                ),
-                const Divider(height: AppSpacing.lg),
-                _ProfileInfo(
-                  label: 'Matrícula',
-                  value: user?.registration ?? '2024021845',
-                ),
-                const Divider(height: AppSpacing.lg),
-                _ProfileInfo(
-                  label: 'Semestre',
-                  value: '${user?.semester ?? 4}',
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          SecondaryButton(
-            onPressed: () => _showSettings(context),
-            icon: Icons.settings_outlined,
-            label: 'Configurações',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          DestructiveButton(
-            onPressed: () => _handleLogout(context, ref),
-            icon: Icons.logout,
-            label: 'Sair',
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            SecondaryButton(
+              onPressed: () => _showSettings(context),
+              icon: Icons.settings_outlined,
+              label: 'Configurações',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            DestructiveButton(
+              onPressed: () => _handleLogout(context, ref),
+              icon: Icons.logout,
+              label: 'Sair',
+            ),
+          ],
+        ),
       ),
     );
   }

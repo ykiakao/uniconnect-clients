@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_tokens.dart';
+
+const _fontFamily = 'Inter';
 
 class AppTheme {
   static ThemeData get lightTheme {
@@ -19,10 +20,11 @@ class AppTheme {
         onSurface: AppColors.dark,
         error: AppColors.danger,
       ),
-      textTheme: GoogleFonts.interTextTheme().apply(
-        bodyColor: AppColors.dark,
-        displayColor: AppColors.dark,
-      ),
+      textTheme: Typography.material2021().black.apply(
+            fontFamily: _fontFamily,
+            bodyColor: AppColors.dark,
+            displayColor: AppColors.dark,
+          ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
@@ -65,7 +67,10 @@ class AppTheme {
           disabledBackgroundColor: AppColors.border,
           disabledForegroundColor: AppColors.muted,
           minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(
+            fontFamily: _fontFamily,
+            fontWeight: FontWeight.w800,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
@@ -76,7 +81,10 @@ class AppTheme {
           minimumSize: const Size.fromHeight(AppSizes.secondaryButtonHeight),
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.border),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(
+            fontFamily: _fontFamily,
+            fontWeight: FontWeight.w800,
+          ),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.md)),
         ),
@@ -84,12 +92,18 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(
+            fontFamily: _fontFamily,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
-        labelStyle:
-            GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800),
+        labelStyle: const TextStyle(
+          fontFamily: _fontFamily,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
@@ -109,7 +123,8 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.dark,
-        contentTextStyle: GoogleFonts.inter(
+        contentTextStyle: const TextStyle(
+          fontFamily: _fontFamily,
           color: Colors.white,
           fontWeight: FontWeight.w700,
         ),
@@ -123,7 +138,8 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: const TextStyle(
+          fontFamily: _fontFamily,
           color: AppColors.dark,
           fontSize: 20,
           fontWeight: FontWeight.w900,
@@ -137,8 +153,11 @@ class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           visualDensity: VisualDensity.compact,
-          textStyle: WidgetStatePropertyAll(
-            GoogleFonts.inter(fontWeight: FontWeight.w800),
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(
+              fontFamily: _fontFamily,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
@@ -153,7 +172,8 @@ class AppTheme {
         height: 72,
         indicatorColor: AppColors.primary.withValues(alpha: .10),
         labelTextStyle: WidgetStateProperty.resolveWith(
-          (states) => GoogleFonts.inter(
+          (states) => TextStyle(
+            fontFamily: _fontFamily,
             fontSize: 10,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w900

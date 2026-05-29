@@ -20,6 +20,38 @@ void main() {
 
     expect(controller.state.status, AuthStatus.authenticated);
     expect(controller.accessToken, 'access-token');
+    expect(controller.state.accessToken, 'access-token');
+    expect(controller.state.role, fakeStudent.role);
+    expect(controller.state.tenantSlug, fakeStudent.tenant.slug);
+    expect(storage.saveCount, 0);
+    expect(await storage.read(), isNull);
+  });
+
+  test('login with API error exposes friendly error and saves nothing',
+      () async {
+    final storage = FakeSessionStorage();
+    final controller = AuthController(
+      FakeAuthService(
+        loginError: const ApiException(
+          'E-mail ou senha incorretos',
+          statusCode: 401,
+        ),
+      ),
+      storage,
+    );
+
+    await expectLater(
+      controller.login(
+        email: 'aluno.teste@uni.com',
+        password: 'errada',
+        rememberSession: true,
+      ),
+      throwsA(isA<ApiException>()),
+    );
+
+    expect(controller.state.status, AuthStatus.error);
+    expect(controller.state.errorMessage, 'E-mail ou senha incorretos');
+    expect(controller.accessToken, isNull);
     expect(storage.saveCount, 0);
     expect(await storage.read(), isNull);
   });
@@ -57,6 +89,7 @@ void main() {
     expect(authService.meCalls, 1);
     expect(controller.state.status, AuthStatus.authenticated);
     expect(controller.accessToken, 'saved-token');
+    expect(controller.state.tenantSlug, fakeStudent.tenant.slug);
   });
 
   test('restore session clears invalid saved token', () async {
@@ -80,6 +113,7 @@ void main() {
 
     expect(controller.state.status, AuthStatus.unauthenticated);
     expect(controller.accessToken, isNull);
+    expect(storage.clearCount, 1);
     expect(await storage.read(), isNull);
   });
 

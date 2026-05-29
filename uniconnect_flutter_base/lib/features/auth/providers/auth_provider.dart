@@ -1,3 +1,4 @@
+// TODO(tech-debt): migrar para NotifierProvider quando estável.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -38,9 +39,8 @@ class AuthController extends StateNotifier<AuthState> {
 
   final ApiAuthService _authService;
   final SessionStorage _sessionStorage;
-  String? _accessToken;
 
-  String? get accessToken => _accessToken;
+  String? get accessToken => state.accessToken;
 
   Future<void> restoreSession() async {
     state = const AuthState.restoring();
@@ -55,11 +55,14 @@ class AuthController extends StateNotifier<AuthState> {
 
     try {
       final user = await _authService.me(storedSession.accessToken);
-      _accessToken = storedSession.accessToken;
-      state = AuthState.authenticated(user);
+      state = AuthState.authenticated(
+        user,
+        accessToken: storedSession.accessToken,
+      );
     } catch (_) {
+      // TODO(backend): implementar refresh token quando /auth/refresh
+      // estiver definido. Limpar sessão por enquanto.
       await _sessionStorage.clear();
-      _accessToken = null;
       state = const AuthState.unauthenticated();
     }
   }
@@ -69,10 +72,17 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
     required bool rememberSession,
   }) async {
-    final session = await _authService.login(
-      email: email,
-      password: password,
-    );
+    late final AuthSession session;
+
+    try {
+      session = await _authService.login(
+        email: email,
+        password: password,
+      );
+    } catch (error) {
+      state = AuthState.error(_friendlyAuthError(error));
+      rethrow;
+    }
 
     if (rememberSession) {
       await _sessionStorage.save(session);
@@ -80,14 +90,23 @@ class AuthController extends StateNotifier<AuthState> {
       await _sessionStorage.clear();
     }
 
-    _accessToken = session.accessToken;
-    state = AuthState.authenticated(session.user);
+    state = AuthState.authenticated(
+      session.user,
+      accessToken: session.accessToken,
+    );
     return session.user;
   }
 
   Future<void> logout() async {
     await _sessionStorage.clear();
-    _accessToken = null;
     state = const AuthState.unauthenticated();
+  }
+
+  String _friendlyAuthError(Object error) {
+    if (error is ApiException && error.statusCode == 401) {
+      return 'E-mail ou senha incorretos';
+    }
+
+    return 'Não foi possível entrar. Tente novamente.';
   }
 }

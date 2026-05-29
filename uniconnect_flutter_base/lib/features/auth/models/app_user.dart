@@ -50,7 +50,8 @@ class AppUser {
 extension UserRoleX on UserRole {
   static UserRole fromApi(String value) {
     return switch (value) {
-      'teacher' => UserRole.teacher,
+      'aluno' || 'student' => UserRole.student,
+      'teacher' || 'professor' => UserRole.teacher,
       _ => UserRole.student,
     };
   }
