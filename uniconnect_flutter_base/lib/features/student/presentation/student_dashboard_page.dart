@@ -21,7 +21,8 @@ class StudentDashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
-    final activities = ref.watch(activitiesProvider);
+    final activitiesAsync = ref.watch(activitiesProvider);
+    final activities = activitiesAsync.value ?? const <AcademicActivity>[];
     final criticalActivities = activities
         .where((activity) => activity.priority == ActivityPriority.critical)
         .toList();
@@ -47,6 +48,10 @@ class StudentDashboardPage extends ConsumerWidget {
             const _SectionTitle('Quadro de Urgências'),
             const _UrgencyCard(),
             const SizedBox(height: AppSpacing.lg),
+            if (activitiesAsync.isLoading) ...const [
+              LinearProgressIndicator(minHeight: 3),
+              SizedBox(height: AppSpacing.md),
+            ],
             Row(
               children: [
                 const Expanded(child: _SectionTitle('Atividades Pendentes')),

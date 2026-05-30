@@ -8,6 +8,8 @@ import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
+import '../../../shared/widgets/error_state_widget.dart';
+import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
 
 class ActivityDetailPage extends ConsumerWidget {
@@ -17,18 +19,50 @@ class ActivityDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activity = ref.watch(activityByIdProvider(activityId));
+    final activityAsync = ref.watch(activityByIdProvider(activityId));
 
-    if (activity == null) {
-      return const Scaffold(
+    return activityAsync.when(
+      loading: () => const Scaffold(
         appBar: AppHeader(
           title: 'Atividade',
           fallbackRoute: AppRoutes.activities,
         ),
-        body: Center(child: Text('Atividade não encontrada.')),
-      );
-    }
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: const AppHeader(
+          title: 'Atividade',
+          fallbackRoute: AppRoutes.activities,
+        ),
+        body: ErrorStateWidget(
+          error: error.toString(),
+          onRetry: () => ref.invalidate(activityByIdProvider(activityId)),
+        ),
+      ),
+      data: (activity) {
+        if (activity == null) {
+          return const Scaffold(
+            appBar: AppHeader(
+              title: 'Atividade',
+              fallbackRoute: AppRoutes.activities,
+            ),
+            body: Center(child: Text('Atividade nao encontrada.')),
+          );
+        }
 
+        return _ActivityDetailContent(activity: activity);
+      },
+    );
+  }
+}
+
+class _ActivityDetailContent extends StatelessWidget {
+  const _ActivityDetailContent({required this.activity});
+
+  final AcademicActivity activity;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: const AppHeader(
         title: 'Detalhes da atividade',
@@ -45,7 +79,7 @@ class ActivityDetailPage extends ConsumerWidget {
           ),
           children: [
             Text(
-              '${activity.subject.toUpperCase()} • MÓDULO 4',
+              activity.subject.toUpperCase(),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w900,
@@ -54,9 +88,7 @@ class ActivityDetailPage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              activity.title == 'Trabalho vence em 2 dias'
-                  ? 'Padrões de Projeto e Microserviços: Estudo de Caso Avançado'
-                  : activity.title,
+              activity.title,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w900,
                     height: 1.12,
@@ -77,7 +109,7 @@ class ActivityDetailPage extends ConsumerWidget {
                   child: _InfoPill(
                     icon: Icons.workspace_premium_outlined,
                     label: 'Valor',
-                    value: '10.0 Pontos',
+                    value: '10.0 pontos',
                   ),
                 ),
               ],
@@ -87,28 +119,26 @@ class ActivityDetailPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel('Instruções da Atividade'),
+                  const _SectionLabel('Instrucoes da atividade'),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    activity.description,
+                    activity.description.isEmpty
+                        ? 'Leia as orientacoes da disciplina antes de iniciar.'
+                        : activity.description,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.muted,
                           height: 1.45,
                         ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const _ChecklistItem(
-                    text:
-                        'Identifique três gargalos de escalabilidade no diagrama anexo.',
-                  ),
-                  const _ChecklistItem(
-                    text:
-                        'Proponha a aplicação do padrão Circuit Breaker para serviços críticos.',
-                  ),
-                  const _ChecklistItem(
-                    text:
-                        'Elabore um relatório técnico em PDF (máximo 5 páginas).',
-                  ),
+                  for (final criterion in activity.criteria)
+                    _ChecklistItem(text: criterion),
+                  if (activity.criteria.isEmpty) ...const [
+                    _ChecklistItem(text: 'Revise o conteudo da aula.'),
+                    _ChecklistItem(text: 'Prepare sua entrega com clareza.'),
+                    _ChecklistItem(
+                        text: 'Confira os arquivos antes de enviar.'),
+                  ],
                 ],
               ),
             ),
@@ -116,24 +146,24 @@ class ActivityDetailPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel('Material de Apoio'),
+                  const _SectionLabel('Material de apoio'),
                   const SizedBox(height: AppSpacing.md),
-                  ...activity.attachments.map(
-                    (attachment) => _MaterialItem(
-                      icon: Icons.picture_as_pdf_outlined,
-                      title: attachment,
-                      subtitle: 'Guia de padrões de projeto (4.2 MB)',
+                  if (activity.attachments.isEmpty)
+                    const Text(
+                      'Nenhum material anexo para esta atividade.',
+                      style: TextStyle(color: AppColors.muted),
+                    )
+                  else
+                    ...activity.attachments.map(
+                      (attachment) => _MaterialItem(
+                        icon: Icons.insert_drive_file_outlined,
+                        title: attachment,
+                        subtitle: 'Material da atividade',
+                      ),
                     ),
-                  ),
-                  const _MaterialItem(
-                    icon: Icons.play_circle_outline,
-                    title: 'Vídeo Aula: Resiliência',
-                    subtitle: 'Assista antes de começar (15 min)',
-                  ),
                 ],
               ),
             ),
-            const _CountdownCard(),
             AppCard(
               child: Row(
                 children: [
@@ -147,7 +177,7 @@ class ActivityDetailPage extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _SectionLabel('PROFESSOR RESPONSÁVEL'),
+                        const _SectionLabel('Professor responsavel'),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           activity.teacher,
@@ -155,10 +185,6 @@ class ActivityDetailPage extends ConsumerWidget {
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
-                        ),
-                        const Text(
-                          'PhD em Engenharia de Software',
-                          style: TextStyle(color: AppColors.muted),
                         ),
                       ],
                     ),
@@ -168,26 +194,18 @@ class ActivityDetailPage extends ConsumerWidget {
             ),
             SecondaryButton(
               icon: Icons.chat_bubble_outline,
-              label: 'Enviar Mensagem',
+              label: 'Enviar mensagem',
               onPressed: () {},
             ),
             const SizedBox(height: AppSpacing.sm),
             PrimaryButton(
               icon: Icons.play_arrow_rounded,
-              label: 'Realizar Atividade',
+              label: 'Realizar atividade',
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Atividade iniciada.')),
                 );
               },
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Ao iniciar, você terá uma tentativa única para submissão dos arquivos.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
             ),
           ],
         ),
@@ -241,72 +259,6 @@ class _InfoPill extends StatelessWidget {
   }
 }
 
-class _CountdownCard extends StatelessWidget {
-  const _CountdownCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      backgroundColor: AppColors.primary,
-      child: Column(
-        children: [
-          Text(
-            'CONTAGEM REGRESSIVA',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .8,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _TimeBlock(value: '03', label: 'DIAS'),
-              _TimeBlock(value: '14', label: 'HORAS'),
-              _TimeBlock(value: '42', label: 'MIN'),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Text(
-            'Atividade expira em 25/10 às 23:59',
-            style: TextStyle(color: Colors.white70),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TimeBlock extends StatelessWidget {
-  const _TimeBlock({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-              ),
-        ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.white70,
-                fontWeight: FontWeight.w900,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
 class _MaterialItem extends StatelessWidget {
   const _MaterialItem({
     required this.icon,
@@ -330,8 +282,10 @@ class _MaterialItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 Text(
                   subtitle,
                   style: const TextStyle(color: AppColors.muted),

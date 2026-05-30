@@ -17,7 +17,8 @@ class GradesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subjects = ref.watch(subjectGradesProvider);
+    final subjectsAsync = ref.watch(subjectGradesProvider);
+    final subjects = subjectsAsync.value ?? const <SubjectGrade>[];
     final gpa = subjects.isEmpty
         ? 0.0
         : subjects
@@ -40,6 +41,21 @@ class GradesPage extends ConsumerWidget {
             children: [
               _GpaPanel(gpa: gpa),
               const SizedBox(height: AppSpacing.md),
+              if (subjectsAsync.isLoading) ...const [
+                LinearProgressIndicator(minHeight: 3),
+                SizedBox(height: AppSpacing.md),
+              ],
+              if (subjectsAsync.hasError) ...[
+                _BootstrapPanel(
+                  child: Text(
+                    'Nao foi possivel carregar suas notas agora.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               const _DeanListPanel(),
               const SizedBox(height: AppSpacing.lg),
               const _SemesterHeader(),
