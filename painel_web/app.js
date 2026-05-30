@@ -14,6 +14,8 @@ const state = {
   session: null,
   sidebarOpen: false,
   showPassword: false,
+  chatbotOpen: false,
+  chatbotNodeId: "start",
 };
 
 const navItems = [
@@ -152,6 +154,265 @@ const mockRows = [
   },
 ];
 
+const chatbotFlow = {
+  start: {
+    eyebrow: "Assistente UniConnect",
+    title: "Como posso ajudar?",
+    message:
+      "Escolha um assunto abaixo. Eu vou guiando por cliques ate chegar na resposta.",
+    options: [
+      { label: "Registrar algo", target: "register" },
+      { label: "Acessar o painel", target: "access" },
+      { label: "Entender os módulos", target: "modules" },
+      { label: "Resolver erro de acesso", target: "accessTrouble" },
+    ],
+  },
+  register: {
+    eyebrow: "Fluxo de registro",
+    title: "O que você quer registrar?",
+    message:
+      "Selecione o tipo de registro para ver o caminho completo de cliques.",
+    options: [
+      { label: "Usuário administrativo", target: "registerUser" },
+      { label: "Curso", target: "registerCourse" },
+      { label: "Turma", target: "registerClass" },
+      { label: "Atividade acadêmica", target: "registerActivity" },
+      { label: "Nota de aluno", target: "registerGrade" },
+    ],
+  },
+  registerUser: {
+    eyebrow: "Usuários",
+    title: "Como registrar um usuário administrativo",
+    message:
+      "Este fluxo já está mapeado no painel, mas a criação real depende do endpoint administrativo.",
+    steps: [
+      "Entrar no painel com perfil admin, coordenador ou mantenedor.",
+      "Clicar em Usuários no menu lateral.",
+      "Clicar em Novo registro quando o botão estiver habilitado.",
+      "Preencher nome, e-mail institucional, perfil, área e status.",
+      "Revisar o tenant exibido no topo para confirmar a instituição correta.",
+      "Clicar em Salvar e conferir o novo usuário na tabela.",
+    ],
+    options: [
+      { label: "Ver cursos", target: "registerCourse" },
+      { label: "Ver erro de permissão", target: "accessTrouble" },
+    ],
+  },
+  registerCourse: {
+    eyebrow: "Cursos",
+    title: "Como registrar um curso",
+    message:
+      "O módulo Cursos está reservado para o CRUD acadêmico do painel.",
+    steps: [
+      "Entrar no painel administrativo.",
+      "Clicar em Cursos no menu lateral.",
+      "Clicar em Novo registro quando a API do módulo estiver disponível.",
+      "Informar nome do curso, área, coordenador e status.",
+      "Salvar o curso.",
+      "Abrir Turmas para vincular períodos e professores depois do cadastro.",
+    ],
+    options: [
+      { label: "Ver turmas", target: "registerClass" },
+      { label: "Entender módulos", target: "modules" },
+    ],
+  },
+  registerClass: {
+    eyebrow: "Turmas",
+    title: "Como registrar uma turma",
+    message:
+      "Turmas organizam alunos por curso, semestre e professor responsável.",
+    steps: [
+      "Clicar em Turmas no menu lateral.",
+      "Clicar em Novo registro quando o endpoint estiver pronto.",
+      "Selecionar curso, semestre, período letivo e professor responsável.",
+      "Definir capacidade, status e observações administrativas.",
+      "Salvar a turma.",
+      "Conferir se a turma aparece nos filtros de usuários, notas e relatórios.",
+    ],
+    options: [
+      { label: "Ver notas", target: "registerGrade" },
+      { label: "Ver relatórios", target: "reportsFlow" },
+    ],
+  },
+  registerActivity: {
+    eyebrow: "Atividades",
+    title: "Como registrar uma atividade acadêmica",
+    message:
+      "Esse fluxo acontece no app do professor, não no painel administrativo atual.",
+    steps: [
+      "Entrar no app UniConnect com uma conta de professor.",
+      "Abrir o dashboard Professor.",
+      "Clicar em Criar atividade.",
+      "Preencher disciplina, título, descrição, prazo, prioridade e critérios.",
+      "Revisar os dados antes de publicar.",
+      "Publicar para que alunos vejam em Atividades.",
+    ],
+    options: [
+      { label: "Registrar nota", target: "registerGrade" },
+      { label: "Voltar para registros", target: "register" },
+    ],
+  },
+  registerGrade: {
+    eyebrow: "Notas",
+    title: "Como registrar nota de aluno",
+    message:
+      "O lançamento de notas é tratado pelo fluxo do professor e deve sincronizar com a API acadêmica.",
+    steps: [
+      "Entrar no app UniConnect com perfil professor.",
+      "Abrir Professor > Notas.",
+      "Selecionar turma, disciplina e aluno.",
+      "Informar P1, P2, trabalho ou campos definidos pela instituição.",
+      "Conferir a média calculada.",
+      "Salvar para atualizar a visão Notas do aluno.",
+    ],
+    options: [
+      { label: "Simulação do aluno", target: "studentGrades" },
+      { label: "Voltar para registros", target: "register" },
+    ],
+  },
+  access: {
+    eyebrow: "Acesso",
+    title: "Como acessar o painel",
+    message:
+      "Use uma credencial administrativa vinculada ao tenant da instituição.",
+    steps: [
+      "Abrir a URL do painel.",
+      "Confirmar a instituição no campo Instituição.",
+      "Abrir Configuração avançada apenas se precisar trocar a URL da API.",
+      "Informar e-mail institucional e senha.",
+      "Marcar Lembrar de mim somente em dispositivo confiável.",
+      "Clicar em Entrar.",
+    ],
+    options: [
+      { label: "Erro de acesso", target: "accessTrouble" },
+      { label: "Perfis aceitos", target: "adminRoles" },
+    ],
+  },
+  accessTrouble: {
+    eyebrow: "Acesso bloqueado",
+    title: "O que conferir quando não entra",
+    message:
+      "A maior parte dos bloqueios vem de API desligada, tenant errado ou perfil sem permissão administrativa.",
+    steps: [
+      "Verificar se a API uniconnect-api está rodando em http://localhost:3333/api/v1.",
+      "Confirmar se a origem http://127.0.0.1:8080 está liberada no CORS da API.",
+      "Conferir se o tenant está como universidade-norte ou o slug correto.",
+      "Confirmar se o usuário tem perfil admin, coordinator ou owner.",
+      "Tentar entrar novamente.",
+      "Se a sessão antiga persistir, clicar em Sair e autenticar de novo.",
+    ],
+    options: [
+      { label: "Perfis aceitos", target: "adminRoles" },
+      { label: "Como acessar", target: "access" },
+    ],
+  },
+  adminRoles: {
+    eyebrow: "Permissões",
+    title: "Quais perfis entram no painel",
+    message:
+      "O painel administrativo é exclusivo para perfis de gestão institucional.",
+    steps: [
+      "admin pode operar recursos administrativos.",
+      "coordinator pode acessar fluxos acadêmicos de coordenação.",
+      "owner representa o mantenedor da instituição.",
+      "student e teacher não devem acessar o painel web administrativo.",
+    ],
+    options: [
+      { label: "Registrar usuário", target: "registerUser" },
+      { label: "Erro de acesso", target: "accessTrouble" },
+    ],
+  },
+  modules: {
+    eyebrow: "Módulos",
+    title: "Para que serve cada módulo",
+    message:
+      "O painel já mostra os módulos principais e deixa claro quais dependem de endpoint futuro.",
+    options: [
+      { label: "Usuários", target: "moduleUsers" },
+      { label: "Cursos", target: "registerCourse" },
+      { label: "Turmas", target: "registerClass" },
+      { label: "Relatórios", target: "reportsFlow" },
+      { label: "Assinatura", target: "billingFlow" },
+    ],
+  },
+  moduleUsers: {
+    eyebrow: "Usuários",
+    title: "O que fazer em Usuários",
+    message:
+      "Este módulo centraliza perfis, vínculos institucionais e permissões.",
+    steps: [
+      "Clicar em Usuários no menu.",
+      "Usar a tabela para revisar pessoas recentes enquanto o endpoint não existe.",
+      "Quando o CRUD estiver ativo, usar Novo registro para cadastrar usuários.",
+      "Validar se cada pessoa pertence ao tenant correto.",
+    ],
+    options: [
+      { label: "Registrar usuário", target: "registerUser" },
+      { label: "Perfis aceitos", target: "adminRoles" },
+    ],
+  },
+  reportsFlow: {
+    eyebrow: "Relatórios",
+    title: "Como consultar relatórios",
+    message:
+      "Relatórios serão a visão consolidada de desempenho, frequência e atividades.",
+    steps: [
+      "Clicar em Relatórios no menu lateral.",
+      "Selecionar o período letivo quando o filtro estiver disponível.",
+      "Filtrar por curso, turma ou disciplina.",
+      "Conferir indicadores de notas, frequência e pendências.",
+      "Exportar em CSV ou PDF quando a ação estiver habilitada.",
+    ],
+    options: [
+      { label: "Ver turmas", target: "registerClass" },
+      { label: "Ver notas", target: "registerGrade" },
+    ],
+  },
+  billingFlow: {
+    eyebrow: "Assinatura",
+    title: "Como consultar assinatura",
+    message:
+      "A assinatura usa o contexto do tenant para mostrar plano, status e limites.",
+    steps: [
+      "Clicar em Assinatura no menu lateral.",
+      "Conferir plano atual e status do tenant.",
+      "Revisar usuários ativos e limites contratados quando a API expuser esses dados.",
+      "Acionar o mantenedor se houver pagamento pendente.",
+    ],
+    options: [
+      { label: "Erro de acesso", target: "accessTrouble" },
+      { label: "Entender módulos", target: "modules" },
+    ],
+  },
+  studentGrades: {
+    eyebrow: "Aluno",
+    title: "Como o aluno acompanha notas",
+    message:
+      "O aluno vê notas e simula médias no app mobile UniConnect.",
+    steps: [
+      "Entrar no app com perfil aluno.",
+      "Abrir Notas no menu inferior.",
+      "Consultar disciplinas, avaliações e média final.",
+      "Usar o simulador para estimar a nota necessária.",
+      "Se houver divergência, falar com o professor ou coordenação.",
+    ],
+    options: [
+      { label: "Registrar nota", target: "registerGrade" },
+      { label: "Voltar ao início", target: "start" },
+    ],
+  },
+};
+
+const chatbotParentMap = Object.entries(chatbotFlow).reduce(
+  (parents, [nodeId, node]) => {
+    node.options?.forEach((option) => {
+      if (!parents[option.target]) parents[option.target] = nodeId;
+    });
+    return parents;
+  },
+  {},
+);
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -229,6 +490,156 @@ function saveStoredSession(session, remember) {
 function clearStoredSession() {
   window.localStorage.removeItem(STORAGE_KEY);
   window.sessionStorage.removeItem(STORAGE_KEY);
+}
+
+function getChatbotNode() {
+  return chatbotFlow[state.chatbotNodeId] ?? chatbotFlow.start;
+}
+
+function renderCurrentScreen() {
+  if (state.session) {
+    renderAdmin();
+    return;
+  }
+
+  renderLogin();
+}
+
+function openChatbot() {
+  state.chatbotOpen = true;
+  renderCurrentScreen();
+  document.querySelector(".chatbot-option, .chatbot-close")?.focus();
+}
+
+function closeChatbot() {
+  state.chatbotOpen = false;
+  renderCurrentScreen();
+  document.querySelector("#chatbot-toggle")?.focus();
+}
+
+function setChatbotNode(nodeId) {
+  state.chatbotNodeId = chatbotFlow[nodeId] ? nodeId : "start";
+  state.chatbotOpen = true;
+  renderCurrentScreen();
+  document.querySelector(".chatbot-option, .chatbot-back, .chatbot-reset")?.focus();
+}
+
+function goBackChatbot() {
+  setChatbotNode(chatbotParentMap[state.chatbotNodeId] ?? "start");
+}
+
+function renderChatbot() {
+  const node = getChatbotNode();
+  const isStart = state.chatbotNodeId === "start";
+  const steps = node.steps
+    ?.map(
+      (step, index) => `
+        <li>
+          <span>${index + 1}</span>
+          <p>${escapeHtml(step)}</p>
+        </li>
+      `,
+    )
+    .join("");
+  const options = node.options
+    ?.map(
+      (option) => `
+        <button class="chatbot-option" type="button" data-chatbot-target="${escapeHtml(option.target)}">
+          ${escapeHtml(option.label)}
+        </button>
+      `,
+    )
+    .join("");
+
+  return `
+    <section class="chatbot-widget" aria-label="Ajuda por fluxo UniConnect">
+      <button
+        class="chatbot-toggle"
+        id="chatbot-toggle"
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded="${state.chatbotOpen ? "true" : "false"}"
+        aria-controls="chatbot-panel"
+      >
+        <span aria-hidden="true">?</span>
+        <span class="sr-only">${state.chatbotOpen ? "Fechar ajuda" : "Abrir ajuda"}</span>
+      </button>
+      ${
+        state.chatbotOpen
+          ? `
+            <div
+              class="chatbot-panel"
+              id="chatbot-panel"
+              role="dialog"
+              aria-modal="false"
+              aria-labelledby="chatbot-title"
+            >
+              <header class="chatbot-header">
+                <div>
+                  <span>${escapeHtml(node.eyebrow)}</span>
+                  <h2 id="chatbot-title">${escapeHtml(node.title)}</h2>
+                </div>
+                <button class="chatbot-close" type="button" aria-label="Fechar ajuda">Fechar</button>
+              </header>
+              <div class="chatbot-body" aria-live="polite">
+                <article class="chatbot-message">
+                  <div class="chatbot-avatar" aria-hidden="true">UC</div>
+                  <p>${escapeHtml(node.message)}</p>
+                </article>
+                ${
+                  steps
+                    ? `
+                      <div class="chatbot-steps">
+                        <strong>Fluxo completo de cliques</strong>
+                        <ol>${steps}</ol>
+                      </div>
+                    `
+                    : ""
+                }
+                ${
+                  options
+                    ? `
+                      <div class="chatbot-options" aria-label="Opções de ajuda">
+                        ${options}
+                      </div>
+                    `
+                    : ""
+                }
+              </div>
+              <footer class="chatbot-footer">
+                <button class="chatbot-back" type="button" ${isStart ? "disabled" : ""}>Voltar</button>
+                <button class="chatbot-reset" type="button" ${isStart ? "disabled" : ""}>Início</button>
+              </footer>
+            </div>
+          `
+          : ""
+      }
+    </section>
+  `;
+}
+
+function bindChatbotEvents() {
+  document.onkeydown = (event) => {
+    if (event.key === "Escape" && state.chatbotOpen) closeChatbot();
+  };
+
+  document.querySelector("#chatbot-toggle")?.addEventListener("click", () => {
+    if (state.chatbotOpen) {
+      closeChatbot();
+      return;
+    }
+
+    openChatbot();
+  });
+
+  document.querySelector(".chatbot-close")?.addEventListener("click", closeChatbot);
+  document.querySelector(".chatbot-back")?.addEventListener("click", goBackChatbot);
+  document.querySelector(".chatbot-reset")?.addEventListener("click", () => {
+    setChatbotNode("start");
+  });
+  document.querySelectorAll("[data-chatbot-target]").forEach((button) => {
+    button.addEventListener("click", () => setChatbotNode(button.dataset.chatbotTarget));
+  });
 }
 
 async function apiRequest(path, options = {}) {
@@ -418,6 +829,7 @@ function renderLogin() {
         <p class="login-links">Português (Brasil) - Suporte - Privacidade</p>
       </section>
     </main>
+    ${renderChatbot()}
   `;
 
   document.querySelector("#login-form").addEventListener("submit", handleLogin);
@@ -425,6 +837,7 @@ function renderLogin() {
     e.preventDefault();
     togglePasswordVisibility();
   });
+  bindChatbotEvents();
 }
 
 function renderAdmin() {
@@ -477,6 +890,7 @@ function renderAdmin() {
         ${renderActiveView()}
       </section>
     </main>
+    ${renderChatbot()}
   `;
 
   document.querySelectorAll("[data-view]").forEach((button) => {
@@ -486,6 +900,7 @@ function renderAdmin() {
   document.querySelector("#refresh-button").addEventListener("click", restoreSession);
   document.querySelector("#menu-button")?.addEventListener("click", toggleSidebar);
   document.querySelector("#sidebar-backdrop")?.addEventListener("click", toggleSidebar);
+  bindChatbotEvents();
 }
 
 function renderActiveView() {
