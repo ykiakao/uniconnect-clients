@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Relatorio do Chatbot UniConnect</title>
+    <style>
+      @page { size: A4; margin: 14mm; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: #212529;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      h1, h2, h3, h4 { margin: 0 0 8px; color: #0b2f66; line-height: 1.2; }
+      h1 { font-size: 26px; }
+      h2 { margin-top: 24px; font-size: 18px; border-bottom: 1px solid #cfd8e3; padding-bottom: 6px; }
+      h3 { font-size: 15px; }
+      h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+      p { margin: 0 0 8px; }
+      code { color: #0b2f66; font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; page-break-inside: auto; }
+      th, td { border: 1px solid #cfd8e3; padding: 6px; text-align: left; vertical-align: top; }
+      th { background: #edf4ff; color: #0b2f66; font-size: 11px; text-transform: uppercase; }
+      ul, ol { margin: 0 0 0 18px; padding: 0; }
+      li { margin-bottom: 4px; }
+      .cover {
+        padding: 18px;
+        border: 1px solid #b8c7dc;
+        border-radius: 8px;
+        background: #f6f9fd;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .metric {
+        padding: 10px;
+        border: 1px solid #cfd8e3;
+        border-radius: 6px;
+        background: #ffffff;
+      }
+      .metric strong { display: block; color: #0b2f66; font-size: 20px; }
+      .note {
+        margin-top: 10px;
+        padding: 10px;
+        border-left: 4px solid #0b72e7;
+        background: #eef6ff;
+      }
+      .node-detail {
+        page-break-inside: avoid;
+        margin-top: 14px;
+        padding: 12px;
+        border: 1px solid #d7dee8;
+        border-radius: 6px;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1.2fr .8fr;
+        gap: 18px;
+        margin-top: 10px;
+      }
+      .page-break { page-break-before: always; }
+    </style>
+  </head>
+  <body>
+    <section class="cover">
+      <h1>Relatorio de funcionalidades e botoes do chatbot UniConnect</h1>
+      <p><strong>Escopo:</strong> somente o chatbot de fluxos UniConnect.</p>
+      <p><strong>Gerado em:</strong> 18 de junho de 2026 às 12:29</p>
+      <div class="summary-grid">
+        <div class="metric"><strong>15</strong><span>nos de fluxo</span></div>
+        <div class="metric"><strong>38</strong><span>botoes de opcao</span></div>
+        <div class="metric"><strong>12</strong><span>nos com passo a passo</span></div>
+        <div class="metric"><strong>64</strong><span>passos documentados</span></div>
+      </div>
+    </section>
+
+    <h2>Funcionalidades do chatbot</h2>
+    <ul>
+      <li>Assistente flutuante disponivel tanto na tela de login quanto no painel autenticado.</li>
+      <li>Navegacao por arvore de decisoes baseada em <code>chatbotFlow</code>.</li>
+      <li>Mensagem contextual, categoria, titulo, botoes de opcao e passo a passo por no.</li>
+      <li>Historico simples por mapa de pais para o botao Voltar.</li>
+      <li>Reset para o inicio do fluxo.</li>
+      <li>Fechamento por botao e por tecla Escape.</li>
+      <li>Foco gerenciado apos abertura, fechamento e troca de no.</li>
+      <li>Protecao contra HTML injetado por <code>escapeHtml</code>.</li>
+      <li>Sem persistencia remota: o estado atual vive em memoria em <code>state.chatbotNodeId</code> e <code>state.chatbotOpen</code>.</li>
+    </ul>
+
+    <h2>Botoes e controles proprios do chatbot</h2>
+    
+    <table>
+      <thead>
+        <tr><th>Controle</th><th>Seletor</th><th>Comportamento</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Abrir/fechar ajuda</td><td>#chatbot-toggle</td><td>Alterna o painel do chatbot, atualiza aria-expanded e devolve foco ao botao ao fechar.</td></tr><tr><td>Fechar</td><td>.chatbot-close</td><td>Fecha o painel de ajuda e retorna foco ao botao flutuante.</td></tr><tr><td>Voltar</td><td>.chatbot-back</td><td>Retorna ao no pai calculado por chatbotParentMap; fica desabilitado no inicio.</td></tr><tr><td>Inicio</td><td>.chatbot-reset</td><td>Reinicia o fluxo no no start; fica desabilitado no inicio.</td></tr><tr><td>Opcao de fluxo</td><td>.chatbot-option[data-chatbot-target]</td><td>Le o destino em data-chatbot-target e navega para o no correspondente; se o destino nao existir, volta ao start.</td></tr><tr><td>Escape</td><td>document.onkeydown</td><td>Fecha o chatbot quando o painel esta aberto.</td></tr>
+      </tbody>
+    </table>
+  
+
+    <h2>Mapa de nos do fluxo</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Pai</th>
+          <th>Categoria</th>
+          <th>Titulo</th>
+          <th>Mensagem</th>
+          <th>Passos</th>
+          <th>Opcoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>start</code></td>
+          <td>studentGrades</td>
+          <td>Assistente UniConnect</td>
+          <td>Como posso ajudar?</td>
+          <td>Escolha um assunto abaixo. Eu vou guiando por cliques ate chegar na resposta.</td>
+          <td>0</td>
+          <td>Registrar algo, Acessar o painel, Entender os módulos, Resolver erro de acesso</td>
+        </tr>
+      
+        <tr>
+          <td><code>register</code></td>
+          <td>start</td>
+          <td>Fluxo de registro</td>
+          <td>O que você quer registrar?</td>
+          <td>Selecione o tipo de registro para ver o caminho completo de cliques.</td>
+          <td>0</td>
+          <td>Usuário administrativo, Curso, Turma, Atividade acadêmica, Nota de aluno</td>
+        </tr>
+      
+        <tr>
+          <td><code>registerUser</code></td>
+          <td>register</td>
+          <td>Usuários</td>
+          <td>Como registrar um usuário administrativo</td>
+          <td>Este fluxo já está mapeado no painel, mas a criação real depende do endpoint administrativo.</td>
+          <td>6</td>
+          <td>Ver cursos, Ver erro de permissão</td>
+        </tr>
+      
+        <tr>
+          <td><code>registerCourse</code></td>
+          <td>register</td>
+          <td>Cursos</td>
+          <td>Como registrar um curso</td>
+          <td>O módulo Cursos está reservado para o CRUD acadêmico do painel.</td>
+          <td>6</td>
+          <td>Ver turmas, Entender módulos</td>
+        </tr>
+      
+        <tr>
+          <td><code>registerClass</code></td>
+          <td>register</td>
+          <td>Turmas</td>
+          <td>Como registrar uma turma</td>
+          <td>Turmas organizam alunos por curso, semestre e professor responsável.</td>
+          <td>6</td>
+          <td>Ver notas, Ver relatórios</td>
+        </tr>
+      
+        <tr>
+          <td><code>registerActivity</code></td>
+          <td>register</td>
+          <td>Atividades</td>
+          <td>Como registrar uma atividade acadêmica</td>
+          <td>Esse fluxo acontece no app do professor, não no painel administrativo atual.</td>
+          <td>6</td>
+          <td>Registrar nota, Voltar para registros</td>
+        </tr>
+      
+        <tr>
+          <td><code>registerGrade</code></td>
+          <td>register</td>
+          <td>Notas</td>
+          <td>Como registrar nota de aluno</td>
+          <td>O lançamento de notas é tratado pelo fluxo do professor e deve sincronizar com a API acadêmica.</td>
+          <td>6</td>
+          <td>Simulação do aluno, Voltar para registros</td>
+        </tr>
+      
+        <tr>
+          <td><code>access</code></td>
+          <td>start</td>
+          <td>Acesso</td>
+          <td>Como acessar o painel</td>
+          <td>Use uma credencial administrativa vinculada ao tenant da instituição.</td>
+          <td>6</td>
+          <td>Erro de acesso, Perfis aceitos</td>
+        </tr>
+      
+        <tr>
+          <td><code>accessTrouble</code></td>
+          <td>start</td>
+          <td>Acesso bloqueado</td>
+          <td>O que conferir quando não entra</td>
+          <td>A maior parte dos bloqueios vem de API desligada, tenant errado ou perfil sem permissão administrativa.</td>
+          <td>6</td>
+          <td>Perfis aceitos, Como acessar</td>
+        </tr>
+      
+        <tr>
+          <td><code>adminRoles</code></td>
+          <td>access</td>
+          <td>Permissões</td>
+          <td>Quais perfis entram no painel</td>
+          <td>O painel administrativo é exclusivo para perfis de gestão institucional.</td>
+          <td>4</td>
+          <td>Registrar usuário, Erro de acesso</td>
+        </tr>
+      
+        <tr>
+          <td><code>modules</code></td>
+          <td>start</td>
+          <td>Módulos</td>
+          <td>Para que serve cada módulo</td>
+          <td>O painel já mostra os módulos principais e deixa claro quais dependem de endpoint futuro.</td>
+          <td>0</td>
+          <td>Usuários, Cursos, Turmas, Relatórios, Assinatura</td>
+        </tr>
+      
+        <tr>
+          <td><code>moduleUsers</code></td>
+          <td>modules</td>
+          <td>Usuários</td>
+          <td>O que fazer em Usuários</td>
+          <td>Este módulo centraliza perfis, vínculos institucionais e permissões.</td>
+          <td>4</td>
+          <td>Registrar usuário, Perfis aceitos</td>
+        </tr>
+      
+        <tr>
+          <td><code>reportsFlow</code></td>
+          <td>registerClass</td>
+          <td>Relatórios</td>
+          <td>Como consultar relatórios</td>
+          <td>Relatórios serão a visão consolidada de desempenho, frequência e atividades.</td>
+          <td>5</td>
+          <td>Ver turmas, Ver notas</td>
+        </tr>
+      
+        <tr>
+          <td><code>billingFlow</code></td>
+          <td>modules</td>
+          <td>Assinatura</td>
+          <td>Como consultar assinatura</td>
+          <td>A assinatura usa o contexto do tenant para mostrar plano, status e limites.</td>
+          <td>4</td>
+          <td>Erro de acesso, Entender módulos</td>
+        </tr>
+      
+        <tr>
+          <td><code>studentGrades</code></td>
+          <td>registerGrade</td>
+          <td>Aluno</td>
+          <td>Como o aluno acompanha notas</td>
+          <td>O aluno vê notas e simula médias no app mobile UniConnect.</td>
+          <td>5</td>
+          <td>Registrar nota, Voltar ao início</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="page-break">Botoes de opcao do chatbot</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>No origem</th>
+          <th>Tela origem</th>
+          <th>Texto do botao</th>
+          <th>Destino</th>
+          <th>Tela destino</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr>
+            <td><code>start</code></td>
+            <td>Como posso ajudar?</td>
+            <td>Registrar algo</td>
+            <td><code>register</code></td>
+            <td>O que você quer registrar?</td>
+          </tr>
+        
+          <tr>
+            <td><code>start</code></td>
+            <td>Como posso ajudar?</td>
+            <td>Acessar o painel</td>
+            <td><code>access</code></td>
+            <td>Como acessar o painel</td>
+          </tr>
+        
+          <tr>
+            <td><code>start</code></td>
+            <td>Como posso ajudar?</td>
+            <td>Entender os módulos</td>
+            <td><code>modules</code></td>
+            <td>Para que serve cada módulo</td>
+          </tr>
+        
+          <tr>
+            <td><code>start</code></td>
+            <td>Como posso ajudar?</td>
+            <td>Resolver erro de acesso</td>
+            <td><code>accessTrouble</code></td>
+            <td>O que conferir quando não entra</td>
+          </tr>
+        
+          <tr>
+            <td><code>register</code></td>
+            <td>O que você quer registrar?</td>
+            <td>Usuário administrativo</td>
+            <td><code>registerUser</code></td>
+            <td>Como registrar um usuário administrativo</td>
+          </tr>
+        
+          <tr>
+            <td><code>register</code></td>
+            <td>O que você quer registrar?</td>
+            <td>Curso</td>
+            <td><code>registerCourse</code></td>
+            <td>Como registrar um curso</td>
+          </tr>
+        
+          <tr>
+            <td><code>register</code></td>
+            <td>O que você quer registrar?</td>
+            <td>Turma</td>
+            <td><code>registerClass</code></td>
+            <td>Como registrar uma turma</td>
+          </tr>
+        
+          <tr>
+            <td><code>register</code></td>
+            <td>O que você quer registrar?</td>
+            <td>Atividade acadêmica</td>
+            <td><code>registerActivity</code></td>
+            <td>Como registrar uma atividade acadêmica</td>
+          </tr>
+        
+          <tr>
+            <td><code>register</code></td>
+            <td>O que você quer registrar?</td>
+            <td>Nota de aluno</td>
+            <td><code>registerGrade</code></td>
+            <td>Como registrar nota de aluno</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerUser</code></td>
+            <td>Como registrar um usuário administrativo</td>
+            <td>Ver cursos</td>
+            <td><code>registerCourse</code></td>
+            <td>Como registrar um curso</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerUser</code></td>
+            <td>Como registrar um usuário administrativo</td>
+            <td>Ver erro de permissão</td>
+            <td><code>accessTrouble</code></td>
+            <td>O que conferir quando não entra</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerCourse</code></td>
+            <td>Como registrar um curso</td>
+            <td>Ver turmas</td>
+            <td><code>registerClass</code></td>
+            <td>Como registrar uma turma</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerCourse</code></td>
+            <td>Como registrar um curso</td>
+            <td>Entender módulos</td>
+            <td><code>modules</code></td>
+            <td>Para que serve cada módulo</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerClass</code></td>
+            <td>Como registrar uma turma</td>
+            <td>Ver notas</td>
+            <td><code>registerGrade</code></td>
+            <td>Como registrar nota de aluno</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerClass</code></td>
+            <td>Como registrar uma turma</td>
+            <td>Ver relatórios</td>
+            <td><code>reportsFlow</code></td>
+            <td>Como consultar relatórios</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerActivity</code></td>
+            <td>Como registrar uma atividade acadêmica</td>
+            <td>Registrar nota</td>
+            <td><code>registerGrade</code></td>
+            <td>Como registrar nota de aluno</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerActivity</code></td>
+            <td>Como registrar uma atividade acadêmica</td>
+            <td>Voltar para registros</td>
+            <td><code>register</code></td>
+            <td>O que você quer registrar?</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerGrade</code></td>
+            <td>Como registrar nota de aluno</td>
+            <td>Simulação do aluno</td>
+            <td><code>studentGrades</code></td>
+            <td>Como o aluno acompanha notas</td>
+          </tr>
+        
+          <tr>
+            <td><code>registerGrade</code></td>
+            <td>Como registrar nota de aluno</td>
+            <td>Voltar para registros</td>
+            <td><code>register</code></td>
+            <td>O que você quer registrar?</td>
+          </tr>
+        
+          <tr>
+            <td><code>access</code></td>
+            <td>Como acessar o painel</td>
+            <td>Erro de acesso</td>
+            <td><code>accessTrouble</code></td>
+            <td>O que conferir quando não entra</td>
+          </tr>
+        
+          <tr>
+            <td><code>access</code></td>
+            <td>Como acessar o painel</td>
+            <td>Perfis aceitos</td>
+            <td><code>adminRoles</code></td>
+            <td>Quais perfis entram no painel</td>
+          </tr>
+        
+          <tr>
+            <td><code>accessTrouble</code></td>
+            <td>O que conferir quando não entra</td>
+            <td>Perfis aceitos</td>
+            <td><code>adminRoles</code></td>
+            <td>Quais perfis entram no painel</td>
+          </tr>
+        
+          <tr>
+            <td><code>accessTrouble</code></td>
+            <td>O que conferir quando não entra</td>
+            <td>Como acessar</td>
+            <td><code>access</code></td>
+            <td>Como acessar o painel</td>
+          </tr>
+        
+          <tr>
+            <td><code>adminRoles</code></td>
+            <td>Quais perfis entram no painel</td>
+            <td>Registrar usuário</td>
+            <td><code>registerUser</code></td>
+            <td>Como registrar um usuário administrativo</td>
+          </tr>
+        
+          <tr>
+            <td><code>adminRoles</code></td>
+            <td>Quais perfis entram no painel</td>
+            <td>Erro de acesso</td>
+            <td><code>accessTrouble</code></td>
+            <td>O que conferir quando não entra</td>
+          </tr>
+        
+          <tr>
+            <td><code>modules</code></td>
+            <td>Para que serve cada módulo</td>
+            <td>Usuários</td>
+            <td><code>moduleUsers</code></td>
+            <td>O que fazer em Usuários</td>
+          </tr>
+        
+          <tr>
+            <td><code>modules</code></td>
+            <td>Para que serve cada módulo</td>
+            <td>Cursos</td>
+            <td><code>registerCourse</code></td>
+            <td>Como registrar um curso</td>
+          </tr>
+        
+          <tr>
+            <td><code>modules</code></td>
+            <td>Para que serve cada módulo</td>
+            <td>Turmas</td>
+            <td><code>registerClass</code></td>
+            <td>Como registrar uma turma</td>
+          </tr>
+        
+          <tr>
+            <td><code>modules</code></td>
+            <td>Para que serve cada módulo</td>
+            <td>Relatórios</td>
+            <td><code>reportsFlow</code></td>
+            <td>Como consultar relatórios</td>
+          </tr>
+        
+          <tr>
+            <td><code>modules</code></td>
+            <td>Para que serve cada módulo</td>
+            <td>Assinatura</td>
+            <td><code>billingFlow</code></td>
+            <td>Como consultar assinatura</td>
+          </tr>
+        
+          <tr>
+            <td><code>moduleUsers</code></td>
+            <td>O que fazer em Usuários</td>
+            <td>Registrar usuário</td>
+            <td><code>registerUser</code></td>
+            <td>Como registrar um usuário administrativo</td>
+          </tr>
+        
+          <tr>
+            <td><code>moduleUsers</code></td>
+            <td>O que fazer em Usuários</td>
+            <td>Perfis aceitos</td>
+            <td><code>adminRoles</code></td>
+            <td>Quais perfis entram no painel</td>
+          </tr>
+        
+          <tr>
+            <td><code>reportsFlow</code></td>
+            <td>Como consultar relatórios</td>
+            <td>Ver turmas</td>
+            <td><code>registerClass</code></td>
+            <td>Como registrar uma turma</td>
+          </tr>
+        
+          <tr>
+            <td><code>reportsFlow</code></td>
+            <td>Como consultar relatórios</td>
+            <td>Ver notas</td>
+            <td><code>registerGrade</code></td>
+            <td>Como registrar nota de aluno</td>
+          </tr>
+        
+          <tr>
+            <td><code>billingFlow</code></td>
+            <td>Como consultar assinatura</td>
+            <td>Erro de acesso</td>
+            <td><code>accessTrouble</code></td>
+            <td>O que conferir quando não entra</td>
+          </tr>
+        
+          <tr>
+            <td><code>billingFlow</code></td>
+            <td>Como consultar assinatura</td>
+            <td>Entender módulos</td>
+            <td><code>modules</code></td>
+            <td>Para que serve cada módulo</td>
+          </tr>
+        
+          <tr>
+            <td><code>studentGrades</code></td>
+            <td>Como o aluno acompanha notas</td>
+            <td>Registrar nota</td>
+            <td><code>registerGrade</code></td>
+            <td>Como registrar nota de aluno</td>
+          </tr>
+        
+          <tr>
+            <td><code>studentGrades</code></td>
+            <td>Como o aluno acompanha notas</td>
+            <td>Voltar ao início</td>
+            <td><code>start</code></td>
+            <td>Como posso ajudar?</td>
+          </tr>
+        </tbody>
+    </table>
+
+    <h2 class="page-break">Detalhamento por no</h2>
+    
+        <section class="node-detail">
+          <h3>Como posso ajudar? <code>start</code></h3>
+          <p><strong>Categoria:</strong> Assistente UniConnect</p>
+          <p>Escolha um assunto abaixo. Eu vou guiando por cliques ate chegar na resposta.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Este no apresenta apenas opcoes de navegacao.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Registrar algo</strong> -> <code>register</code></li><li><strong>Acessar o painel</strong> -> <code>access</code></li><li><strong>Entender os módulos</strong> -> <code>modules</code></li><li><strong>Resolver erro de acesso</strong> -> <code>accessTrouble</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>O que você quer registrar? <code>register</code></h3>
+          <p><strong>Categoria:</strong> Fluxo de registro</p>
+          <p>Selecione o tipo de registro para ver o caminho completo de cliques.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Este no apresenta apenas opcoes de navegacao.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Usuário administrativo</strong> -> <code>registerUser</code></li><li><strong>Curso</strong> -> <code>registerCourse</code></li><li><strong>Turma</strong> -> <code>registerClass</code></li><li><strong>Atividade acadêmica</strong> -> <code>registerActivity</code></li><li><strong>Nota de aluno</strong> -> <code>registerGrade</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como registrar um usuário administrativo <code>registerUser</code></h3>
+          <p><strong>Categoria:</strong> Usuários</p>
+          <p>Este fluxo já está mapeado no painel, mas a criação real depende do endpoint administrativo.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Entrar no painel com perfil admin, coordenador ou mantenedor.</li><li>Clicar em Usuários no menu lateral.</li><li>Clicar em Novo registro quando o botão estiver habilitado.</li><li>Preencher nome, e-mail institucional, perfil, área e status.</li><li>Revisar o tenant exibido no topo para confirmar a instituição correta.</li><li>Clicar em Salvar e conferir o novo usuário na tabela.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Ver cursos</strong> -> <code>registerCourse</code></li><li><strong>Ver erro de permissão</strong> -> <code>accessTrouble</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como registrar um curso <code>registerCourse</code></h3>
+          <p><strong>Categoria:</strong> Cursos</p>
+          <p>O módulo Cursos está reservado para o CRUD acadêmico do painel.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Entrar no painel administrativo.</li><li>Clicar em Cursos no menu lateral.</li><li>Clicar em Novo registro quando a API do módulo estiver disponível.</li><li>Informar nome do curso, área, coordenador e status.</li><li>Salvar o curso.</li><li>Abrir Turmas para vincular períodos e professores depois do cadastro.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Ver turmas</strong> -> <code>registerClass</code></li><li><strong>Entender módulos</strong> -> <code>modules</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como registrar uma turma <code>registerClass</code></h3>
+          <p><strong>Categoria:</strong> Turmas</p>
+          <p>Turmas organizam alunos por curso, semestre e professor responsável.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Clicar em Turmas no menu lateral.</li><li>Clicar em Novo registro quando o endpoint estiver pronto.</li><li>Selecionar curso, semestre, período letivo e professor responsável.</li><li>Definir capacidade, status e observações administrativas.</li><li>Salvar a turma.</li><li>Conferir se a turma aparece nos filtros de usuários, notas e relatórios.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Ver notas</strong> -> <code>registerGrade</code></li><li><strong>Ver relatórios</strong> -> <code>reportsFlow</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como registrar uma atividade acadêmica <code>registerActivity</code></h3>
+          <p><strong>Categoria:</strong> Atividades</p>
+          <p>Esse fluxo acontece no app do professor, não no painel administrativo atual.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Entrar no app UniConnect com uma conta de professor.</li><li>Abrir o dashboard Professor.</li><li>Clicar em Criar atividade.</li><li>Preencher disciplina, título, descrição, prazo, prioridade e critérios.</li><li>Revisar os dados antes de publicar.</li><li>Publicar para que alunos vejam em Atividades.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Registrar nota</strong> -> <code>registerGrade</code></li><li><strong>Voltar para registros</strong> -> <code>register</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como registrar nota de aluno <code>registerGrade</code></h3>
+          <p><strong>Categoria:</strong> Notas</p>
+          <p>O lançamento de notas é tratado pelo fluxo do professor e deve sincronizar com a API acadêmica.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Entrar no app UniConnect com perfil professor.</li><li>Abrir Professor &gt; Notas.</li><li>Selecionar turma, disciplina e aluno.</li><li>Informar P1, P2, trabalho ou campos definidos pela instituição.</li><li>Conferir a média calculada.</li><li>Salvar para atualizar a visão Notas do aluno.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Simulação do aluno</strong> -> <code>studentGrades</code></li><li><strong>Voltar para registros</strong> -> <code>register</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como acessar o painel <code>access</code></h3>
+          <p><strong>Categoria:</strong> Acesso</p>
+          <p>Use uma credencial administrativa vinculada ao tenant da instituição.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Abrir a URL do painel.</li><li>Confirmar a instituição no campo Instituição.</li><li>Abrir Configuração avançada apenas se precisar trocar a URL da API.</li><li>Informar e-mail institucional e senha.</li><li>Marcar Lembrar de mim somente em dispositivo confiável.</li><li>Clicar em Entrar.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Erro de acesso</strong> -> <code>accessTrouble</code></li><li><strong>Perfis aceitos</strong> -> <code>adminRoles</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>O que conferir quando não entra <code>accessTrouble</code></h3>
+          <p><strong>Categoria:</strong> Acesso bloqueado</p>
+          <p>A maior parte dos bloqueios vem de API desligada, tenant errado ou perfil sem permissão administrativa.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Verificar se a API uniconnect-api está rodando em http://localhost:3333/api/v1.</li><li>Confirmar se a origem http://127.0.0.1:8080 está liberada no CORS da API.</li><li>Conferir se o tenant está como universidade-norte ou o slug correto.</li><li>Confirmar se o usuário tem perfil admin, coordinator ou owner.</li><li>Tentar entrar novamente.</li><li>Se a sessão antiga persistir, clicar em Sair e autenticar de novo.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Perfis aceitos</strong> -> <code>adminRoles</code></li><li><strong>Como acessar</strong> -> <code>access</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Quais perfis entram no painel <code>adminRoles</code></h3>
+          <p><strong>Categoria:</strong> Permissões</p>
+          <p>O painel administrativo é exclusivo para perfis de gestão institucional.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>admin pode operar recursos administrativos.</li><li>coordinator pode acessar fluxos acadêmicos de coordenação.</li><li>owner representa o mantenedor da instituição.</li><li>student e teacher não devem acessar o painel web administrativo.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Registrar usuário</strong> -> <code>registerUser</code></li><li><strong>Erro de acesso</strong> -> <code>accessTrouble</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Para que serve cada módulo <code>modules</code></h3>
+          <p><strong>Categoria:</strong> Módulos</p>
+          <p>O painel já mostra os módulos principais e deixa claro quais dependem de endpoint futuro.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Este no apresenta apenas opcoes de navegacao.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Usuários</strong> -> <code>moduleUsers</code></li><li><strong>Cursos</strong> -> <code>registerCourse</code></li><li><strong>Turmas</strong> -> <code>registerClass</code></li><li><strong>Relatórios</strong> -> <code>reportsFlow</code></li><li><strong>Assinatura</strong> -> <code>billingFlow</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>O que fazer em Usuários <code>moduleUsers</code></h3>
+          <p><strong>Categoria:</strong> Usuários</p>
+          <p>Este módulo centraliza perfis, vínculos institucionais e permissões.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Clicar em Usuários no menu.</li><li>Usar a tabela para revisar pessoas recentes enquanto o endpoint não existe.</li><li>Quando o CRUD estiver ativo, usar Novo registro para cadastrar usuários.</li><li>Validar se cada pessoa pertence ao tenant correto.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Registrar usuário</strong> -> <code>registerUser</code></li><li><strong>Perfis aceitos</strong> -> <code>adminRoles</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como consultar relatórios <code>reportsFlow</code></h3>
+          <p><strong>Categoria:</strong> Relatórios</p>
+          <p>Relatórios serão a visão consolidada de desempenho, frequência e atividades.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Clicar em Relatórios no menu lateral.</li><li>Selecionar o período letivo quando o filtro estiver disponível.</li><li>Filtrar por curso, turma ou disciplina.</li><li>Conferir indicadores de notas, frequência e pendências.</li><li>Exportar em CSV ou PDF quando a ação estiver habilitada.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Ver turmas</strong> -> <code>registerClass</code></li><li><strong>Ver notas</strong> -> <code>registerGrade</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como consultar assinatura <code>billingFlow</code></h3>
+          <p><strong>Categoria:</strong> Assinatura</p>
+          <p>A assinatura usa o contexto do tenant para mostrar plano, status e limites.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Clicar em Assinatura no menu lateral.</li><li>Conferir plano atual e status do tenant.</li><li>Revisar usuários ativos e limites contratados quando a API expuser esses dados.</li><li>Acionar o mantenedor se houver pagamento pendente.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Erro de acesso</strong> -> <code>accessTrouble</code></li><li><strong>Entender módulos</strong> -> <code>modules</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+        <section class="node-detail">
+          <h3>Como o aluno acompanha notas <code>studentGrades</code></h3>
+          <p><strong>Categoria:</strong> Aluno</p>
+          <p>O aluno vê notas e simula médias no app mobile UniConnect.</p>
+          <div class="split">
+            <div>
+              <h4>Passos do fluxo</h4>
+              <ol><li>Entrar no app com perfil aluno.</li><li>Abrir Notas no menu inferior.</li><li>Consultar disciplinas, avaliações e média final.</li><li>Usar o simulador para estimar a nota necessária.</li><li>Se houver divergência, falar com o professor ou coordenação.</li></ol>
+            </div>
+            <div>
+              <h4>Botoes/opcoes exibidos</h4>
+              <ul><li><strong>Registrar nota</strong> -> <code>registerGrade</code></li><li><strong>Voltar ao início</strong> -> <code>start</code></li></ul>
+            </div>
+          </div>
+        </section>
+      
+
+    <h2>Observacoes tecnicas</h2>
+    <ul>
+      <li>O chatbot usa uma arvore de decisoes local baseada no objeto <code>chatbotFlow</code>.</li>
+      <li>Cada opcao de fluxo aponta para um destino por <code>data-chatbot-target</code>.</li>
+      <li>Quando um destino invalido e solicitado, o chatbot retorna ao no inicial.</li>
+      <li>O conteudo apresentado no chatbot e escapado por <code>escapeHtml</code>.</li>
+    </ul>
+  </body>
+</html>

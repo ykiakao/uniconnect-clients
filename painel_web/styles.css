@@ -896,13 +896,40 @@ tr:last-child td {
   white-space: nowrap;
 }
 
-.chatbot-widget {
+.vlibras-lazy-button {
   position: fixed;
   right: var(--lg);
   bottom: var(--lg);
+  z-index: 11;
+  min-width: 88px;
+  min-height: 44px;
+  border: 3px solid #ffffff;
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  box-shadow: var(--shadow);
+  color: #ffffff;
+  padding: 0 var(--sm);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.vlibras-lazy-button:hover:not(:disabled) {
+  background: #d96d12;
+}
+
+.vlibras-lazy-button:disabled {
+  cursor: wait;
+  opacity: 0.74;
+}
+
+.chatbot-widget {
+  position: fixed;
+  left: var(--lg);
+  bottom: var(--lg);
+  right: auto;
   z-index: 10;
   display: grid;
-  justify-items: end;
+  justify-items: start;
   gap: var(--sm);
 }
 
@@ -1195,6 +1222,12 @@ tr:last-child td {
   }
 
   .chatbot-widget {
+    left: var(--md);
+    bottom: var(--md);
+    right: auto;
+  }
+
+  .vlibras-lazy-button {
     right: var(--md);
     bottom: var(--md);
   }

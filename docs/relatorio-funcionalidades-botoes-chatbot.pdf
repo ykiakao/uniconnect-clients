@@ -1,0 +1,421 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R] /Count 8 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 4609 >>
+stream
+BT /F1 18 Tf 42 799.89 Td (Relatorio de funcionalidades e botoes do chatbot) Tj ET
+BT /F1 18 Tf 42 775.59 Td (UniConnect) Tj ET
+BT /F1 10 Tf 42 747.29 Td (Escopo: somente o chatbot de fluxos UniConnect.) Tj ET
+BT /F1 10 Tf 42 725.79 Td (Resumo: 15 nos de fluxo; 38 botoes de opcao; 12 nos com passo a passo; 64 passos documentados.) Tj ET
+BT /F1 14 Tf 42 696.29 Td (Funcionalidades do chatbot) Tj ET
+BT /F1 9.5 Tf 54 673.39 Td (- Assistente flutuante disponivel na tela de login e no painel autenticado.) Tj ET
+BT /F1 9.5 Tf 54 660.57 Td (- Navegacao por arvore de decisoes baseada em chatbotFlow.) Tj ET
+BT /F1 9.5 Tf 54 647.74 Td (- Mensagem contextual, categoria, titulo, botoes de opcao e passo a passo por no.) Tj ET
+BT /F1 9.5 Tf 54 634.91 Td (- Historico simples por mapa de pais para o botao Voltar.) Tj ET
+BT /F1 9.5 Tf 54 622.09 Td (- Reset para o inicio do fluxo.) Tj ET
+BT /F1 9.5 Tf 54 609.26 Td (- Fechamento por botao e por tecla Escape.) Tj ET
+BT /F1 9.5 Tf 54 596.44 Td (- Foco gerenciado apos abertura, fechamento e troca de no.) Tj ET
+BT /F1 9.5 Tf 54 583.61 Td (- Protecao contra HTML injetado por escapeHtml.) Tj ET
+BT /F1 9.5 Tf 54 570.79 Td (- Sem persistencia remota: o estado vive em state.chatbotNodeId e state.chatbotOpen.) Tj ET
+BT /F1 14 Tf 42 541.96 Td (Botoes e controles proprios do chatbot) Tj ET
+BT /F1 9.5 Tf 54 519.06 Td (- Abrir/fechar ajuda \(#chatbot-toggle\): Alterna o painel do chatbot, atualiza aria-expanded e devolve) Tj ET
+BT /F1 9.5 Tf 54 506.24 Td (foco ao botao ao fechar.) Tj ET
+BT /F1 9.5 Tf 54 493.41 Td (- Fechar \(.chatbot-close\): Fecha o painel de ajuda e retorna foco ao botao flutuante.) Tj ET
+BT /F1 9.5 Tf 54 480.59 Td (- Voltar \(.chatbot-back\): Retorna ao no pai calculado por chatbotParentMap; fica desabilitado no) Tj ET
+BT /F1 9.5 Tf 54 467.76 Td (inicio.) Tj ET
+BT /F1 9.5 Tf 54 454.94 Td (- Inicio \(.chatbot-reset\): Reinicia o fluxo no no start; fica desabilitado no inicio.) Tj ET
+BT /F1 9.5 Tf 54 442.11 Td (- Opcao de fluxo \(.chatbot-option[data-chatbot-target]\): Le o destino em data-chatbot-target e navega) Tj ET
+BT /F1 9.5 Tf 54 429.29 Td (para o no correspondente; se o destino nao existir, volta ao start.) Tj ET
+BT /F1 9.5 Tf 54 416.46 Td (- Escape \(document.onkeydown\): Fecha o chatbot quando o painel esta aberto.) Tj ET
+BT /F1 14 Tf 42 387.64 Td (Mapa de nos do fluxo) Tj ET
+BT /F1 10 Tf 42 358.74 Td (start | pai: studentGrades | Assistente UniConnect | Como posso ajudar?) Tj ET
+BT /F1 9.2 Tf 52 345.24 Td (Mensagem: Escolha um assunto abaixo. Eu vou guiando por cliques ate chegar na resposta.) Tj ET
+BT /F1 9.2 Tf 52 332.82 Td (Passos: 0. Opcoes: Registrar algo, Acessar o painel, Entender os modulos, Resolver erro de acesso) Tj ET
+BT /F1 10 Tf 42 314.40 Td (register | pai: start | Fluxo de registro | O que voce quer registrar?) Tj ET
+BT /F1 9.2 Tf 52 300.90 Td (Mensagem: Selecione o tipo de registro para ver o caminho completo de cliques.) Tj ET
+BT /F1 9.2 Tf 52 288.48 Td (Passos: 0. Opcoes: Usuario administrativo, Curso, Turma, Atividade academica, Nota de aluno) Tj ET
+BT /F1 10 Tf 42 270.06 Td (registerUser | pai: register | Usuarios | Como registrar um usuario administrativo) Tj ET
+BT /F1 9.2 Tf 52 256.56 Td (Mensagem: Este fluxo ja esta mapeado no painel, mas a criacao real depende do endpoint administrativo.) Tj ET
+BT /F1 9.2 Tf 52 244.14 Td (Passos: 6. Opcoes: Ver cursos, Ver erro de permissao) Tj ET
+BT /F1 10 Tf 42 225.72 Td (registerCourse | pai: register | Cursos | Como registrar um curso) Tj ET
+BT /F1 9.2 Tf 52 212.22 Td (Mensagem: O modulo Cursos esta reservado para o CRUD academico do painel.) Tj ET
+BT /F1 9.2 Tf 52 199.80 Td (Passos: 6. Opcoes: Ver turmas, Entender modulos) Tj ET
+BT /F1 10 Tf 42 181.38 Td (registerClass | pai: register | Turmas | Como registrar uma turma) Tj ET
+BT /F1 9.2 Tf 52 167.88 Td (Mensagem: Turmas organizam alunos por curso, semestre e professor responsavel.) Tj ET
+BT /F1 9.2 Tf 52 155.46 Td (Passos: 6. Opcoes: Ver notas, Ver relatorios) Tj ET
+BT /F1 10 Tf 42 137.04 Td (registerActivity | pai: register | Atividades | Como registrar uma atividade academica) Tj ET
+BT /F1 9.2 Tf 52 123.54 Td (Mensagem: Esse fluxo acontece no app do professor, nao no painel administrativo atual.) Tj ET
+BT /F1 9.2 Tf 52 111.12 Td (Passos: 6. Opcoes: Registrar nota, Voltar para registros) Tj ET
+BT /F1 10 Tf 42 92.70 Td (registerGrade | pai: register | Notas | Como registrar nota de aluno) Tj ET
+BT /F1 9.2 Tf 52 79.20 Td (Mensagem: O lancamento de notas e tratado pelo fluxo do professor e deve sincronizar com a API) Tj ET
+BT /F1 9.2 Tf 52 66.78 Td (academica.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 2620 >>
+stream
+BT /F1 9.2 Tf 52 799.89 Td (Passos: 6. Opcoes: Simulacao do aluno, Voltar para registros) Tj ET
+BT /F1 10 Tf 42 781.47 Td (access | pai: start | Acesso | Como acessar o painel) Tj ET
+BT /F1 9.2 Tf 52 767.97 Td (Mensagem: Use uma credencial administrativa vinculada ao tenant da instituicao.) Tj ET
+BT /F1 9.2 Tf 52 755.55 Td (Passos: 6. Opcoes: Erro de acesso, Perfis aceitos) Tj ET
+BT /F1 10 Tf 42 737.13 Td (accessTrouble | pai: start | Acesso bloqueado | O que conferir quando nao entra) Tj ET
+BT /F1 9.2 Tf 52 723.63 Td (Mensagem: A maior parte dos bloqueios vem de API desligada, tenant errado ou perfil sem permissao) Tj ET
+BT /F1 9.2 Tf 52 711.21 Td (administrativa.) Tj ET
+BT /F1 9.2 Tf 52 698.79 Td (Passos: 6. Opcoes: Perfis aceitos, Como acessar) Tj ET
+BT /F1 10 Tf 42 680.37 Td (adminRoles | pai: access | Permissoes | Quais perfis entram no painel) Tj ET
+BT /F1 9.2 Tf 52 666.87 Td (Mensagem: O painel administrativo e exclusivo para perfis de gestao institucional.) Tj ET
+BT /F1 9.2 Tf 52 654.45 Td (Passos: 4. Opcoes: Registrar usuario, Erro de acesso) Tj ET
+BT /F1 10 Tf 42 636.03 Td (modules | pai: start | Modulos | Para que serve cada modulo) Tj ET
+BT /F1 9.2 Tf 52 622.53 Td (Mensagem: O painel ja mostra os modulos principais e deixa claro quais dependem de endpoint futuro.) Tj ET
+BT /F1 9.2 Tf 52 610.11 Td (Passos: 0. Opcoes: Usuarios, Cursos, Turmas, Relatorios, Assinatura) Tj ET
+BT /F1 10 Tf 42 591.69 Td (moduleUsers | pai: modules | Usuarios | O que fazer em Usuarios) Tj ET
+BT /F1 9.2 Tf 52 578.19 Td (Mensagem: Este modulo centraliza perfis, vinculos institucionais e permissoes.) Tj ET
+BT /F1 9.2 Tf 52 565.77 Td (Passos: 4. Opcoes: Registrar usuario, Perfis aceitos) Tj ET
+BT /F1 10 Tf 42 547.35 Td (reportsFlow | pai: registerClass | Relatorios | Como consultar relatorios) Tj ET
+BT /F1 9.2 Tf 52 533.85 Td (Mensagem: Relatorios serao a visao consolidada de desempenho, frequencia e atividades.) Tj ET
+BT /F1 9.2 Tf 52 521.43 Td (Passos: 5. Opcoes: Ver turmas, Ver notas) Tj ET
+BT /F1 10 Tf 42 503.01 Td (billingFlow | pai: modules | Assinatura | Como consultar assinatura) Tj ET
+BT /F1 9.2 Tf 52 489.51 Td (Mensagem: A assinatura usa o contexto do tenant para mostrar plano, status e limites.) Tj ET
+BT /F1 9.2 Tf 52 477.09 Td (Passos: 4. Opcoes: Erro de acesso, Entender modulos) Tj ET
+BT /F1 10 Tf 42 458.67 Td (studentGrades | pai: registerGrade | Aluno | Como o aluno acompanha notas) Tj ET
+BT /F1 9.2 Tf 52 445.17 Td (Mensagem: O aluno ve notas e simula medias no app mobile UniConnect.) Tj ET
+BT /F1 9.2 Tf 52 432.75 Td (Passos: 5. Opcoes: Registrar nota, Voltar ao inicio) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 5904 >>
+stream
+BT /F1 14 Tf 42 783.89 Td (Botoes de opcao do chatbot) Tj ET
+BT /F1 9.5 Tf 54 760.99 Td (- start / Como posso ajudar?: "Registrar algo" -> register \(O que voce quer registrar?\)) Tj ET
+BT /F1 9.5 Tf 54 748.16 Td (- start / Como posso ajudar?: "Acessar o painel" -> access \(Como acessar o painel\)) Tj ET
+BT /F1 9.5 Tf 54 735.34 Td (- start / Como posso ajudar?: "Entender os modulos" -> modules \(Para que serve cada modulo\)) Tj ET
+BT /F1 9.5 Tf 54 722.51 Td (- start / Como posso ajudar?: "Resolver erro de acesso" -> accessTrouble \(O que conferir quando nao) Tj ET
+BT /F1 9.5 Tf 54 709.69 Td (entra\)) Tj ET
+BT /F1 9.5 Tf 54 696.86 Td (- register / O que voce quer registrar?: "Usuario administrativo" -> registerUser \(Como registrar um) Tj ET
+BT /F1 9.5 Tf 54 684.04 Td (usuario administrativo\)) Tj ET
+BT /F1 9.5 Tf 54 671.21 Td (- register / O que voce quer registrar?: "Curso" -> registerCourse \(Como registrar um curso\)) Tj ET
+BT /F1 9.5 Tf 54 658.39 Td (- register / O que voce quer registrar?: "Turma" -> registerClass \(Como registrar uma turma\)) Tj ET
+BT /F1 9.5 Tf 54 645.56 Td (- register / O que voce quer registrar?: "Atividade academica" -> registerActivity \(Como registrar) Tj ET
+BT /F1 9.5 Tf 54 632.74 Td (uma atividade academica\)) Tj ET
+BT /F1 9.5 Tf 54 619.91 Td (- register / O que voce quer registrar?: "Nota de aluno" -> registerGrade \(Como registrar nota de) Tj ET
+BT /F1 9.5 Tf 54 607.09 Td (aluno\)) Tj ET
+BT /F1 9.5 Tf 54 594.26 Td (- registerUser / Como registrar um usuario administrativo: "Ver cursos" -> registerCourse \(Como) Tj ET
+BT /F1 9.5 Tf 54 581.44 Td (registrar um curso\)) Tj ET
+BT /F1 9.5 Tf 54 568.61 Td (- registerUser / Como registrar um usuario administrativo: "Ver erro de permissao" -> accessTrouble) Tj ET
+BT /F1 9.5 Tf 54 555.79 Td (\(O que conferir quando nao entra\)) Tj ET
+BT /F1 9.5 Tf 54 542.96 Td (- registerCourse / Como registrar um curso: "Ver turmas" -> registerClass \(Como registrar uma turma\)) Tj ET
+BT /F1 9.5 Tf 54 530.14 Td (- registerCourse / Como registrar um curso: "Entender modulos" -> modules \(Para que serve cada) Tj ET
+BT /F1 9.5 Tf 54 517.31 Td (modulo\)) Tj ET
+BT /F1 9.5 Tf 54 504.49 Td (- registerClass / Como registrar uma turma: "Ver notas" -> registerGrade \(Como registrar nota de) Tj ET
+BT /F1 9.5 Tf 54 491.66 Td (aluno\)) Tj ET
+BT /F1 9.5 Tf 54 478.84 Td (- registerClass / Como registrar uma turma: "Ver relatorios" -> reportsFlow \(Como consultar) Tj ET
+BT /F1 9.5 Tf 54 466.01 Td (relatorios\)) Tj ET
+BT /F1 9.5 Tf 54 453.19 Td (- registerActivity / Como registrar uma atividade academica: "Registrar nota" -> registerGrade \(Como) Tj ET
+BT /F1 9.5 Tf 54 440.36 Td (registrar nota de aluno\)) Tj ET
+BT /F1 9.5 Tf 54 427.54 Td (- registerActivity / Como registrar uma atividade academica: "Voltar para registros" -> register \(O) Tj ET
+BT /F1 9.5 Tf 54 414.71 Td (que voce quer registrar?\)) Tj ET
+BT /F1 9.5 Tf 54 401.89 Td (- registerGrade / Como registrar nota de aluno: "Simulacao do aluno" -> studentGrades \(Como o aluno) Tj ET
+BT /F1 9.5 Tf 54 389.06 Td (acompanha notas\)) Tj ET
+BT /F1 9.5 Tf 54 376.24 Td (- registerGrade / Como registrar nota de aluno: "Voltar para registros" -> register \(O que voce quer) Tj ET
+BT /F1 9.5 Tf 54 363.41 Td (registrar?\)) Tj ET
+BT /F1 9.5 Tf 54 350.59 Td (- access / Como acessar o painel: "Erro de acesso" -> accessTrouble \(O que conferir quando nao entra\)) Tj ET
+BT /F1 9.5 Tf 54 337.76 Td (- access / Como acessar o painel: "Perfis aceitos" -> adminRoles \(Quais perfis entram no painel\)) Tj ET
+BT /F1 9.5 Tf 54 324.94 Td (- accessTrouble / O que conferir quando nao entra: "Perfis aceitos" -> adminRoles \(Quais perfis) Tj ET
+BT /F1 9.5 Tf 54 312.11 Td (entram no painel\)) Tj ET
+BT /F1 9.5 Tf 54 299.29 Td (- accessTrouble / O que conferir quando nao entra: "Como acessar" -> access \(Como acessar o painel\)) Tj ET
+BT /F1 9.5 Tf 54 286.46 Td (- adminRoles / Quais perfis entram no painel: "Registrar usuario" -> registerUser \(Como registrar um) Tj ET
+BT /F1 9.5 Tf 54 273.64 Td (usuario administrativo\)) Tj ET
+BT /F1 9.5 Tf 54 260.81 Td (- adminRoles / Quais perfis entram no painel: "Erro de acesso" -> accessTrouble \(O que conferir) Tj ET
+BT /F1 9.5 Tf 54 247.99 Td (quando nao entra\)) Tj ET
+BT /F1 9.5 Tf 54 235.16 Td (- modules / Para que serve cada modulo: "Usuarios" -> moduleUsers \(O que fazer em Usuarios\)) Tj ET
+BT /F1 9.5 Tf 54 222.34 Td (- modules / Para que serve cada modulo: "Cursos" -> registerCourse \(Como registrar um curso\)) Tj ET
+BT /F1 9.5 Tf 54 209.51 Td (- modules / Para que serve cada modulo: "Turmas" -> registerClass \(Como registrar uma turma\)) Tj ET
+BT /F1 9.5 Tf 54 196.69 Td (- modules / Para que serve cada modulo: "Relatorios" -> reportsFlow \(Como consultar relatorios\)) Tj ET
+BT /F1 9.5 Tf 54 183.86 Td (- modules / Para que serve cada modulo: "Assinatura" -> billingFlow \(Como consultar assinatura\)) Tj ET
+BT /F1 9.5 Tf 54 171.04 Td (- moduleUsers / O que fazer em Usuarios: "Registrar usuario" -> registerUser \(Como registrar um) Tj ET
+BT /F1 9.5 Tf 54 158.21 Td (usuario administrativo\)) Tj ET
+BT /F1 9.5 Tf 54 145.39 Td (- moduleUsers / O que fazer em Usuarios: "Perfis aceitos" -> adminRoles \(Quais perfis entram no) Tj ET
+BT /F1 9.5 Tf 54 132.56 Td (painel\)) Tj ET
+BT /F1 9.5 Tf 54 119.74 Td (- reportsFlow / Como consultar relatorios: "Ver turmas" -> registerClass \(Como registrar uma turma\)) Tj ET
+BT /F1 9.5 Tf 54 106.91 Td (- reportsFlow / Como consultar relatorios: "Ver notas" -> registerGrade \(Como registrar nota de) Tj ET
+BT /F1 9.5 Tf 54 94.09 Td (aluno\)) Tj ET
+BT /F1 9.5 Tf 54 81.26 Td (- billingFlow / Como consultar assinatura: "Erro de acesso" -> accessTrouble \(O que conferir quando) Tj ET
+BT /F1 9.5 Tf 54 68.44 Td (nao entra\)) Tj ET
+BT /F1 9.5 Tf 54 55.61 Td (- billingFlow / Como consultar assinatura: "Entender modulos" -> modules \(Para que serve cada modulo\)) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 318 >>
+stream
+BT /F1 9.5 Tf 54 799.89 Td (- studentGrades / Como o aluno acompanha notas: "Registrar nota" -> registerGrade \(Como registrar) Tj ET
+BT /F1 9.5 Tf 54 787.06 Td (nota de aluno\)) Tj ET
+BT /F1 9.5 Tf 54 774.24 Td (- studentGrades / Como o aluno acompanha notas: "Voltar ao inicio" -> start \(Como posso ajudar?\)) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 3608 >>
+stream
+BT /F1 14 Tf 42 783.89 Td (Detalhamento por no) Tj ET
+BT /F1 12 Tf 42 744.99 Td (Como posso ajudar? \(start\)) Tj ET
+BT /F1 9.5 Tf 42 724.79 Td (Categoria: Assistente UniConnect) Tj ET
+BT /F1 9.5 Tf 42 711.96 Td (Mensagem: Escolha um assunto abaixo. Eu vou guiando por cliques ate chegar na resposta.) Tj ET
+BT /F1 9.5 Tf 42 695.14 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 682.31 Td (- Este no apresenta apenas opcoes de navegacao.) Tj ET
+BT /F1 9.5 Tf 42 665.49 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 652.66 Td (- Registrar algo -> register) Tj ET
+BT /F1 9.5 Tf 60 639.84 Td (- Acessar o painel -> access) Tj ET
+BT /F1 9.5 Tf 60 627.01 Td (- Entender os modulos -> modules) Tj ET
+BT /F1 9.5 Tf 60 614.19 Td (- Resolver erro de acesso -> accessTrouble) Tj ET
+BT /F1 12 Tf 42 585.36 Td (O que voce quer registrar? \(register\)) Tj ET
+BT /F1 9.5 Tf 42 565.16 Td (Categoria: Fluxo de registro) Tj ET
+BT /F1 9.5 Tf 42 552.34 Td (Mensagem: Selecione o tipo de registro para ver o caminho completo de cliques.) Tj ET
+BT /F1 9.5 Tf 42 535.51 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 522.69 Td (- Este no apresenta apenas opcoes de navegacao.) Tj ET
+BT /F1 9.5 Tf 42 505.86 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 493.04 Td (- Usuario administrativo -> registerUser) Tj ET
+BT /F1 9.5 Tf 60 480.21 Td (- Curso -> registerCourse) Tj ET
+BT /F1 9.5 Tf 60 467.39 Td (- Turma -> registerClass) Tj ET
+BT /F1 9.5 Tf 60 454.56 Td (- Atividade academica -> registerActivity) Tj ET
+BT /F1 9.5 Tf 60 441.74 Td (- Nota de aluno -> registerGrade) Tj ET
+BT /F1 12 Tf 42 412.91 Td (Como registrar um usuario administrativo \(registerUser\)) Tj ET
+BT /F1 9.5 Tf 42 392.71 Td (Categoria: Usuarios) Tj ET
+BT /F1 9.5 Tf 42 379.89 Td (Mensagem: Este fluxo ja esta mapeado no painel, mas a criacao real depende do endpoint administrativo.) Tj ET
+BT /F1 9.5 Tf 42 363.06 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 350.24 Td (- 1. Entrar no painel com perfil admin, coordenador ou mantenedor.) Tj ET
+BT /F1 9.5 Tf 60 337.41 Td (- 2. Clicar em Usuarios no menu lateral.) Tj ET
+BT /F1 9.5 Tf 60 324.59 Td (- 3. Clicar em Novo registro quando o botao estiver habilitado.) Tj ET
+BT /F1 9.5 Tf 60 311.76 Td (- 4. Preencher nome, e-mail institucional, perfil, area e status.) Tj ET
+BT /F1 9.5 Tf 60 298.94 Td (- 5. Revisar o tenant exibido no topo para confirmar a instituicao correta.) Tj ET
+BT /F1 9.5 Tf 60 286.11 Td (- 6. Clicar em Salvar e conferir o novo usuario na tabela.) Tj ET
+BT /F1 9.5 Tf 42 269.29 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 256.46 Td (- Ver cursos -> registerCourse) Tj ET
+BT /F1 9.5 Tf 60 243.64 Td (- Ver erro de permissao -> accessTrouble) Tj ET
+BT /F1 12 Tf 42 214.81 Td (Como registrar um curso \(registerCourse\)) Tj ET
+BT /F1 9.5 Tf 42 194.61 Td (Categoria: Cursos) Tj ET
+BT /F1 9.5 Tf 42 181.79 Td (Mensagem: O modulo Cursos esta reservado para o CRUD academico do painel.) Tj ET
+BT /F1 9.5 Tf 42 164.96 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 152.14 Td (- 1. Entrar no painel administrativo.) Tj ET
+BT /F1 9.5 Tf 60 139.31 Td (- 2. Clicar em Cursos no menu lateral.) Tj ET
+BT /F1 9.5 Tf 60 126.49 Td (- 3. Clicar em Novo registro quando a API do modulo estiver disponivel.) Tj ET
+BT /F1 9.5 Tf 60 113.66 Td (- 4. Informar nome do curso, area, coordenador e status.) Tj ET
+BT /F1 9.5 Tf 60 100.84 Td (- 5. Salvar o curso.) Tj ET
+BT /F1 9.5 Tf 60 88.01 Td (- 6. Abrir Turmas para vincular periodos e professores depois do cadastro.) Tj ET
+BT /F1 9.5 Tf 42 71.19 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 58.36 Td (- Ver turmas -> registerClass) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 3796 >>
+stream
+BT /F1 9.5 Tf 60 799.89 Td (- Entender modulos -> modules) Tj ET
+BT /F1 12 Tf 42 771.06 Td (Como registrar uma turma \(registerClass\)) Tj ET
+BT /F1 9.5 Tf 42 750.86 Td (Categoria: Turmas) Tj ET
+BT /F1 9.5 Tf 42 738.04 Td (Mensagem: Turmas organizam alunos por curso, semestre e professor responsavel.) Tj ET
+BT /F1 9.5 Tf 42 721.21 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 708.39 Td (- 1. Clicar em Turmas no menu lateral.) Tj ET
+BT /F1 9.5 Tf 60 695.56 Td (- 2. Clicar em Novo registro quando o endpoint estiver pronto.) Tj ET
+BT /F1 9.5 Tf 60 682.74 Td (- 3. Selecionar curso, semestre, periodo letivo e professor responsavel.) Tj ET
+BT /F1 9.5 Tf 60 669.91 Td (- 4. Definir capacidade, status e observacoes administrativas.) Tj ET
+BT /F1 9.5 Tf 60 657.09 Td (- 5. Salvar a turma.) Tj ET
+BT /F1 9.5 Tf 60 644.26 Td (- 6. Conferir se a turma aparece nos filtros de usuarios, notas e relatorios.) Tj ET
+BT /F1 9.5 Tf 42 627.44 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 614.61 Td (- Ver notas -> registerGrade) Tj ET
+BT /F1 9.5 Tf 60 601.79 Td (- Ver relatorios -> reportsFlow) Tj ET
+BT /F1 12 Tf 42 572.96 Td (Como registrar uma atividade academica \(registerActivity\)) Tj ET
+BT /F1 9.5 Tf 42 552.76 Td (Categoria: Atividades) Tj ET
+BT /F1 9.5 Tf 42 539.94 Td (Mensagem: Esse fluxo acontece no app do professor, nao no painel administrativo atual.) Tj ET
+BT /F1 9.5 Tf 42 523.11 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 510.29 Td (- 1. Entrar no app UniConnect com uma conta de professor.) Tj ET
+BT /F1 9.5 Tf 60 497.46 Td (- 2. Abrir o dashboard Professor.) Tj ET
+BT /F1 9.5 Tf 60 484.64 Td (- 3. Clicar em Criar atividade.) Tj ET
+BT /F1 9.5 Tf 60 471.81 Td (- 4. Preencher disciplina, titulo, descricao, prazo, prioridade e criterios.) Tj ET
+BT /F1 9.5 Tf 60 458.99 Td (- 5. Revisar os dados antes de publicar.) Tj ET
+BT /F1 9.5 Tf 60 446.16 Td (- 6. Publicar para que alunos vejam em Atividades.) Tj ET
+BT /F1 9.5 Tf 42 429.34 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 416.51 Td (- Registrar nota -> registerGrade) Tj ET
+BT /F1 9.5 Tf 60 403.69 Td (- Voltar para registros -> register) Tj ET
+BT /F1 12 Tf 42 374.86 Td (Como registrar nota de aluno \(registerGrade\)) Tj ET
+BT /F1 9.5 Tf 42 354.66 Td (Categoria: Notas) Tj ET
+BT /F1 9.5 Tf 42 341.84 Td (Mensagem: O lancamento de notas e tratado pelo fluxo do professor e deve sincronizar com a API) Tj ET
+BT /F1 9.5 Tf 42 329.01 Td (academica.) Tj ET
+BT /F1 9.5 Tf 42 312.19 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 299.36 Td (- 1. Entrar no app UniConnect com perfil professor.) Tj ET
+BT /F1 9.5 Tf 60 286.54 Td (- 2. Abrir Professor > Notas.) Tj ET
+BT /F1 9.5 Tf 60 273.71 Td (- 3. Selecionar turma, disciplina e aluno.) Tj ET
+BT /F1 9.5 Tf 60 260.89 Td (- 4. Informar P1, P2, trabalho ou campos definidos pela instituicao.) Tj ET
+BT /F1 9.5 Tf 60 248.06 Td (- 5. Conferir a media calculada.) Tj ET
+BT /F1 9.5 Tf 60 235.24 Td (- 6. Salvar para atualizar a visao Notas do aluno.) Tj ET
+BT /F1 9.5 Tf 42 218.41 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 205.59 Td (- Simulacao do aluno -> studentGrades) Tj ET
+BT /F1 9.5 Tf 60 192.76 Td (- Voltar para registros -> register) Tj ET
+BT /F1 12 Tf 42 163.94 Td (Como acessar o painel \(access\)) Tj ET
+BT /F1 9.5 Tf 42 143.74 Td (Categoria: Acesso) Tj ET
+BT /F1 9.5 Tf 42 130.91 Td (Mensagem: Use uma credencial administrativa vinculada ao tenant da instituicao.) Tj ET
+BT /F1 9.5 Tf 42 114.09 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 101.26 Td (- 1. Abrir a URL do painel.) Tj ET
+BT /F1 9.5 Tf 60 88.44 Td (- 2. Confirmar a instituicao no campo Instituicao.) Tj ET
+BT /F1 9.5 Tf 60 75.61 Td (- 3. Abrir Configuracao avancada apenas se precisar trocar a URL da API.) Tj ET
+BT /F1 9.5 Tf 60 62.79 Td (- 4. Informar e-mail institucional e senha.) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 3857 >>
+stream
+BT /F1 9.5 Tf 60 799.89 Td (- 5. Marcar Lembrar de mim somente em dispositivo confiavel.) Tj ET
+BT /F1 9.5 Tf 60 787.06 Td (- 6. Clicar em Entrar.) Tj ET
+BT /F1 9.5 Tf 42 770.24 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 757.41 Td (- Erro de acesso -> accessTrouble) Tj ET
+BT /F1 9.5 Tf 60 744.59 Td (- Perfis aceitos -> adminRoles) Tj ET
+BT /F1 12 Tf 42 715.76 Td (O que conferir quando nao entra \(accessTrouble\)) Tj ET
+BT /F1 9.5 Tf 42 695.56 Td (Categoria: Acesso bloqueado) Tj ET
+BT /F1 9.5 Tf 42 682.74 Td (Mensagem: A maior parte dos bloqueios vem de API desligada, tenant errado ou perfil sem permissao) Tj ET
+BT /F1 9.5 Tf 42 669.91 Td (administrativa.) Tj ET
+BT /F1 9.5 Tf 42 653.09 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 640.26 Td (- 1. Verificar se a API uniconnect-api esta rodando em http://localhost:3333/api/v1.) Tj ET
+BT /F1 9.5 Tf 60 627.44 Td (- 2. Confirmar se a origem http://127.0.0.1:8080 esta liberada no CORS da API.) Tj ET
+BT /F1 9.5 Tf 60 614.61 Td (- 3. Conferir se o tenant esta como universidade-norte ou o slug correto.) Tj ET
+BT /F1 9.5 Tf 60 601.79 Td (- 4. Confirmar se o usuario tem perfil admin, coordinator ou owner.) Tj ET
+BT /F1 9.5 Tf 60 588.96 Td (- 5. Tentar entrar novamente.) Tj ET
+BT /F1 9.5 Tf 60 576.14 Td (- 6. Se a sessao antiga persistir, clicar em Sair e autenticar de novo.) Tj ET
+BT /F1 9.5 Tf 42 559.31 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 546.49 Td (- Perfis aceitos -> adminRoles) Tj ET
+BT /F1 9.5 Tf 60 533.66 Td (- Como acessar -> access) Tj ET
+BT /F1 12 Tf 42 504.84 Td (Quais perfis entram no painel \(adminRoles\)) Tj ET
+BT /F1 9.5 Tf 42 484.64 Td (Categoria: Permissoes) Tj ET
+BT /F1 9.5 Tf 42 471.81 Td (Mensagem: O painel administrativo e exclusivo para perfis de gestao institucional.) Tj ET
+BT /F1 9.5 Tf 42 454.99 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 442.16 Td (- 1. admin pode operar recursos administrativos.) Tj ET
+BT /F1 9.5 Tf 60 429.34 Td (- 2. coordinator pode acessar fluxos academicos de coordenacao.) Tj ET
+BT /F1 9.5 Tf 60 416.51 Td (- 3. owner representa o mantenedor da instituicao.) Tj ET
+BT /F1 9.5 Tf 60 403.69 Td (- 4. student e teacher nao devem acessar o painel web administrativo.) Tj ET
+BT /F1 9.5 Tf 42 386.86 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 374.04 Td (- Registrar usuario -> registerUser) Tj ET
+BT /F1 9.5 Tf 60 361.21 Td (- Erro de acesso -> accessTrouble) Tj ET
+BT /F1 12 Tf 42 332.39 Td (Para que serve cada modulo \(modules\)) Tj ET
+BT /F1 9.5 Tf 42 312.19 Td (Categoria: Modulos) Tj ET
+BT /F1 9.5 Tf 42 299.36 Td (Mensagem: O painel ja mostra os modulos principais e deixa claro quais dependem de endpoint futuro.) Tj ET
+BT /F1 9.5 Tf 42 282.54 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 269.71 Td (- Este no apresenta apenas opcoes de navegacao.) Tj ET
+BT /F1 9.5 Tf 42 252.89 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 240.06 Td (- Usuarios -> moduleUsers) Tj ET
+BT /F1 9.5 Tf 60 227.24 Td (- Cursos -> registerCourse) Tj ET
+BT /F1 9.5 Tf 60 214.41 Td (- Turmas -> registerClass) Tj ET
+BT /F1 9.5 Tf 60 201.59 Td (- Relatorios -> reportsFlow) Tj ET
+BT /F1 9.5 Tf 60 188.76 Td (- Assinatura -> billingFlow) Tj ET
+BT /F1 12 Tf 42 159.94 Td (O que fazer em Usuarios \(moduleUsers\)) Tj ET
+BT /F1 9.5 Tf 42 139.74 Td (Categoria: Usuarios) Tj ET
+BT /F1 9.5 Tf 42 126.91 Td (Mensagem: Este modulo centraliza perfis, vinculos institucionais e permissoes.) Tj ET
+BT /F1 9.5 Tf 42 110.09 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 97.26 Td (- 1. Clicar em Usuarios no menu.) Tj ET
+BT /F1 9.5 Tf 60 84.44 Td (- 2. Usar a tabela para revisar pessoas recentes enquanto o endpoint nao existe.) Tj ET
+BT /F1 9.5 Tf 60 71.61 Td (- 3. Quando o CRUD estiver ativo, usar Novo registro para cadastrar usuarios.) Tj ET
+BT /F1 9.5 Tf 60 58.79 Td (- 4. Validar se cada pessoa pertence ao tenant correto.) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R >> >> /Contents 16 0 R >>
+endobj
+18 0 obj
+<< /Length 3395 >>
+stream
+BT /F1 9.5 Tf 42 799.89 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 787.06 Td (- Registrar usuario -> registerUser) Tj ET
+BT /F1 9.5 Tf 60 774.24 Td (- Perfis aceitos -> adminRoles) Tj ET
+BT /F1 12 Tf 42 745.41 Td (Como consultar relatorios \(reportsFlow\)) Tj ET
+BT /F1 9.5 Tf 42 725.21 Td (Categoria: Relatorios) Tj ET
+BT /F1 9.5 Tf 42 712.39 Td (Mensagem: Relatorios serao a visao consolidada de desempenho, frequencia e atividades.) Tj ET
+BT /F1 9.5 Tf 42 695.56 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 682.74 Td (- 1. Clicar em Relatorios no menu lateral.) Tj ET
+BT /F1 9.5 Tf 60 669.91 Td (- 2. Selecionar o periodo letivo quando o filtro estiver disponivel.) Tj ET
+BT /F1 9.5 Tf 60 657.09 Td (- 3. Filtrar por curso, turma ou disciplina.) Tj ET
+BT /F1 9.5 Tf 60 644.26 Td (- 4. Conferir indicadores de notas, frequencia e pendencias.) Tj ET
+BT /F1 9.5 Tf 60 631.44 Td (- 5. Exportar em CSV ou PDF quando a acao estiver habilitada.) Tj ET
+BT /F1 9.5 Tf 42 614.61 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 601.79 Td (- Ver turmas -> registerClass) Tj ET
+BT /F1 9.5 Tf 60 588.96 Td (- Ver notas -> registerGrade) Tj ET
+BT /F1 12 Tf 42 560.14 Td (Como consultar assinatura \(billingFlow\)) Tj ET
+BT /F1 9.5 Tf 42 539.94 Td (Categoria: Assinatura) Tj ET
+BT /F1 9.5 Tf 42 527.11 Td (Mensagem: A assinatura usa o contexto do tenant para mostrar plano, status e limites.) Tj ET
+BT /F1 9.5 Tf 42 510.29 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 497.46 Td (- 1. Clicar em Assinatura no menu lateral.) Tj ET
+BT /F1 9.5 Tf 60 484.64 Td (- 2. Conferir plano atual e status do tenant.) Tj ET
+BT /F1 9.5 Tf 60 471.81 Td (- 3. Revisar usuarios ativos e limites contratados quando a API expuser esses dados.) Tj ET
+BT /F1 9.5 Tf 60 458.99 Td (- 4. Acionar o mantenedor se houver pagamento pendente.) Tj ET
+BT /F1 9.5 Tf 42 442.16 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 429.34 Td (- Erro de acesso -> accessTrouble) Tj ET
+BT /F1 9.5 Tf 60 416.51 Td (- Entender modulos -> modules) Tj ET
+BT /F1 12 Tf 42 387.69 Td (Como o aluno acompanha notas \(studentGrades\)) Tj ET
+BT /F1 9.5 Tf 42 367.49 Td (Categoria: Aluno) Tj ET
+BT /F1 9.5 Tf 42 354.66 Td (Mensagem: O aluno ve notas e simula medias no app mobile UniConnect.) Tj ET
+BT /F1 9.5 Tf 42 337.84 Td (Passos do fluxo:) Tj ET
+BT /F1 9.5 Tf 60 325.01 Td (- 1. Entrar no app com perfil aluno.) Tj ET
+BT /F1 9.5 Tf 60 312.19 Td (- 2. Abrir Notas no menu inferior.) Tj ET
+BT /F1 9.5 Tf 60 299.36 Td (- 3. Consultar disciplinas, avaliacoes e media final.) Tj ET
+BT /F1 9.5 Tf 60 286.54 Td (- 4. Usar o simulador para estimar a nota necessaria.) Tj ET
+BT /F1 9.5 Tf 60 273.71 Td (- 5. Se houver divergencia, falar com o professor ou coordenacao.) Tj ET
+BT /F1 9.5 Tf 42 256.89 Td (Botoes/opcoes exibidos:) Tj ET
+BT /F1 9.5 Tf 60 244.06 Td (- Registrar nota -> registerGrade) Tj ET
+BT /F1 9.5 Tf 60 231.24 Td (- Voltar ao inicio -> start) Tj ET
+BT /F1 14 Tf 42 202.41 Td (Observacoes tecnicas) Tj ET
+BT /F1 9.5 Tf 54 179.51 Td (- O chatbot usa uma arvore de decisoes local baseada no objeto chatbotFlow.) Tj ET
+BT /F1 9.5 Tf 54 166.69 Td (- Cada opcao de fluxo aponta para um destino por data-chatbot-target.) Tj ET
+BT /F1 9.5 Tf 54 153.86 Td (- Quando um destino invalido e solicitado, o chatbot retorna ao no inicial.) Tj ET
+BT /F1 9.5 Tf 54 141.04 Td (- O conteudo apresentado no chatbot e escapado por escapeHtml.) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R >> >> /Contents 18 0 R >>
+endobj
+xref
+0 20
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000162 00000 n 
+0000000232 00000 n 
+0000004893 00000 n 
+0000005025 00000 n 
+0000007697 00000 n 
+0000007829 00000 n 
+0000013785 00000 n 
+0000013917 00000 n 
+0000014287 00000 n 
+0000014421 00000 n 
+0000018082 00000 n 
+0000018216 00000 n 
+0000022065 00000 n 
+0000022199 00000 n 
+0000026109 00000 n 
+0000026243 00000 n 
+0000029691 00000 n 
+trailer
+<< /Size 20 /Root 1 0 R >>
+startxref
+29825
+%%EOF

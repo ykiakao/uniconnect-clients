@@ -14,6 +14,132 @@
   </head>
   <body>
     <div id="app" class="app-shell"></div>
+    <button
+      class="vlibras-lazy-button"
+      id="vlibras-load-button"
+      type="button"
+      aria-controls="vlibras-widget"
+    >
+      VLibras
+    </button>
+    <div id="vlibras-widget" vw class="enabled" hidden>
+      <div vw-access-button class="active"></div>
+      <div vw-plugin-wrapper>
+        <div class="vw-plugin-top-wrapper"></div>
+      </div>
+    </div>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const VLIBRAS_BASE_URL = "https://www.vlibras.gov.br/app";
+        const VLIBRAS_SCRIPT_URL = `${VLIBRAS_BASE_URL}/vlibras-plugin.js`;
+        const loadButton = document.querySelector("#vlibras-load-button");
+        const widget = document.querySelector("#vlibras-widget");
+        let isLoading = false;
+        let isLoaded = false;
+
+        const resetButton = (message = "VLibras") => {
+          isLoading = false;
+          if (!loadButton) return;
+          loadButton.disabled = false;
+          loadButton.textContent = message;
+          loadButton.title = "Clique para carregar o VLibras.";
+        };
+
+        const isOfficialWidgetReady = () => {
+          const accessIcon = widget?.querySelector(".vp-access-button");
+          const pluginRoot = widget?.querySelector("[vp]");
+          return Boolean(accessIcon && pluginRoot);
+        };
+
+        const waitForOfficialWidget = (attempt = 0) => {
+          if (isOfficialWidgetReady()) {
+            loadButton.hidden = true;
+            return;
+          }
+
+          if (attempt >= 20) {
+            isLoaded = false;
+            resetButton("Tentar VLibras");
+            return;
+          }
+
+          window.setTimeout(() => waitForOfficialWidget(attempt + 1), 300);
+        };
+
+        const activateVlibras = () => {
+          if (!window.VLibras?.Widget || !widget || !loadButton) {
+            resetButton("Tentar VLibras");
+            return;
+          }
+
+          widget.hidden = false;
+
+          try {
+            new window.VLibras.Widget({
+              rootPath: VLIBRAS_BASE_URL,
+              position: "BR",
+            });
+            const runVlibrasLoad = window.onload;
+            runVlibrasLoad?.(new Event("load"));
+            if (window.onload === runVlibrasLoad) {
+              window.onload = null;
+            }
+            isLoaded = true;
+          } catch {
+            resetButton("Tentar VLibras");
+            return;
+          }
+
+          loadButton.textContent = "Abrir VLibras";
+          loadButton.disabled = false;
+          waitForOfficialWidget();
+        };
+
+        loadButton?.addEventListener("click", () => {
+          if (isLoading) return;
+          if (isLoaded) {
+            if (isOfficialWidgetReady()) {
+              loadButton.hidden = true;
+              return;
+            }
+
+            resetButton("Tentar VLibras");
+            return;
+          }
+          if (window.VLibras?.Widget) {
+            isLoading = true;
+            loadButton.disabled = true;
+            loadButton.textContent = "Carregando...";
+            activateVlibras();
+            return;
+          }
+
+          isLoading = true;
+          loadButton.disabled = true;
+          loadButton.textContent = "Carregando...";
+
+          const script = document.createElement("script");
+          const timeoutId = window.setTimeout(() => {
+            script.remove();
+            resetButton("Tentar VLibras");
+          }, 6000);
+
+          script.src = VLIBRAS_SCRIPT_URL;
+          script.async = true;
+          script.onload = () => {
+            window.clearTimeout(timeoutId);
+            activateVlibras();
+          };
+          script.onerror = () => {
+            window.clearTimeout(timeoutId);
+            script.remove();
+            resetButton("Tentar VLibras");
+          };
+
+          document.body.appendChild(script);
+        });
+      });
+    </script>
     <script src="./app.js" defer></script>
   </body>
 </html>
