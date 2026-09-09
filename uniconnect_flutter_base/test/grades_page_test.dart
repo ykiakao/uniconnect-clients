@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uniconnect/features/grades/presentation/grades_page.dart';
+import 'package:uniconnect/features/grades/providers/grades_provider.dart';
 
 void main() {
   testWidgets('renders grades dashboard content', (tester) async {
@@ -13,8 +14,11 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
+      ProviderScope(
+        overrides: [
+          subjectGradesProvider.overrideWith((ref) => const []),
+        ],
+        child: const MaterialApp(
           home: GradesPage(),
         ),
       ),

@@ -1,4 +1,6 @@
 // TODO(tech-debt): migrar para NotifierProvider quando estável.
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -34,26 +36,32 @@ final currentUserProvider = Provider<AppUser?>((ref) {
 });
 
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._authService, this._sessionStorage)
-      : super(const AuthState.restoring());
+  AuthController(
+    this._authService,
+    this._sessionStorage, {
+    this.storageTimeout = const Duration(seconds: 4),
+  }) : super(const AuthState.restoring());
 
   final ApiAuthService _authService;
   final SessionStorage _sessionStorage;
+  final Duration storageTimeout;
 
   String? get accessToken => state.accessToken;
 
   Future<void> restoreSession() async {
     state = const AuthState.restoring();
-    await _sessionStorage.clearLegacyCredentials();
-
-    final storedSession = await _sessionStorage.read();
-
-    if (storedSession == null) {
-      state = const AuthState.unauthenticated();
-      return;
-    }
 
     try {
+      await _sessionStorage.clearLegacyCredentials().timeout(storageTimeout);
+
+      final storedSession =
+          await _sessionStorage.read().timeout(storageTimeout);
+
+      if (storedSession == null) {
+        state = const AuthState.unauthenticated();
+        return;
+      }
+
       final user = await _authService.me(storedSession.accessToken);
       state = AuthState.authenticated(
         user,
@@ -62,7 +70,7 @@ class AuthController extends StateNotifier<AuthState> {
     } catch (_) {
       // TODO(backend): implementar refresh token quando /auth/refresh
       // estiver definido. Limpar sessão por enquanto.
-      await _sessionStorage.clear();
+      await _clearStoredSessionSafely();
       state = const AuthState.unauthenticated();
     }
   }
@@ -85,9 +93,9 @@ class AuthController extends StateNotifier<AuthState> {
     }
 
     if (rememberSession) {
-      await _sessionStorage.save(session);
+      await _saveSessionSafely(session);
     } else {
-      await _sessionStorage.clear();
+      await _clearStoredSessionSafely();
     }
 
     state = AuthState.authenticated(
@@ -98,8 +106,24 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    await _sessionStorage.clear();
+    await _clearStoredSessionSafely();
     state = const AuthState.unauthenticated();
+  }
+
+  Future<void> _saveSessionSafely(AuthSession session) async {
+    try {
+      await _sessionStorage.save(session).timeout(storageTimeout);
+    } catch (_) {
+      await _clearStoredSessionSafely();
+    }
+  }
+
+  Future<void> _clearStoredSessionSafely() async {
+    try {
+      await _sessionStorage.clear().timeout(storageTimeout);
+    } catch (_) {
+      // Falha de storage nao deve prender o app no loading nem bloquear login.
+    }
   }
 
   String _friendlyAuthError(Object error) {

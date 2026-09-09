@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uniconnect/core/network/api_client.dart';
 import 'package:uniconnect/features/auth/providers/auth_provider.dart';
@@ -114,6 +116,42 @@ void main() {
     expect(controller.state.status, AuthStatus.unauthenticated);
     expect(controller.accessToken, isNull);
     expect(storage.clearCount, 1);
+    expect(await storage.read(), isNull);
+  });
+
+  test('restore session exits loading when persistent storage hangs', () async {
+    final storage = FakeSessionStorage(
+      readCompleter: Completer<StoredAuthSession?>(),
+    );
+    final controller = AuthController(
+      FakeAuthService(),
+      storage,
+      storageTimeout: const Duration(milliseconds: 1),
+    );
+
+    await controller.restoreSession();
+
+    expect(controller.state.status, AuthStatus.unauthenticated);
+    expect(controller.accessToken, isNull);
+  });
+
+  test('remember me save failure keeps login authenticated in memory',
+      () async {
+    final storage = FakeSessionStorage(
+      saveError: StateError('storage unavailable'),
+    );
+    final controller = AuthController(FakeAuthService(), storage);
+
+    final user = await controller.login(
+      email: 'aluno.teste@uni.com',
+      password: '123456',
+      rememberSession: true,
+    );
+
+    expect(user, fakeStudent);
+    expect(controller.state.status, AuthStatus.authenticated);
+    expect(controller.accessToken, 'access-token');
+    expect(storage.saveCount, 1);
     expect(await storage.read(), isNull);
   });
 
