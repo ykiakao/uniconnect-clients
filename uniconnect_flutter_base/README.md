@@ -108,6 +108,12 @@ Rodar apontando para uma API específica:
 flutter run --dart-define=API_BASE_URL=http://localhost:3333/api/v1
 ```
 
+Rodar apontando para a API publicada no Render e para o tenant EduKMais:
+
+```bash
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080 --dart-define=API_BASE_URL=https://uniconnect-api-ht5x.onrender.com/api/v1 --dart-define=TENANT_SLUG=edukmais
+```
+
 Para testes no emulador Android, o app usa por padrão:
 
 ```text
@@ -144,19 +150,40 @@ uniconnect-api
 
 ---
 
+## Deploy Web para Apresentacao
+
+O app Flutter Web e publicado pelo GitHub Actions em GitHub Pages.
+
+No GitHub, configure o repositorio em **Settings > Pages > Build and deployment**
+com:
+
+```text
+Source: GitHub Actions
+```
+
+Depois de fazer push para `main`, acompanhe em **Actions > Deploy Flutter Web**.
+
+Link esperado da apresentacao:
+
+```text
+https://ykiakao.github.io/uniconnect-clients/
+```
+
+---
+
 ## Login de Teste
 
 | Perfil | E-mail | Senha |
 | ------ | ------ | ----- |
-| Aluno | `aluno@uni.com` | `123456` |
-| Professor | `professor@uni.com` | `123456` |
+| Aluno | `aluno@edukmais.edu.br` | `123456` |
+| Professor | `professor@edukmais.edu.br` | `123456` |
 
 Tenant demo:
 
 | Campo | Valor |
 | ----- | ----- |
-| Nome | Universidade Norte |
-| Slug | `universidade-norte` |
+| Nome | EduKMais |
+| Slug | `edukmais` |
 | Plano | Growth |
 | Status | Teste ativo |
 
