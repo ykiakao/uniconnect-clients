@@ -2,11 +2,13 @@
 
 ## Goal
 
-Deliver a reliable student demonstration using the existing EduKMais demo accounts and seeded academic data. The presentation flow is login, student dashboard, activities, activity details, and grades. The web panel, institutional invitations, chat, submissions, and session refresh are outside this delivery.
+Deliver a reliable demonstration using the existing EduKMais demo accounts and seeded academic data. The primary presentation flow is student login, student dashboard, activities, activity details, and grades. A separate, short professor login demonstrates role-aware routing and institutional context. The web panel, institutional invitations, chat, submissions, and session refresh are outside this delivery.
 
 ## User And Primary Flow
 
 The user is a student already registered in the fictional EduKMais institution. After signing in, the student reaches the dashboard, opens the complete activities list, narrows it with text search or priority filters, opens an activity, and then consults grades.
+
+The secondary user is an already registered professor. After signing in, the professor reaches an informational dashboard showing the authenticated name, role, email, and EduKMais institution. This proves that the same authentication flow routes each supported role to its own protected area without claiming teacher operations that are not implemented.
 
 ## Scope
 
@@ -18,10 +20,13 @@ The user is a student already registered in the fictional EduKMais institution. 
 - Present activity details as read-only: subject, title, deadline, instructions, support materials when supplied, and responsible teacher.
 - Remove controls that imply a completed workflow not backed by the API: sending a message and starting or submitting an activity.
 - Keep the grades page as the final consultation screen in the demonstration route.
+- Preserve the existing professor login redirect and professor route guard.
+- Reduce the existing professor dashboard to authenticated identity and tenant context already available in `AppUser` and `TenantContext`.
+- Remove simulated professor metrics and operational shortcuts that create, grade, communicate, or imply access to unimplemented teacher workflows.
 
 ### Excluded
 
-- Activity submission, attachments upload, grading mutations, chat, notifications, institutional invitation, dashboard metrics work, and web panel work.
+- Activity submission, attachments upload, grading mutations, chat, notifications, institutional invitation, dashboard metrics work, web panel work, and all teacher CRUD workflows.
 - New API endpoints or database schema changes.
 
 ## Technical Design
@@ -31,6 +36,8 @@ The user is a student already registered in the fictional EduKMais institution. 
 `ActivityDetailPage` resolves an item from the already fetched activities list through `activityByIdProvider`. Its UI stays read-only. The static points field is not presented as live data because the current activity model does not carry a points value. Where criteria or materials are absent from the API response, the page communicates their absence rather than implying an available submission flow.
 
 No routing, authentication contract, API contract, or persistent model changes are required.
+
+`TeacherDashboardPage` reads `currentUserProvider` and `currentTenantProvider`, which are already derived from the authenticated session. It does not issue academic-data requests, expose a teacher activities list, or depend on new endpoints. The existing logout action remains available.
 
 ## States And Errors
 
@@ -48,8 +55,10 @@ No routing, authentication contract, API contract, or persistent model changes a
 - Search and priority filters update the displayed list without another request.
 - Selecting an item opens a read-only detail page with no message, start, or submit action.
 - The user can navigate from the main flow to the grades page.
+- A valid EduKMais professor login redirects to the professor dashboard.
+- The professor dashboard shows only session-derived identity and institution information, with no simulated metrics, creation, grading, or chat controls.
 - `flutter analyze` and `flutter test` pass after the changes.
 
 ## Demonstration Boundary
 
-The presentation explicitly states that the accounts and academic records belong to the fictional EduKMais tenant. It demonstrates authenticated, tenant-aware data retrieval, not a complete virtual learning environment.
+The presentation explicitly states that the accounts and academic records belong to the fictional EduKMais tenant. It demonstrates authenticated, tenant-aware data retrieval for the student flow and role-aware access for the professor flow, not a complete virtual learning environment.
