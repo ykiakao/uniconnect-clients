@@ -91,4 +91,15 @@ void main() {
 
     expect(redirect, isNull);
   });
+
+  test('professor em rota de aluno vai para dashboard professor', () {
+    final redirect = computeRedirect(
+      isRestoring: false,
+      isAuthenticated: true,
+      userRole: UserRole.teacher,
+      location: AppRoutes.studentDashboard,
+    );
+
+    expect(redirect, AppRoutes.teacherDashboard);
+  });
 }
