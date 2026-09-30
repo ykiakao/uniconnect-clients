@@ -39,6 +39,7 @@ Thumbs.db
 # Local AI/Codex helper kits
 **/.codex-kit/
 **/.tmp-scripts/
+.worktrees/
 **/AGENTS.md
 **/CLAUDE.md
 **/.instructions.md
