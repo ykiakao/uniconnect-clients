@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
@@ -95,24 +94,10 @@ class _ActivityDetailContent extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: _InfoPill(
-                    icon: Icons.event_outlined,
-                    label: 'Prazo',
-                    value: activity.dueLabel,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                const Expanded(
-                  child: _InfoPill(
-                    icon: Icons.workspace_premium_outlined,
-                    label: 'Valor',
-                    value: '10.0 pontos',
-                  ),
-                ),
-              ],
+            _InfoPill(
+              icon: Icons.event_outlined,
+              label: 'Prazo',
+              value: activity.dueLabel,
             ),
             const SizedBox(height: AppSpacing.lg),
             AppCard(
@@ -133,12 +118,11 @@ class _ActivityDetailContent extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   for (final criterion in activity.criteria)
                     _ChecklistItem(text: criterion),
-                  if (activity.criteria.isEmpty) ...const [
-                    _ChecklistItem(text: 'Revise o conteudo da aula.'),
-                    _ChecklistItem(text: 'Prepare sua entrega com clareza.'),
-                    _ChecklistItem(
-                        text: 'Confira os arquivos antes de enviar.'),
-                  ],
+                  if (activity.criteria.isEmpty)
+                    const Text(
+                      'Os criterios de avaliacao nao foram informados para esta atividade.',
+                      style: TextStyle(color: AppColors.muted),
+                    ),
                 ],
               ),
             ),
@@ -191,21 +175,6 @@ class _ActivityDetailContent extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-            SecondaryButton(
-              icon: Icons.chat_bubble_outline,
-              label: 'Enviar mensagem',
-              onPressed: () {},
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            PrimaryButton(
-              icon: Icons.play_arrow_rounded,
-              label: 'Realizar atividade',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Atividade iniciada.')),
-                );
-              },
             ),
           ],
         ),
