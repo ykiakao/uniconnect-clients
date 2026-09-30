@@ -46,7 +46,10 @@ void main() {
     expect(find.text('professor@edukmais.edu.br'), findsOneWidget);
     expect(find.text('EduKMais'), findsOneWidget);
     expect(find.text('Criar atividade'), findsNothing);
-    expect(find.text('Lancar notas'), findsNothing);
+    expect(find.text('Turmas'), findsNothing);
+    expect(find.text('Alunos'), findsNothing);
+    expect(find.text('Pendências'), findsNothing);
+    expect(find.text('Lançar notas'), findsNothing);
     expect(find.text('Enviar comunicados'), findsNothing);
   });
 }
