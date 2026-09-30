@@ -23,6 +23,7 @@ void main() {
     email: 'professor@edukmais.edu.br',
     role: UserRole.teacher,
     tenant: tenant,
+    course: 'Engenharia de Software',
   );
 
   setUpAll(() {
@@ -45,6 +46,8 @@ void main() {
     expect(find.text('Professor'), findsOneWidget);
     expect(find.text('professor@edukmais.edu.br'), findsOneWidget);
     expect(find.text('EduKMais'), findsOneWidget);
+    expect(find.text('Vinculo academico'), findsOneWidget);
+    expect(find.text('Engenharia de Software'), findsOneWidget);
     expect(find.text('Criar atividade'), findsNothing);
     expect(find.text('Turmas'), findsNothing);
     expect(find.text('Alunos'), findsNothing);
