@@ -43,7 +43,7 @@ jobs:
         run: >
           flutter build web --release
           --base-href /uniconnect-clients/
-          --dart-define=API_BASE_URL=http://161.97.168.36:4622/api/v1
+          --dart-define=API_BASE_URL=https://api-uni.juancjc.com.br/api/v1
           --dart-define=TENANT_SLUG=edukmais
 
       - name: Support client-side routes
