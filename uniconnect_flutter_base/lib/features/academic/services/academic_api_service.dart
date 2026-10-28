@@ -36,7 +36,11 @@ class AcademicApiService {
       }
     }
 
-    activities.sort((left, right) => left.dueDate.compareTo(right.dueDate));
+    activities.sort((left, right) {
+      if (left.dueDate == null) return right.dueDate == null ? 0 : 1;
+      if (right.dueDate == null) return -1;
+      return left.dueDate!.compareTo(right.dueDate!);
+    });
     return activities;
   }
 
@@ -59,6 +63,8 @@ class AcademicApiService {
       final activityId = json['activityId'] as String? ?? 'ATV000';
 
       return SubjectGrade(
+        activityId: json['activityId'] as String?,
+        feedback: json['feedback'] as String?,
         subject: title,
         code: _shortCode(activityId),
         teacher: 'Professor da turma',
@@ -122,18 +128,18 @@ class AcademicApiService {
     if (data is! List) return const [];
 
     return data.whereType<Map<String, dynamic>>().map((json) {
-      final dueDate = DateTime.tryParse(json['dueDate'] as String? ?? '') ??
-          DateTime.now().add(const Duration(days: 30));
+      final dueDate = DateTime.tryParse(json['dueDate'] as String? ?? '');
 
       return AcademicActivity(
         id: json['id'] as String,
         subject: subject,
         title: json['title'] as String? ?? 'Atividade',
         description: json['description'] as String? ?? '',
-        dueLabel: _dueLabel(dueDate),
+        dueLabel: dueDate == null ? 'Prazo não informado' : _dueLabel(dueDate),
         dueDate: dueDate,
         teacher: 'Professor da turma',
-        priority: _priorityFor(dueDate),
+        priority:
+            dueDate == null ? ActivityPriority.low : _priorityFor(dueDate),
         status: ActivityStatus.pending,
         criteria: const [],
         attachments: const [],
@@ -150,16 +156,23 @@ class AcademicApiService {
 
   static String _dueLabel(DateTime dueDate) {
     final remaining = dueDate.difference(DateTime.now());
-    if (remaining.inHours <= 0) return 'Prazo encerrado';
-    if (remaining.inHours <= 24) return 'Vence hoje';
-    if (remaining.inDays == 1) return 'Vence amanha';
+    if (remaining.isNegative) return 'Prazo encerrado';
+    if (remaining.inHours < 1) return 'Vence em menos de 1 hora';
+    if (remaining.inHours <= 24) return 'Vence em ${remaining.inHours} h';
+    if (remaining.inDays == 1) return 'Vence em 1 dia';
     return 'Vence em ${remaining.inDays} dias';
   }
 
   static double _toDouble(Object? value) {
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0;
-    return 0;
+    final parsed = value is num
+        ? value.toDouble()
+        : value is String
+            ? double.tryParse(value)
+            : null;
+    if (parsed == null || !parsed.isFinite) {
+      throw const ApiException('A API não informou uma nota válida.');
+    }
+    return parsed;
   }
 
   static String _shortCode(String value) {

@@ -9,7 +9,10 @@ import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
+import '../../../shared/widgets/academic_content.dart';
+import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../academic/demo/synthetic_academic_providers.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -45,13 +48,12 @@ class ProfilePage extends ConsumerWidget {
   }
 
   void _showSettings(BuildContext context) {
-    var notificationsEnabled = true;
-    var remindersEnabled = true;
-
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
+      isScrollControlled: true,
+      builder: (sheetContext) => SingleChildScrollView(
+          child: StatefulBuilder(
         builder: (context, setState) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -71,23 +73,22 @@ class ProfilePage extends ConsumerWidget {
                       ),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                const Text(
+                    'Notificações e lembretes ainda não estão integrados neste aplicativo.',
+                    style: TextStyle(color: AppColors.muted)),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   secondary: const Icon(Icons.notifications_outlined),
                   title: const Text('Notificações'),
-                  value: notificationsEnabled,
-                  onChanged: (value) {
-                    setState(() => notificationsEnabled = value);
-                  },
+                  value: false,
+                  onChanged: null,
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   secondary: const Icon(Icons.event_available_outlined),
                   title: const Text('Lembretes de atividades'),
-                  value: remindersEnabled,
-                  onChanged: (value) {
-                    setState(() => remindersEnabled = value);
-                  },
+                  value: false,
+                  onChanged: null,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 PrimaryButton(
@@ -98,22 +99,26 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
+    final isTeacher = user?.role == UserRole.teacher;
 
     return Scaffold(
-      appBar: const AppHeader(
+      appBar: AppHeader(
         title: 'Perfil',
-        fallbackRoute: AppRoutes.studentDashboard,
+        fallbackRoute:
+            isTeacher ? AppRoutes.teacherDashboard : AppRoutes.studentDashboard,
       ),
-      bottomNavigationBar: const UniBottomNav(currentIndex: 4),
+      bottomNavigationBar:
+          isTeacher ? null : const UniBottomNav(currentIndex: 4),
       body: SafeArea(
-        child: ListView(
+        child: AcademicContent(
+            child: ListView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
             AppSpacing.md,
@@ -142,7 +147,7 @@ class ProfilePage extends ConsumerWidget {
                                   ),
                         ),
                         Text(
-                          user?.email ?? 'email@uni.com',
+                          user?.email ?? 'E-mail não informado',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.muted,
@@ -162,13 +167,15 @@ class ProfilePage extends ConsumerWidget {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppColors.secondarySoft,
-                      child: Text(
-                        user.tenant.initials,
-                        style: const TextStyle(
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                      child: user.tenant.id.isEmpty
+                          ? const Icon(Icons.school_outlined)
+                          : Text(
+                              user.tenant.initials,
+                              style: const TextStyle(
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
@@ -176,7 +183,9 @@ class ProfilePage extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user.tenant.name,
+                            user.tenant.id.isNotEmpty
+                                ? user.tenant.name
+                                : 'Instituição não informada',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -186,7 +195,7 @@ class ProfilePage extends ConsumerWidget {
                           ),
                           const SizedBox(height: AppSpacing.xxs),
                           Text(
-                            '${user.tenant.planLabel} • ${user.tenant.statusLabel}',
+                            'Instituição vinculada à sua conta',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: AppColors.muted,
@@ -200,6 +209,25 @@ class ProfilePage extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
             ],
+            if (ref.watch(syntheticDemoEnabledProvider))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Ambiente de demonstração',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppColors.muted,
+                            )),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                        'Dados acadêmicos fictícios da EduKMais, usados para apresentação. Não representam registros reais da sua conta.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            )),
+                  ],
+                ),
+              ),
             AppCard(
               child: Column(
                 children: [
@@ -212,17 +240,21 @@ class ProfilePage extends ConsumerWidget {
                   ],
                   _ProfileInfo(
                     label: 'Curso',
-                    value: user?.course ?? 'Engenharia de Software',
+                    value: user?.course?.trim().isNotEmpty == true
+                        ? user!.course!
+                        : 'Não informado',
                   ),
                   const Divider(height: AppSpacing.lg),
                   _ProfileInfo(
                     label: 'Matrícula',
-                    value: user?.registration ?? '2024021845',
+                    value: user?.registration?.trim().isNotEmpty == true
+                        ? user!.registration!
+                        : 'Não informado',
                   ),
                   const Divider(height: AppSpacing.lg),
                   _ProfileInfo(
                     label: 'Semestre',
-                    value: '${user?.semester ?? 4}',
+                    value: user?.semester?.toString() ?? 'Não informado',
                   ),
                 ],
               ),
@@ -240,7 +272,7 @@ class ProfilePage extends ConsumerWidget {
               label: 'Sair',
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -259,10 +291,12 @@ class _ProfileInfo extends StatelessWidget {
       child: Row(
         children: [
           Expanded(child: Text(label)),
-          Text(
+          Expanded(
+              child: Text(
             value,
+            textAlign: TextAlign.end,
             style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
+          )),
         ],
       ),
     );

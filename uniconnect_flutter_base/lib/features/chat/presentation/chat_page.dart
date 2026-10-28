@@ -19,13 +19,19 @@ class ChatPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: const AppHeader(
-        title: 'Conversas',
+        title: 'Conversas • Demonstração',
         fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 2),
       body: SafeArea(
         child: Column(
           children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(24, 12, 24, 0),
+              child: Text(
+                  'Dados de demonstração. Mensagens ilustrativas; envio e anexos ainda não estão disponíveis.',
+                  style: TextStyle(color: AppColors.primaryDark)),
+            ),
             const Padding(
               padding: EdgeInsets.fromLTRB(
                 AppSpacing.lg,
@@ -36,6 +42,7 @@ class ChatPage extends ConsumerWidget {
               child: Column(
                 children: [
                   TextField(
+                    enabled: false,
                     decoration: InputDecoration(
                       hintText: 'Buscar mensagens...',
                       prefixIcon: Icon(Icons.search),
@@ -74,7 +81,7 @@ class _ConversationStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 86,
+      height: 72 + 32 * MediaQuery.textScalerOf(context).scale(1),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: const [
@@ -207,7 +214,7 @@ class _ChatHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'ONLINE AGORA',
+                  'CONVERSA ILUSTRATIVA',
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
@@ -295,11 +302,12 @@ class _Composer extends StatelessWidget {
           children: [
             IconButton(
               tooltip: 'Anexar arquivo',
-              onPressed: () {},
+              onPressed: null,
               icon: const Icon(Icons.attach_file),
             ),
             const Expanded(
               child: TextField(
+                enabled: false,
                 decoration:
                     InputDecoration(hintText: 'Escreva sua mensagem...'),
               ),
@@ -307,7 +315,7 @@ class _Composer extends StatelessWidget {
             const SizedBox(width: AppSpacing.xs),
             IconButton.filled(
               tooltip: 'Enviar mensagem',
-              onPressed: () {},
+              onPressed: null,
               icon: const Icon(Icons.send),
             ),
           ],

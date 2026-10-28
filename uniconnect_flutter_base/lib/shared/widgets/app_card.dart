@@ -23,10 +23,12 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: backgroundColor,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: Stack(
+          fit: StackFit.passthrough,
           children: [
             if (accentColor != null)
               Positioned.fill(
@@ -43,7 +45,9 @@ class AppCard extends StatelessWidget {
                   ),
                 ),
               ),
-            Padding(padding: padding, child: child),
+            SizedBox(
+                width: double.infinity,
+                child: Padding(padding: padding, child: child)),
           ],
         ),
       ),

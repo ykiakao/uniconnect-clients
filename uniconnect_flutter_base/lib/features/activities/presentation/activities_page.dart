@@ -6,6 +6,9 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/academic_content.dart';
+import '../../../shared/widgets/academic_demo_frame.dart';
+import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
@@ -51,7 +54,10 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 1),
       body: SafeArea(
-        child: activitiesAsync.when(
+          child: AcademicDemoFrame(
+        child: AcademicContent(
+            child: activitiesAsync.when(
+          skipLoadingOnRefresh: false,
           data: (allActivities) => _ActivitiesContent(
             allActivities: allActivities,
             searchController: _searchController,
@@ -63,6 +69,7 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
             },
             onClearFilters: _clearFilters,
             onRefresh: () async {
+              invalidateSyntheticAcademicData(ref);
               ref.invalidate(activitiesProvider);
               await ref.read(activitiesProvider.future).catchError((_) {
                 return <AcademicActivity>[];
@@ -71,11 +78,14 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => ErrorStateWidget(
-            error: error.toString(),
-            onRetry: () => ref.invalidate(activitiesProvider),
+            error: 'Confira sua conexão e tente novamente.',
+            onRetry: () {
+              invalidateSyntheticAcademicData(ref);
+              ref.invalidate(activitiesProvider);
+            },
           ),
-        ),
-      ),
+        )),
+      )),
     );
   }
 
@@ -117,8 +127,8 @@ class _ActivitiesContent extends StatelessWidget {
           activity.title.toLowerCase().contains(normalizedQuery) ||
           activity.subject.toLowerCase().contains(normalizedQuery) ||
           activity.teacher.toLowerCase().contains(normalizedQuery);
-      final matchesPriority =
-          priorityFilter == null || activity.priority == priorityFilter;
+      final matchesPriority = priorityFilter == null ||
+          (activity.dueDate != null && activity.priority == priorityFilter);
 
       return matchesSearch && matchesPriority;
     }).toList();
@@ -126,6 +136,7 @@ class _ActivitiesContent extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
           AppSpacing.md,
@@ -136,7 +147,7 @@ class _ActivitiesContent extends StatelessWidget {
           const ContextualTip(
             title: 'Organizado por prioridade',
             message:
-                'Atividades criticas ficam no topo para voce focar no que realmente importa.',
+                'Consulte os prazos por disciplina. Use a busca e os filtros para organizar sua rotina.',
             icon: Icons.priority_high,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -171,12 +182,12 @@ class _ActivitiesContent extends StatelessWidget {
                 ),
                 ButtonSegment(
                   value: ActivityPriority.critical,
-                  label: Text('Criticas'),
+                  label: Text('Críticas'),
                   icon: Icon(Icons.priority_high),
                 ),
                 ButtonSegment(
                   value: ActivityPriority.medium,
-                  label: Text('Medias'),
+                  label: Text('Médias'),
                   icon: Icon(Icons.schedule),
                 ),
                 ButtonSegment(
@@ -218,29 +229,44 @@ class _ActivitiesContent extends StatelessWidget {
             EmptyStateWidget(
               icon: Icons.checklist_outlined,
               title: 'Nenhuma atividade encontrada',
-              subtitle: searchQuery.isEmpty
-                  ? 'Voce esta em dia com este filtro.'
+              subtitle: allActivities.isEmpty
+                  ? 'Não há atividades disponíveis para consulta neste momento.'
                   : 'Tente outras palavras-chave ou limpe os filtros.',
-              action: onClearFilters,
+              action: normalizedQuery.isNotEmpty || priorityFilter != null
+                  ? onClearFilters
+                  : null,
               actionLabel: 'Limpar filtros',
             )
           else ...[
             _ActivityGroup(
-              title: 'Criticas',
-              subtitle: 'Exigem acao imediata',
+              title: 'Prazo encerrado',
+              subtitle:
+                  'A data passou; a situação de entrega não foi informada',
+              activities: filteredActivities
+                  .where((activity) => activity.isExpired)
+                  .toList(),
+            ),
+            _ActivityGroup(
+              title: 'Críticas',
+              subtitle: 'Atividades com prazo próximo',
               activities: filteredActivities
                   .where(
                     (activity) =>
+                        activity.dueDate != null &&
+                        !activity.isExpired &&
                         activity.priority == ActivityPriority.critical,
                   )
                   .toList(),
             ),
             _ActivityGroup(
-              title: 'Prioridade media',
+              title: 'Prioridade média',
               subtitle: 'Importantes, mas com respiro',
               activities: filteredActivities
                   .where(
-                    (activity) => activity.priority == ActivityPriority.medium,
+                    (activity) =>
+                        activity.dueDate != null &&
+                        !activity.isExpired &&
+                        activity.priority == ActivityPriority.medium,
                   )
                   .toList(),
             ),
@@ -249,8 +275,18 @@ class _ActivitiesContent extends StatelessWidget {
               subtitle: 'Acompanhar sem interromper seu foco',
               activities: filteredActivities
                   .where(
-                    (activity) => activity.priority == ActivityPriority.low,
+                    (activity) =>
+                        activity.dueDate != null &&
+                        !activity.isExpired &&
+                        activity.priority == ActivityPriority.low,
                   )
+                  .toList(),
+            ),
+            _ActivityGroup(
+              title: 'Prazo não informado',
+              subtitle: 'Consulte as orientações da disciplina',
+              activities: filteredActivities
+                  .where((activity) => activity.dueDate == null)
                   .toList(),
             ),
           ],

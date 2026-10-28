@@ -1,3 +1,4 @@
+import 'package:uniconnect/features/academic/demo/synthetic_academic_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +31,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          syntheticDemoRequestedProvider.overrideWithValue(false),
           activitiesProvider.overrideWith((ref) async => [activity]),
         ],
         child: const MaterialApp(

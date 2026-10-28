@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_badge.dart';
 import '../models/academic_activity.dart';
 import 'priority_badge.dart';
 
@@ -19,11 +21,14 @@ class ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final priorityColor = switch (activity.priority) {
-      ActivityPriority.critical => AppColors.danger,
-      ActivityPriority.medium => AppColors.warning,
-      ActivityPriority.low => AppColors.success,
-    };
+    final isExpired = activity.isExpired;
+    final priorityColor = activity.dueDate == null || isExpired
+        ? AppColors.muted
+        : switch (activity.priority) {
+            ActivityPriority.critical => AppColors.danger,
+            ActivityPriority.medium => AppColors.warning,
+            ActivityPriority.low => AppColors.success,
+          };
 
     return AppCard(
       onTap: onTap,
@@ -43,7 +48,14 @@ class ActivityCard extends StatelessWidget {
                       ),
                 ),
               ),
-              PriorityBadge(priority: activity.priority),
+              if (activity.dueDate != null)
+                Flexible(
+                    child: Align(
+                        alignment: Alignment.centerRight,
+                        child: isExpired
+                            ? const AppBadge(
+                                label: 'Encerrado', tone: AppBadgeTone.neutral)
+                            : PriorityBadge(priority: activity.priority))),
             ],
           ),
           const SizedBox(height: 8),
@@ -70,10 +82,20 @@ class ActivityCard extends StatelessWidget {
               Icon(Icons.event_outlined, size: 18, color: priorityColor),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(
-                  activity.dueLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(activity.dueLabel,
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      if (activity.dueDate != null)
+                        Text(
+                            DateFormat('dd/MM/yyyy • HH:mm')
+                                .format(activity.displayDueDate!),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: AppColors.muted)),
+                    ]),
               ),
               const Icon(Icons.chevron_right, color: AppColors.muted),
             ],

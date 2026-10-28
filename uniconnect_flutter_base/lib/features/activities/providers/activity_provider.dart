@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../academic/services/academic_api_service.dart';
+import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/academic_activity.dart';
 
@@ -14,6 +15,10 @@ final activitiesProvider = FutureProvider<List<AcademicActivity>>((ref) async {
   final user = authState.user;
 
   if (accessToken == null || user == null) return const [];
+
+  if (ref.watch(syntheticDemoEnabledProvider)) {
+    return (await ref.watch(syntheticAcademicDataProvider.future)).activities;
+  }
 
   return ref.watch(academicApiServiceProvider).listActivities(
         accessToken: accessToken,

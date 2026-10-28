@@ -136,7 +136,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SAAS ACADÊMICO MOBILE-FIRST',
+                        'SEU AMBIENTE ACADÊMICO',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w900,
@@ -162,6 +162,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.username],
+                        autocorrect: false,
                         textInputAction: TextInputAction.next,
                         enabled: !_isLoading,
                         onChanged: (_) => _clearErrorsOnEdit(),
@@ -176,6 +178,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       TextField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        autofillHints: const [AutofillHints.password],
+                        autocorrect: false,
+                        enableSuggestions: false,
                         textInputAction: TextInputAction.done,
                         enabled: !_isLoading,
                         onSubmitted: (_) {
@@ -248,7 +253,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Português (Brasil)  •  Suporte  •  Privacidade',
+                  'UniConnect • Conectando sua rotina acadêmica',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,

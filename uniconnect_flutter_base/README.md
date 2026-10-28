@@ -14,7 +14,9 @@ O app mobile é o cliente Flutter de um SaaS acadêmico multi-tenant. Suporta m�
 
 ## Sobre o Projeto
 
-Este app centraliza a rotina acadêmica em uma interface mobile. Alunos conseguem acompanhar atividades, notas, chat e perfil. Professores acessam ações rápidas para publicar atividades, lançar notas e enviar comunicados.
+Este app centraliza a rotina acadêmica em uma interface mobile. Alunos consultam atividades, detalhes, notas e perfil. Professores consultam identidade, instituição e vínculo acadêmico disponível. Chat, criação de atividades e lançamento docente de notas são protótipos identificados, sem envio ou publicação.
+
+Preparação da Demo Day de 28/10/2026: [relatório, validação e roteiro de execução](../docs/codex-kit/DEMO_DAY_2026-10-28.md).
 
 O aplicativo consome a API do repositório `uniconnect-api` via HTTP e mantém a URL centralizada para facilitar troca entre ambiente local e produção.
 
@@ -161,7 +163,12 @@ com:
 Source: GitHub Actions
 ```
 
-Depois de fazer push para `main`, acompanhe em **Actions > Deploy Flutter Web**.
+Pushes para `main` ou `demo-day-flutter-polish` apenas validam e geram o build
+sintetico. A publicacao exige **Actions > Deploy Flutter Web > Run workflow**,
+selecionando a branch e habilitando `publish` explicitamente.
+
+Veja o [roteiro de publicacao, validacao e recuperacao](../docs/demo-day/github-pages-publication.md)
+antes de executar commit, push ou deploy.
 
 Link esperado da apresentacao:
 
@@ -173,10 +180,8 @@ https://ykiakao.github.io/uniconnect-clients/
 
 ## Login de Teste
 
-| Perfil | E-mail | Senha |
-| ------ | ------ | ----- |
-| Aluno | `aluno@edukmais.edu.br` | `123456` |
-| Professor | `professor@edukmais.edu.br` | `123456` |
+As contas de apresentação são fornecidas pelo responsável em canal privado.
+Não registrar e-mails de acesso, senhas ou tokens neste repositório.
 
 Tenant demo:
 
@@ -194,7 +199,7 @@ Tenant demo:
 1. O usuário acessa a tela de login.
 2. O app envia as credenciais para a API.
 3. A API retorna usuário, perfil, token e tenant.
-4. O app persiste a sessão localmente.
+4. O app mantém a sessão em memória e só a persiste quando “Lembrar de mim” está selecionado.
 5. A navegação direciona para o dashboard correto.
 6. O usuário acessa atividades, notas, chat e perfil.
 

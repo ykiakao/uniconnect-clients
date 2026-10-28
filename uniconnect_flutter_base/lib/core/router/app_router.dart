@@ -179,7 +179,8 @@ String? computeRedirect({
 
   final isLoading = location == AppRoutes.authLoading;
   final isTeacherRoute = location.startsWith(AppRoutes.teacherDashboard);
-  final isStudentRoute = _studentOnlyRoutes.contains(location);
+  final isStudentRoute = _studentOnlyRoutes.contains(location) ||
+      location.startsWith('${AppRoutes.activities}/');
 
   // TODO(produto): adicionar guard para perfil gestor/admin quando definido.
   return switch (userRole) {

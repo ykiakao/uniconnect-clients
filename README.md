@@ -128,7 +128,12 @@ com:
 Source: GitHub Actions
 ```
 
-Depois de fazer push para `main`, acompanhe em **Actions > Deploy Flutter Web**.
+Pushes para `main` ou `demo-day-flutter-polish` apenas validam e geram o build
+sintetico. A publicacao exige **Actions > Deploy Flutter Web > Run workflow**,
+selecionando a branch e habilitando `publish` explicitamente.
+
+Veja o [roteiro de publicacao, validacao e recuperacao](docs/demo-day/github-pages-publication.md)
+antes de executar commit, push ou deploy.
 
 Link esperado da apresentacao:
 
@@ -140,10 +145,8 @@ https://ykiakao.github.io/uniconnect-clients/
 
 ## Login de Teste
 
-| Perfil | E-mail | Senha |
-| ------ | ------ | ----- |
-| Aluno | `aluno@edukmais.edu.br` | `123456` |
-| Professor | `professor@edukmais.edu.br` | `123456` |
+As contas de apresentação são fornecidas pelo responsável em canal privado.
+Não registrar e-mails de acesso, senhas ou tokens neste repositório.
 
 Tenant demo:
 

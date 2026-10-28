@@ -108,7 +108,7 @@ void main() {
     );
 
     await tester.enterText(find.byType(TextField).first, 'aluno@uni.com');
-    await tester.enterText(find.byType(TextField).last, '123456');
+    await tester.enterText(find.byType(TextField).last, 'test-only-password');
     pressLoginButton(tester);
     await tester.pump();
 
@@ -168,7 +168,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.enterText(find.byType(TextField).last, '123456');
+    await tester.enterText(find.byType(TextField).last, 'test-only-password');
     await tester.pump();
     expect(
       find.text(

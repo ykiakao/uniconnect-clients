@@ -39,7 +39,7 @@ void main() {
 
     final session = await service.login(
       email: 'aluno@uni.com',
-      password: '123456',
+      password: 'test-only-password',
     );
 
     expect(capturedRequest?.headers['x-tenant-slug'], kDemoTenantSlug);

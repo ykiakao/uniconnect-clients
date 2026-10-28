@@ -99,12 +99,8 @@ O painel web não deve aceitar alunos ou professores. A API libera o acesso some
 * `coordinator`
 * `owner`
 
-Usuários esperados no seed, depois de criados no Supabase Auth:
-
-| Perfil | E-mail | Senha |
-| ------ | ------ | ----- |
-| Coordenador | `coordenador@uni.com` | `123456` |
-| Mantenedor | `dono@uni.com` | `123456` |
+Contas de apresentação são fornecidas pelo responsável em canal privado.
+Não registrar credenciais de acesso neste repositório.
 
 ## Roadmap do Painel
 

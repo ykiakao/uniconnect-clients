@@ -111,7 +111,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: AppColors.card,
-        elevation: 3,
+        elevation: 1,
         shadowColor: AppColors.shadow,
         surfaceTintColor: Colors.transparent,
         margin: const EdgeInsets.only(bottom: 12),

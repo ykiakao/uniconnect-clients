@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_routes.dart';
@@ -7,9 +9,24 @@ import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/status_banner.dart';
+import '../../../shared/widgets/academic_content.dart';
 
-class TeacherGradesPage extends StatelessWidget {
+class TeacherGradesPage extends StatefulWidget {
   const TeacherGradesPage({super.key});
+
+  @override
+  State<TeacherGradesPage> createState() => _TeacherGradesPageState();
+}
+
+class _TeacherGradesPageState extends State<TeacherGradesPage> {
+  final _tableController = ScrollController();
+
+  @override
+  void dispose() {
+    _tableController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +43,8 @@ class TeacherGradesPage extends StatelessWidget {
         fallbackRoute: AppRoutes.teacherDashboard,
       ),
       body: SafeArea(
-        child: ListView(
+        child: AcademicContent(
+            child: ListView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
             AppSpacing.md,
@@ -34,6 +52,13 @@ class TeacherGradesPage extends StatelessWidget {
             AppSpacing.xl,
           ),
           children: [
+            const StatusBanner(
+              title: 'Dados de demonstração',
+              message:
+                  'Alunos e notas ilustrativos. O lançamento de notas ainda não está integrado; nenhuma alteração será publicada.',
+              tone: AppBadgeTone.warning,
+            ),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'GESTÃO ACADÊMICA',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -58,6 +83,7 @@ class TeacherGradesPage extends StatelessWidget {
             const _DistributionCard(),
             const SizedBox(height: AppSpacing.md),
             const TextField(
+              enabled: false,
               decoration: InputDecoration(
                 hintText: 'Buscar aluno...',
                 prefixIcon: Icon(Icons.search),
@@ -65,27 +91,53 @@ class TeacherGradesPage extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             PrimaryButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Notas publicadas com sucesso.')),
-                );
-              },
+              onPressed: null,
               icon: Icons.cloud_upload_outlined,
               label: 'Publicar Notas',
             ),
             const SizedBox(height: AppSpacing.lg),
-            AppCard(
-              child: Column(
-                children: [
-                  const _TableHeader(),
-                  const Divider(height: AppSpacing.lg),
-                  ...rows.map((row) => _StudentGradeRow(row: row)),
-                ],
-              ),
-            ),
+            LayoutBuilder(builder: (context, constraints) {
+              final scale =
+                  math.max(1.0, MediaQuery.textScalerOf(context).scale(1));
+              final tableWidth = math.max(constraints.maxWidth, 640 * scale);
+              return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (tableWidth > constraints.maxWidth) ...[
+                      const Row(children: [
+                        Icon(Icons.swipe_outlined,
+                            size: 20, color: AppColors.muted),
+                        SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                            child: Text('Deslize para ver todas as colunas',
+                                style: TextStyle(color: AppColors.muted))),
+                      ]),
+                      const SizedBox(height: AppSpacing.xs),
+                    ],
+                    Scrollbar(
+                      controller: _tableController,
+                      thumbVisibility: true,
+                      trackVisibility: true,
+                      child: SingleChildScrollView(
+                        controller: _tableController,
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: SizedBox(
+                            width: tableWidth,
+                            child: AppCard(
+                              child: Column(children: [
+                                const _TableHeader(),
+                                const Divider(height: AppSpacing.lg),
+                                ...rows
+                                    .map((row) => _StudentGradeRow(row: row)),
+                              ]),
+                            )),
+                      ),
+                    ),
+                  ]);
+            }),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -109,25 +161,44 @@ class _DistributionCard extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: AppSpacing.md),
-          const Row(
-            children: [
-              Expanded(child: _Metric(label: '0-5', value: '2')),
-              Expanded(child: _Metric(label: '5-7', value: '5')),
-              Expanded(child: _Metric(label: '7-9', value: '18')),
-              Expanded(child: _Metric(label: '9-10', value: '8')),
-            ],
-          ),
+          LayoutBuilder(builder: (context, constraints) {
+            final scale = MediaQuery.textScalerOf(context).scale(1);
+            final columns =
+                (constraints.maxWidth / (48 * scale)).floor().clamp(1, 4);
+            final width =
+                (constraints.maxWidth - AppSpacing.xs * (columns - 1)) /
+                    columns;
+            return Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.md,
+                children: [
+                  for (final metric in const [
+                    _Metric(label: '0-5', value: '2'),
+                    _Metric(label: '5-7', value: '5'),
+                    _Metric(label: '7-9', value: '18'),
+                    _Metric(label: '9-10', value: '8'),
+                  ])
+                    SizedBox(width: width, child: metric),
+                ]);
+          }),
           const SizedBox(height: AppSpacing.lg),
-          const Row(
-            children: [
-              Expanded(
-                child: _SummaryMetric(label: 'Média da Turma', value: '7.8'),
-              ),
-              Expanded(
-                child: _SummaryMetric(label: 'Alunos Aprovados', value: '84%'),
-              ),
-            ],
-          ),
+          LayoutBuilder(builder: (context, constraints) {
+            final scale = MediaQuery.textScalerOf(context).scale(1);
+            final columns = constraints.maxWidth >= 220 * scale ? 2 : 1;
+            final width =
+                (constraints.maxWidth - AppSpacing.md * (columns - 1)) /
+                    columns;
+            return Wrap(
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.md,
+                children: [
+                  for (final metric in const [
+                    _SummaryMetric(label: 'Média da Turma', value: '7.8'),
+                    _SummaryMetric(label: 'Alunos Aprovados', value: '84%'),
+                  ])
+                    SizedBox(width: width, child: metric),
+                ]);
+          }),
         ],
       ),
     );
@@ -143,6 +214,7 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(value, style: const TextStyle(color: Colors.white)),
         const SizedBox(height: AppSpacing.xxs),
@@ -183,7 +255,9 @@ class _TableHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(
       children: [
-        Expanded(flex: 3, child: _HeaderCell('ESTUDANTE')),
+        Expanded(
+            flex: 3,
+            child: _HeaderCell('ESTUDANTE', alignment: TextAlign.start)),
         Expanded(child: _HeaderCell('P1')),
         Expanded(child: _HeaderCell('P2')),
         Expanded(flex: 2, child: _HeaderCell('STATUS')),
@@ -228,8 +302,6 @@ class _StudentGradeRow extends StatelessWidget {
                     children: [
                       Text(
                         row.$2,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                       Text(
@@ -249,10 +321,13 @@ class _StudentGradeRow extends StatelessWidget {
           Expanded(child: Text(row.$5, textAlign: TextAlign.center)),
           Expanded(
             flex: 2,
-            child: AppBadge(
-              label: row.$6,
-              tone: warning ? AppBadgeTone.warning : AppBadgeTone.primary,
-              compact: true,
+            child: Align(
+              alignment: Alignment.center,
+              child: AppBadge(
+                label: row.$6,
+                tone: warning ? AppBadgeTone.warning : AppBadgeTone.primary,
+                compact: true,
+              ),
             ),
           ),
         ],
@@ -262,15 +337,16 @@ class _StudentGradeRow extends StatelessWidget {
 }
 
 class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(this.text);
+  const _HeaderCell(this.text, {this.alignment = TextAlign.center});
 
   final String text;
+  final TextAlign alignment;
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      textAlign: TextAlign.center,
+      textAlign: alignment,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: AppColors.muted,
             fontWeight: FontWeight.w900,

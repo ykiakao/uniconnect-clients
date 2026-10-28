@@ -16,7 +16,7 @@ void main() {
 
     await controller.login(
       email: 'aluno.teste@uni.com',
-      password: '123456',
+      password: 'test-only-password',
       rememberSession: false,
     );
 
@@ -64,7 +64,7 @@ void main() {
 
     await controller.login(
       email: 'aluno.teste@uni.com',
-      password: '123456',
+      password: 'test-only-password',
       rememberSession: true,
     );
 
@@ -144,7 +144,7 @@ void main() {
 
     final user = await controller.login(
       email: 'aluno.teste@uni.com',
-      password: '123456',
+      password: 'test-only-password',
       rememberSession: true,
     );
 
@@ -161,7 +161,7 @@ void main() {
 
     await controller.login(
       email: 'aluno.teste@uni.com',
-      password: '123456',
+      password: 'test-only-password',
       rememberSession: true,
     );
     await controller.logout();

@@ -4,12 +4,21 @@ on:
   push:
     branches:
       - main
+      - demo-day-flutter-polish
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the validated synthetic demo to GitHub Pages
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+
+env:
+  API_BASE_URL: https://uniconnect-api-ht5x.onrender.com/api/v1
+  TENANT_SLUG: edukmais
 
 concurrency:
   group: github-pages
@@ -30,34 +39,74 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run tests
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests (normal)
         run: flutter test
+
+      - name: Run tests (synthetic)
+        run: flutter test --dart-define=DEMO_SYNTHETIC_DATA=true
 
       - name: Build web
         run: >
           flutter build web --release
+          --output build/web-pages
           --base-href /uniconnect-clients/
-          --dart-define=API_BASE_URL=https://uniconnect-api-ht5x.onrender.com/api/v1
-          --dart-define=TENANT_SLUG=edukmais
+          --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+          --dart-define=TENANT_SLUG=${{ env.TENANT_SLUG }}
+          --dart-define=DEMO_SYNTHETIC_DATA=true
 
       - name: Support client-side routes
-        run: cp build/web/index.html build/web/404.html
+        run: cp build/web-pages/index.html build/web-pages/404.html
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+      - name: Verify Pages build
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
 
-      - name: Upload artifact
+          root = Path('build/web-pages')
+          index = (root / 'index.html').read_text(encoding='utf-8')
+          assert '<base href="/uniconnect-clients/">' in index, 'Incorrect base href'
+          assert (root / '404.html').read_bytes() == (root / 'index.html').read_bytes()
+          for name in ('main.dart.js', 'flutter_bootstrap.js', 'assets/AssetManifest.bin'):
+              assert (root / name).is_file(), f'Missing web resource: {name}'
+          asset = root / 'assets/assets/demo/synthetic-academic-data.json'
+          assert asset.read_bytes() == Path('assets/demo/synthetic-academic-data.json').read_bytes()
+          data = json.loads(asset.read_text(encoding='utf-8'))
+          assert data['metadata']['synthetic'] is True
+          assert len(data['activities']) == 10 and len(data['evaluations']) == 6
+          assert not any(path.is_symlink() for path in root.rglob('*')), 'Unexpected symlink'
+          print('Pages base path, fallback, resources and synthetic asset verified (10/6).')
+          PY
+
+      - name: Preserve release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-day-pages-${{ github.sha }}-${{ github.run_attempt }}
+          path: uniconnect_flutter_base/build/web-pages
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: uniconnect_flutter_base/build/web
+          path: uniconnect_flutter_base/build/web-pages
 
   deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -66,6 +115,9 @@ jobs:
     needs: build
 
     steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

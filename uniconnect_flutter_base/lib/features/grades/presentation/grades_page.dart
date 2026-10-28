@@ -4,13 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/app_badge.dart';
-import '../../../shared/widgets/app_buttons.dart';
+import '../../../shared/widgets/academic_content.dart';
+import '../../../shared/widgets/academic_demo_frame.dart';
+import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
+import '../../../shared/widgets/empty_state_widget.dart';
+import '../../../shared/widgets/error_state_widget.dart';
+import '../../../shared/widgets/section_header.dart';
 import '../models/subject_grade.dart';
 import '../providers/grades_provider.dart';
+import '../../activities/models/academic_activity.dart';
+import '../../activities/providers/activity_provider.dart';
 
 class GradesPage extends ConsumerWidget {
   const GradesPage({super.key});
@@ -18,13 +24,11 @@ class GradesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final subjectsAsync = ref.watch(subjectGradesProvider);
-    final subjects = subjectsAsync.value ?? const <SubjectGrade>[];
-    final gpa = subjects.isEmpty
-        ? 0.0
-        : subjects
-                .map((subject) => subject.finalAverage)
-                .reduce((a, b) => a + b) /
-            subjects.length;
+    final activitiesAsync = subjectsAsync.asData?.value.isNotEmpty == true
+        ? ref.watch(activitiesProvider)
+        : null;
+    final activities =
+        activitiesAsync?.asData?.value ?? const <AcademicActivity>[];
 
     return Scaffold(
       appBar: const AppHeader(
@@ -32,301 +36,214 @@ class GradesPage extends ConsumerWidget {
         fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 3),
-      body: ColoredBox(
-        color: AppColors.background,
-        child: SafeArea(
-          top: false,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-            children: [
-              _GpaPanel(gpa: gpa),
-              const SizedBox(height: AppSpacing.md),
-              if (subjectsAsync.isLoading) ...const [
-                LinearProgressIndicator(minHeight: 3),
-                SizedBox(height: AppSpacing.md),
-              ],
-              if (subjectsAsync.hasError) ...[
-                _BootstrapPanel(
-                  child: Text(
-                    'Nao foi possivel carregar suas notas agora.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.muted,
-                        ),
-                  ),
+      body: SafeArea(
+          child: AcademicDemoFrame(
+        child: AcademicContent(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              invalidateSyntheticAcademicData(ref);
+              ref.invalidate(subjectGradesProvider);
+              ref.invalidate(activitiesProvider);
+              try {
+                await Future.wait([
+                  ref.read(subjectGradesProvider.future),
+                  ref.read(activitiesProvider.future),
+                ]);
+              } catch (_) {}
+            },
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              children: [
+                const SectionHeader(
+                  title: 'Seu acompanhamento',
+                  subtitle: 'Notas das atividades disponíveis para consulta',
                 ),
-                const SizedBox(height: AppSpacing.md),
+                subjectsAsync.when(
+                  skipLoadingOnRefresh: false,
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                    child: Column(children: [
+                      LinearProgressIndicator(),
+                      SizedBox(height: AppSpacing.md),
+                      Text('Carregando notas...'),
+                    ]),
+                  ),
+                  error: (_, __) => ErrorStateWidget(
+                    title: 'Não foi possível carregar suas notas',
+                    error: 'Confira sua conexão e tente novamente.',
+                    onRetry: () {
+                      invalidateSyntheticAcademicData(ref);
+                      ref.invalidate(subjectGradesProvider);
+                      ref.invalidate(activitiesProvider);
+                    },
+                  ),
+                  data: (subjects) => _GradesContent(
+                      subjects: subjects, activities: activities),
+                ),
+                if (activitiesAsync?.hasError == true)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                    child: Text(
+                        'Identificação das disciplinas temporariamente indisponível. Puxe para atualizar.',
+                        style: TextStyle(color: AppColors.muted)),
+                  ),
+                const SizedBox(height: AppSpacing.lg),
+                const _AverageSimulatorPanel(),
               ],
-              const _DeanListPanel(),
-              const SizedBox(height: AppSpacing.lg),
-              const _SemesterHeader(),
-              const SizedBox(height: AppSpacing.sm),
-              for (final subject in subjects)
-                _SubjectGradeCard(subject: subject),
-              const SizedBox(height: AppSpacing.md),
-              const _EvolutionPanel(),
-              const SizedBox(height: AppSpacing.md),
-              const _AverageSimulatorPanel(),
-              const SizedBox(height: AppSpacing.md),
-              SecondaryButton(
-                icon: Icons.picture_as_pdf_outlined,
-                label: 'Gerar Histórico (PDF)',
-                onPressed: () {},
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+      )),
     );
   }
 }
 
-class _SemesterHeader extends StatelessWidget {
-  const _SemesterHeader();
+class _GradesContent extends StatelessWidget {
+  const _GradesContent({required this.subjects, required this.activities});
+
+  final List<SubjectGrade> subjects;
+  final List<AcademicActivity> activities;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    if (subjects.isEmpty) {
+      return const EmptyStateWidget(
+        icon: Icons.school_outlined,
+        title: 'Nenhuma nota disponível',
+        subtitle:
+            'Suas notas aparecerão aqui quando forem disponibilizadas pela instituição.',
+      );
+    }
+    final current = subjects.where((s) => !s.isHistorical).toList();
+    final history = subjects.where((s) => s.isHistorical).toList();
+    final average = current.isEmpty
+        ? null
+        : current.map((s) => s.p1).reduce((a, b) => a + b) / current.length;
+    final activityById = {
+      for (final activity in activities) activity.id: activity
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Semestre Atual',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
+        AppCard(
+          backgroundColor: AppColors.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.insights_outlined,
+                  color: Colors.white, size: 28),
+              const SizedBox(height: AppSpacing.md),
+              Text('MÉDIA DAS NOTAS DISPONÍVEIS',
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge
+                      ?.copyWith(color: Colors.white)),
+              const SizedBox(height: AppSpacing.sm),
+              Text(average?.toStringAsFixed(1) ?? 'Sem notas atuais',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: Colors.white, fontWeight: FontWeight.w700)),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                  '${current.length} ${current.length == 1 ? 'avaliação disponível' : 'avaliações disponíveis'}',
+                  style: const TextStyle(color: Colors.white)),
+              const SizedBox(height: AppSpacing.xs),
+              const Text(
+                  'Média simples para acompanhamento. Não representa o coeficiente oficial do curso.',
+                  style: TextStyle(color: Colors.white)),
+            ],
+          ),
         ),
-        OutlinedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.filter_list),
-          label: const Text('Filtrar'),
-        ),
+        const SizedBox(height: AppSpacing.md),
+        const SectionHeader(title: 'Avaliações registradas'),
+        for (final subject in current)
+          _EvaluationCard(
+              subject: subject, activity: activityById[subject.activityId]),
+        if (history.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          const SectionHeader(
+              title: 'Histórico acadêmico demonstrativo',
+              subtitle:
+                  'Avaliações anteriores, fora da média do período atual'),
+          for (final subject in history)
+            _EvaluationCard(
+                subject: subject, activity: activityById[subject.activityId]),
+        ],
       ],
     );
   }
 }
 
-class _GpaPanel extends StatelessWidget {
-  const _GpaPanel({required this.gpa});
-
-  final double gpa;
-
-  @override
-  Widget build(BuildContext context) {
-    return _BootstrapPanel(
-      color: AppColors.primary,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'COEFICIENTE DE RENDIMENTO',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .8,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  gpa.toStringAsFixed(1),
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    ' / 10.0',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'Progresso do Curso',
-            style: TextStyle(color: Colors.white70),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: const LinearProgressIndicator(
-              value: .75,
-              minHeight: 10,
-              backgroundColor: Colors.white24,
-              color: AppColors.secondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Align(
-            alignment: Alignment.centerRight,
-            child: Text('75%', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DeanListPanel extends StatelessWidget {
-  const _DeanListPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    return _BootstrapPanel(
-      color: AppColors.successSoft,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const content = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Lista do Reitor',
-                style: TextStyle(fontWeight: FontWeight.w900),
-              ),
-              SizedBox(height: AppSpacing.xxs),
-              Text(
-                'Parabéns! Seu desempenho acadêmico este semestre te coloca entre os top 5%.',
-                style: TextStyle(color: AppColors.muted),
-              ),
-            ],
-          );
-
-          if (constraints.maxWidth < 220) {
-            return const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.emoji_events_outlined, color: AppColors.success),
-                SizedBox(height: AppSpacing.sm),
-                content,
-              ],
-            );
-          }
-
-          return const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.emoji_events_outlined, color: AppColors.success),
-              SizedBox(width: AppSpacing.md),
-              Expanded(child: content),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _SubjectGradeCard extends StatelessWidget {
-  const _SubjectGradeCard({required this.subject});
+class _EvaluationCard extends StatelessWidget {
+  const _EvaluationCard({required this.subject, this.activity});
 
   final SubjectGrade subject;
+  final AcademicActivity? activity;
 
   @override
   Widget build(BuildContext context) {
-    final approved = subject.finalAverage >= 7;
-
-    return _BootstrapPanel(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final info = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                subject.subject,
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                '${subject.code} • ${subject.teacher}',
-                style: const TextStyle(color: AppColors.muted),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              AppBadge(
-                label: approved ? 'APROVADO' : 'EM CURSO',
-                tone: approved ? AppBadgeTone.success : AppBadgeTone.warning,
-              ),
-            ],
-          );
-
-          final grade = Text(
-            subject.finalAverage == 0
-                ? '--'
-                : subject.finalAverage.toStringAsFixed(1),
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w900,
-                ),
-          );
-
-          if (constraints.maxWidth < 240) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                info,
-                const SizedBox(height: AppSpacing.md),
-                Align(alignment: Alignment.centerRight, child: grade),
-              ],
-            );
-          }
-
-          return Row(
-            children: [
-              Expanded(child: info),
-              const SizedBox(width: AppSpacing.md),
-              grade,
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _EvolutionPanel extends StatelessWidget {
-  const _EvolutionPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    return _BootstrapPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'EVOLUÇÃO ACADÊMICA',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .8,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Text('Total de Créditos'),
-          const SizedBox(height: AppSpacing.xs),
-          const Wrap(
-            spacing: AppSpacing.lg,
-            runSpacing: AppSpacing.xs,
-            alignment: WrapAlignment.spaceBetween,
-            children: [
-              Text('142 / 180'),
-              Text('22.1   22.2   23.1   24.1'),
-            ],
-          ),
+    return AppCard(
+      accentColor: AppColors.primary,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Icon(Icons.assignment_turned_in_outlined,
+              color: AppColors.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(subject.subject,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: AppSpacing.xxs),
+                Text('Referência: ${subject.code}',
+                    style: const TextStyle(color: AppColors.muted)),
+              ])),
+        ]),
+        if (subject.disciplineName != null || activity != null) ...[
           const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: const LinearProgressIndicator(value: .78, minHeight: 8),
-          ),
+          Text(
+              'Disciplina/turma: ${subject.disciplineName ?? activity!.subject}',
+              style: const TextStyle(color: AppColors.primary)),
         ],
-      ),
+        if (subject.periodLabel != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text('Período acadêmico: ${subject.periodLabel}',
+              style: const TextStyle(color: AppColors.muted)),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(12)),
+          child: Wrap(
+              spacing: AppSpacing.md,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                    subject.disciplineName != null && subject.activityId == null
+                        ? 'Nota da avaliação'
+                        : 'Nota da atividade',
+                    style: const TextStyle(color: AppColors.primaryDark)),
+                Text(subject.p1.toStringAsFixed(1),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: AppColors.primary, fontWeight: FontWeight.w700)),
+              ]),
+        ),
+        if (subject.feedback?.trim().isNotEmpty == true) ...[
+          const SizedBox(height: AppSpacing.md),
+          const Text('Devolutiva da avaliação',
+              style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(subject.feedback!,
+              style: const TextStyle(color: AppColors.muted)),
+        ],
+      ]),
     );
   }
 }
@@ -373,13 +290,14 @@ class _AverageSimulatorPanelState extends State<_AverageSimulatorPanel> {
           ),
           const SizedBox(height: AppSpacing.xs),
           const Text(
-            'P1 e P2 valem 35%; trabalho vale 30%.',
+            'Simulação local: P1 e P2 valem 35%; trabalho vale 30%. Não altera suas notas oficiais.',
             style: TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: AppSpacing.md),
           LayoutBuilder(
             builder: (context, constraints) {
-              if (constraints.maxWidth < 260) {
+              final scale = MediaQuery.textScalerOf(context).scale(1);
+              if (constraints.maxWidth < 260 * scale) {
                 return Column(
                   children: [
                     _GradeField('P1', _p1Controller, _refresh),
@@ -449,11 +367,9 @@ class _GradeField extends StatelessWidget {
 class _BootstrapPanel extends StatelessWidget {
   const _BootstrapPanel({
     required this.child,
-    this.color = Colors.white,
   });
 
   final Widget child;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -462,7 +378,6 @@ class _BootstrapPanel extends StatelessWidget {
         final tight = constraints.maxWidth < 320;
 
         return AppCard(
-          backgroundColor: color,
           padding: EdgeInsets.all(tight ? 14 : AppSpacing.cardPadding),
           child: child,
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,6 +9,10 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/error_state_widget.dart';
+import '../../../shared/widgets/academic_content.dart';
+import '../../../shared/widgets/academic_demo_frame.dart';
+import '../../academic/demo/synthetic_academic_providers.dart';
+import '../../../shared/widgets/empty_state_widget.dart';
 import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
 
@@ -26,17 +31,24 @@ class ActivityDetailPage extends ConsumerWidget {
           title: 'Atividade',
           fallbackRoute: AppRoutes.activities,
         ),
-        body: Center(child: CircularProgressIndicator()),
+        body: SafeArea(
+            child: AcademicDemoFrame(
+                child: Center(child: CircularProgressIndicator()))),
       ),
       error: (error, stack) => Scaffold(
         appBar: const AppHeader(
           title: 'Atividade',
           fallbackRoute: AppRoutes.activities,
         ),
-        body: ErrorStateWidget(
-          error: error.toString(),
-          onRetry: () => ref.invalidate(activityByIdProvider(activityId)),
-        ),
+        body: SafeArea(
+            child: AcademicDemoFrame(
+                child: ErrorStateWidget(
+          error: 'Confira sua conexão e tente novamente.',
+          onRetry: () {
+            invalidateSyntheticAcademicData(ref);
+            ref.invalidate(activitiesProvider);
+          },
+        ))),
       ),
       data: (activity) {
         if (activity == null) {
@@ -45,7 +57,14 @@ class ActivityDetailPage extends ConsumerWidget {
               title: 'Atividade',
               fallbackRoute: AppRoutes.activities,
             ),
-            body: Center(child: Text('Atividade nao encontrada.')),
+            body: SafeArea(
+                child: AcademicDemoFrame(
+                    child: EmptyStateWidget(
+              icon: Icons.search_off_outlined,
+              title: 'Atividade não encontrada',
+              subtitle:
+                  'Volte à lista para consultar as atividades disponíveis.',
+            ))),
           );
         }
 
@@ -69,7 +88,9 @@ class _ActivityDetailContent extends StatelessWidget {
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 1),
       body: SafeArea(
-        child: ListView(
+          child: AcademicDemoFrame(
+        child: AcademicContent(
+            child: ListView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
             AppSpacing.md,
@@ -97,18 +118,20 @@ class _ActivityDetailContent extends StatelessWidget {
             _InfoPill(
               icon: Icons.event_outlined,
               label: 'Prazo',
-              value: activity.dueLabel,
+              value: activity.dueDate == null
+                  ? activity.dueLabel
+                  : '${DateFormat('dd/MM/yyyy • HH:mm').format(activity.displayDueDate!)}\n${activity.dueLabel} • ${activity.timeZoneLabel}',
             ),
             const SizedBox(height: AppSpacing.lg),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel('Instrucoes da atividade'),
+                  const _SectionLabel('Instruções da atividade'),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     activity.description.isEmpty
-                        ? 'Leia as orientacoes da disciplina antes de iniciar.'
+                        ? 'Nenhuma instrução foi informada para esta atividade.'
                         : activity.description,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.muted,
@@ -161,7 +184,7 @@ class _ActivityDetailContent extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _SectionLabel('Professor responsavel'),
+                        const _SectionLabel('Professor responsável'),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           activity.teacher,
@@ -177,8 +200,8 @@ class _ActivityDetailContent extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
+        )),
+      )),
     );
   }
 }
@@ -215,8 +238,6 @@ class _InfoPill extends StatelessWidget {
                 ),
                 Text(
                   value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
               ],

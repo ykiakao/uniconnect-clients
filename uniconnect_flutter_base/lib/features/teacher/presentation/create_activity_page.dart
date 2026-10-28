@@ -8,6 +8,7 @@ import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/status_banner.dart';
+import '../../../shared/widgets/academic_content.dart';
 
 class CreateActivityPage extends StatefulWidget {
   const CreateActivityPage({super.key});
@@ -39,44 +40,6 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     super.dispose();
   }
 
-  void _publish() {
-    final weight = double.tryParse(_weightController.text.replaceAll(',', '.'));
-
-    setState(() {
-      _subjectError = _subjectController.text.trim().isEmpty
-          ? 'Informe a disciplina'
-          : null;
-      _titleError =
-          _titleController.text.trim().isEmpty ? 'Informe o título' : null;
-      _descriptionError = _descriptionController.text.trim().length < 10
-          ? 'Descreva a atividade com pelo menos 10 caracteres'
-          : null;
-      _dueError = _dueController.text.trim().isEmpty ? 'Informe o prazo' : null;
-      _weightError = weight == null || weight <= 0
-          ? 'Informe um peso maior que zero'
-          : null;
-    });
-
-    if (_subjectError != null ||
-        _titleError != null ||
-        _descriptionError != null ||
-        _dueError != null ||
-        _weightError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Revise os campos destacados.')),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Atividade publicada com sucesso.')),
-    );
-    _titleController.clear();
-    _descriptionController.clear();
-    _dueController.clear();
-    _weightController.clear();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,7 +48,8 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
         fallbackRoute: AppRoutes.teacherDashboard,
       ),
       body: SafeArea(
-        child: ListView(
+        child: AcademicContent(
+            child: ListView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
             AppSpacing.md,
@@ -93,6 +57,13 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
             AppSpacing.xl,
           ),
           children: [
+            const StatusBanner(
+              title: 'Protótipo de demonstração',
+              message:
+                  'Formulário ilustrativo, sem integração de publicação. Nenhuma atividade será enviada ou salva.',
+              tone: AppBadgeTone.warning,
+            ),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'PORTAL DO PROFESSOR',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -120,69 +91,77 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
             const SizedBox(height: AppSpacing.lg),
             AppCard(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  TextField(
-                    controller: _subjectController,
-                    onChanged: (_) => _clearError(() => _subjectError = null),
-                    decoration: InputDecoration(
-                      labelText: 'Selecione a Disciplina',
-                      hintText: 'Escolha o curso...',
-                      prefixIcon: const Icon(Icons.menu_book_outlined),
-                      errorText: _subjectError,
-                    ),
-                  ),
+                  _LabeledField(
+                      label: 'Selecione a Disciplina',
+                      child: TextField(
+                        controller: _subjectController,
+                        onChanged: (_) =>
+                            _clearError(() => _subjectError = null),
+                        decoration: InputDecoration(
+                          hintText: 'Escolha o curso...',
+                          prefixIcon: const Icon(Icons.menu_book_outlined),
+                          errorText: _subjectError,
+                        ),
+                      )),
                   const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _titleController,
-                    onChanged: (_) => _clearError(() => _titleError = null),
-                    decoration: InputDecoration(
-                      labelText: 'Título da Atividade',
-                      hintText: 'Ex: Projeto Semestral de Urbanismo',
-                      prefixIcon: const Icon(Icons.title),
-                      errorText: _titleError,
-                    ),
-                  ),
+                  _LabeledField(
+                      label: 'Título da Atividade',
+                      child: TextField(
+                        controller: _titleController,
+                        onChanged: (_) => _clearError(() => _titleError = null),
+                        decoration: InputDecoration(
+                          hintText: 'Ex: Projeto Semestral de Urbanismo',
+                          prefixIcon: const Icon(Icons.title),
+                          errorText: _titleError,
+                        ),
+                      )),
                   const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _descriptionController,
-                    minLines: 4,
-                    maxLines: 6,
-                    onChanged: (_) =>
-                        _clearError(() => _descriptionError = null),
-                    decoration: InputDecoration(
-                      labelText: 'Descrição e Instruções',
-                      hintText:
-                          'Descreva os objetivos, metodologia e requisitos de entrega...',
-                      prefixIcon: const Icon(Icons.notes_outlined),
-                      errorText: _descriptionError,
-                    ),
-                  ),
+                  _LabeledField(
+                      label: 'Descrição e Instruções',
+                      child: TextField(
+                        controller: _descriptionController,
+                        minLines: 4,
+                        maxLines: 6,
+                        onChanged: (_) =>
+                            _clearError(() => _descriptionError = null),
+                        decoration: InputDecoration(
+                          hintText:
+                              'Descreva os objetivos, metodologia e requisitos de entrega...',
+                          prefixIcon: const Icon(Icons.notes_outlined),
+                          errorText: _descriptionError,
+                        ),
+                      )),
                   const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _dueController,
-                    onChanged: (_) => _clearError(() => _dueError = null),
-                    decoration: InputDecoration(
-                      labelText: 'Data de Entrega',
-                      hintText: 'mm/dd/yyyy',
-                      prefixIcon: const Icon(Icons.event_outlined),
-                      errorText: _dueError,
-                    ),
-                  ),
+                  _LabeledField(
+                      label: 'Data de Entrega',
+                      child: TextField(
+                        controller: _dueController,
+                        onChanged: (_) => _clearError(() => _dueError = null),
+                        decoration: InputDecoration(
+                          hintText: 'mm/dd/yyyy',
+                          prefixIcon: const Icon(Icons.event_outlined),
+                          errorText: _dueError,
+                        ),
+                      )),
                   const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _weightController,
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => _clearError(() => _weightError = null),
-                    decoration: InputDecoration(
-                      labelText: 'Valor da Atividade (Pontos)',
-                      hintText: '0.0 - 10.0',
-                      prefixIcon: const Icon(Icons.percent),
-                      errorText: _weightError,
-                    ),
-                  ),
+                  _LabeledField(
+                      label: 'Valor da Atividade (Pontos)',
+                      child: TextField(
+                        controller: _weightController,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) =>
+                            _clearError(() => _weightError = null),
+                        decoration: InputDecoration(
+                          hintText: '0.0 - 10.0',
+                          prefixIcon: const Icon(Icons.percent),
+                          errorText: _weightError,
+                        ),
+                      )),
                   const SizedBox(height: AppSpacing.lg),
                   PrimaryButton(
-                    onPressed: _publish,
+                    onPressed: null,
                     icon: Icons.publish_outlined,
                     label: 'Publicar Atividade',
                   ),
@@ -196,15 +175,33 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
               tone: AppBadgeTone.warning,
               icon: Icons.lightbulb_outline,
             ),
+            const SizedBox(height: AppSpacing.md),
             const _QuickPreview(),
           ],
-        ),
+        )),
       ),
     );
   }
 
   void _clearError(VoidCallback update) {
     setState(update);
+  }
+}
+
+class _LabeledField extends StatelessWidget {
+  const _LabeledField({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      ExcludeSemantics(
+          child: Text(label, style: Theme.of(context).textTheme.labelLarge)),
+      const SizedBox(height: AppSpacing.xs),
+      Semantics(label: label, child: child),
+    ]);
   }
 }
 
@@ -228,13 +225,13 @@ class _QuickPreview extends StatelessWidget {
           _PreviewLine(
             title: 'Público-alvo',
             text:
-                'Todos os alunos matriculados na turma selecionada receberão uma notificação imediata.',
+                'Exemplo ilustrativo de público-alvo. Não há envio de notificações neste protótipo.',
           ),
           SizedBox(height: AppSpacing.md),
           _PreviewLine(
             title: 'Histórico',
             text:
-                'Esta atividade será arquivada no portfólio do semestre 2024.1.',
+                'Exemplo ilustrativo de histórico. Este protótipo não salva atividades.',
           ),
         ],
       ),

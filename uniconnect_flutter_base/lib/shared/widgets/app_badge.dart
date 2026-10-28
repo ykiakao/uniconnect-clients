@@ -61,8 +61,8 @@ class AppBadge extends StatelessWidget {
     return switch (tone) {
       AppBadgeTone.primary => (AppColors.primary, AppColors.primarySoft),
       AppBadgeTone.success => (AppColors.success, AppColors.successSoft),
-      AppBadgeTone.warning => (AppColors.warning, AppColors.warningSoft),
-      AppBadgeTone.danger => (AppColors.danger, AppColors.dangerSoft),
+      AppBadgeTone.warning => (const Color(0xFF9A4600), AppColors.warningSoft),
+      AppBadgeTone.danger => (const Color(0xFFB3261E), AppColors.dangerSoft),
       AppBadgeTone.info => (AppColors.info, AppColors.infoSoft),
       AppBadgeTone.neutral => (AppColors.muted, AppColors.background),
     };

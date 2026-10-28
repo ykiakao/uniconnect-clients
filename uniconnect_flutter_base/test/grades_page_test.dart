@@ -1,3 +1,4 @@
+import 'package:uniconnect/features/academic/demo/synthetic_academic_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          syntheticDemoRequestedProvider.overrideWithValue(false),
           subjectGradesProvider.overrideWith((ref) => const []),
         ],
         child: const MaterialApp(
@@ -24,7 +26,10 @@ void main() {
       ),
     );
 
-    expect(find.text('COEFICIENTE DE RENDIMENTO'), findsOneWidget);
-    expect(find.text('Semestre Atual'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Seu acompanhamento'), findsOneWidget);
+    expect(find.text('Nenhuma nota disponível'), findsOneWidget);
+    expect(find.text('COEFICIENTE DE RENDIMENTO'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }

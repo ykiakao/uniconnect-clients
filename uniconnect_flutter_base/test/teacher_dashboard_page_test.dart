@@ -20,7 +20,7 @@ void main() {
   const teacher = AppUser(
     id: 'teacher-1',
     name: 'Ana Lima',
-    email: 'professor@edukmais.edu.br',
+    email: 'teacher-test@example.invalid',
     role: UserRole.teacher,
     tenant: tenant,
     course: 'Engenharia de Software',
@@ -44,9 +44,12 @@ void main() {
 
     expect(find.text('Ana Lima'), findsOneWidget);
     expect(find.text('Professor'), findsOneWidget);
-    expect(find.text('professor@edukmais.edu.br'), findsOneWidget);
+    expect(find.text('teacher-test@example.invalid'), findsOneWidget);
     expect(find.text('EduKMais'), findsOneWidget);
-    expect(find.text('Vinculo academico'), findsOneWidget);
+    expect(find.text('Ambiente de demonstração'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Vínculo acadêmico'), 200,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('Vínculo acadêmico'), findsOneWidget);
     expect(find.text('Engenharia de Software'), findsOneWidget);
     expect(find.text('Criar atividade'), findsNothing);
     expect(find.text('Turmas'), findsNothing);

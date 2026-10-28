@@ -7,7 +7,7 @@ class AppColors {
   static const secondary = Color(0xFFF58220);
   static const secondarySoft = Color(0xFFFFF2E8);
   static const dark = Color(0xFF212529);
-  static const muted = Color(0xFF6C757D);
+  static const muted = Color(0xFF596674);
   static const background = Color(0xFFF4F7FB);
   static const card = Colors.white;
   static const border = Color(0xFFDEE2E6);

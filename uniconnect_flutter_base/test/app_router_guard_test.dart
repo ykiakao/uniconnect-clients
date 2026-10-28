@@ -4,6 +4,17 @@ import 'package:uniconnect/core/router/app_router.dart';
 import 'package:uniconnect/features/auth/models/app_user.dart';
 
 void main() {
+  test('professor cannot enter concrete student activity detail routes', () {
+    expect(
+      computeRedirect(
+        isRestoring: false,
+        isAuthenticated: true,
+        userRole: UserRole.teacher,
+        location: '/atividades/activity-1',
+      ),
+      AppRoutes.teacherDashboard,
+    );
+  });
   test('sessao em restauracao nao redireciona', () {
     final redirect = computeRedirect(
       isRestoring: true,
