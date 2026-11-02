@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_routes.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -15,6 +16,8 @@ import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
+import '../providers/student_submission_provider.dart';
+import '../widgets/student_submission_panel.dart';
 
 class ActivityDetailPage extends ConsumerWidget {
   const ActivityDetailPage({super.key, required this.activityId});
@@ -25,7 +28,11 @@ class ActivityDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activityAsync = ref.watch(activityByIdProvider(activityId));
 
+    final refreshError = activityAsync.error;
+    final preserveOnRefreshError = refreshError is ApiException &&
+        ![401, 403, 404].contains(refreshError.statusCode);
     return activityAsync.when(
+      skipError: preserveOnRefreshError,
       loading: () => const Scaffold(
         appBar: AppHeader(
           title: 'Atividade',
@@ -43,10 +50,11 @@ class ActivityDetailPage extends ConsumerWidget {
         body: SafeArea(
             child: AcademicDemoFrame(
                 child: ErrorStateWidget(
-          error: 'Confira sua conexão e tente novamente.',
+          error: submissionErrorText(error),
           onRetry: () {
             invalidateSyntheticAcademicData(ref);
             ref.invalidate(activitiesProvider);
+            ref.invalidate(activityByIdProvider(activityId));
           },
         ))),
       ),
@@ -68,16 +76,27 @@ class ActivityDetailPage extends ConsumerWidget {
           );
         }
 
-        return _ActivityDetailContent(activity: activity);
+        return _ActivityDetailContent(
+            activity: activity,
+            activityIsCurrent:
+                !activityAsync.hasError && !activityAsync.isLoading,
+            refreshError: activityAsync.hasError
+                ? submissionErrorText(activityAsync.error!)
+                : null);
       },
     );
   }
 }
 
 class _ActivityDetailContent extends StatelessWidget {
-  const _ActivityDetailContent({required this.activity});
+  const _ActivityDetailContent(
+      {required this.activity,
+      required this.activityIsCurrent,
+      this.refreshError});
 
   final AcademicActivity activity;
+  final bool activityIsCurrent;
+  final String? refreshError;
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +117,11 @@ class _ActivityDetailContent extends StatelessWidget {
             AppSpacing.xl,
           ),
           children: [
+            refreshError == null
+                ? const SizedBox.shrink()
+                : Text('Não foi possível atualizar a atividade. $refreshError',
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
             Text(
               activity.subject.toUpperCase(),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -130,9 +154,14 @@ class _ActivityDetailContent extends StatelessWidget {
                   const _SectionLabel('Instruções da atividade'),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    activity.description.isEmpty
+                    [activity.description, activity.instructions]
+                            .where((s) => s.isNotEmpty)
+                            .join('\n\n')
+                            .isEmpty
                         ? 'Nenhuma instrução foi informada para esta atividade.'
-                        : activity.description,
+                        : [activity.description, activity.instructions]
+                            .where((s) => s.isNotEmpty)
+                            .join('\n\n'),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.muted,
                           height: 1.45,
@@ -171,6 +200,10 @@ class _ActivityDetailContent extends StatelessWidget {
                 ],
               ),
             ),
+            StudentSubmissionPanel(
+                key: ValueKey(activity.id),
+                activity: activity,
+                activityIsCurrent: activityIsCurrent),
             AppCard(
               child: Row(
                 children: [

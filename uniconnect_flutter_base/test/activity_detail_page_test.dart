@@ -32,7 +32,7 @@ void main() {
       ProviderScope(
         overrides: [
           syntheticDemoRequestedProvider.overrideWithValue(false),
-          activitiesProvider.overrideWith((ref) async => [activity]),
+          activityByIdProvider.overrideWith((ref, id) async => activity),
         ],
         child: const MaterialApp(
           home: ActivityDetailPage(activityId: 'activity-1'),

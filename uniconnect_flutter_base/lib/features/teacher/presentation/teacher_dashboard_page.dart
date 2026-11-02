@@ -206,16 +206,16 @@ class TeacherDashboardPage extends ConsumerWidget {
                   title: 'Atividades acadêmicas',
                   icon: Icons.assignment_outlined,
                   description:
-                      'Conheça o formulário demonstrativo. Nenhuma atividade será publicada ou salva.',
-                  status: 'Demonstração',
+                      'Crie rascunhos, consulte atividades por oferta e publique após a confirmação da API.',
+                  status: 'Integrado à API',
                   route: AppRoutes.teacherCreateActivity,
                 ),
                 _TeacherWorkspaceCard(
                   title: 'Lançamento de notas',
                   icon: Icons.grading_outlined,
                   description:
-                      'Veja a apresentação de avaliações com dados ilustrativos e publicação bloqueada.',
-                  status: 'Demonstração',
+                      'Consulte respostas textuais, salve correções e publique avaliações por atividade.',
+                  status: 'Integrado à API',
                   route: AppRoutes.teacherGrades,
                 ),
                 _TeacherWorkspaceCard(
@@ -305,7 +305,9 @@ class _TeacherWorkspaceCard extends StatelessWidget {
                 minimumSize: const Size(0, 48)),
             onPressed: () => context.push(route!),
             icon: const Icon(Icons.visibility_outlined),
-            label: const Text('Ver protótipo'),
+            label: Text(route == AppRoutes.teacherCreateActivity
+                ? 'Gerenciar atividades'
+                : 'Avaliar entregas'),
           ),
         ],
       ]),

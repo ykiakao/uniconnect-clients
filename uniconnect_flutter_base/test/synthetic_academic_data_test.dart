@@ -37,6 +37,12 @@ const syntheticStudent = AppUser(
 
 class CountingAcademicApi extends AcademicApiService {
   CountingAcademicApi() : super(ApiClient());
+  @override
+  Future<AcademicActivity> getActivity(
+          {required String accessToken,
+          required String tenantSlug,
+          required String id}) async =>
+      demoActivity;
   int activityCalls = 0;
   int gradeCalls = 0;
   @override
@@ -54,13 +60,11 @@ class CountingAcademicApi extends AcademicApiService {
     gradeCalls++;
     return const [
       SubjectGrade(
-          subject: 'API normal',
-          code: 'API001',
-          teacher: 'API',
-          p1: 7,
-          p2: 7,
-          work: 7,
-          status: '')
+        subject: 'API normal',
+        code: 'API001',
+        teacher: 'API',
+        grade: 7,
+      )
     ];
   }
 }
@@ -139,7 +143,7 @@ void main() {
     expect(next.displayDueDate!.hour, 22);
     expect(next.dueLabel, 'Vence em 3 h');
     final grades = data.grades.where((g) => !g.isHistorical).toList();
-    expect(grades.map((g) => g.p1).reduce((a, b) => a + b) / grades.length,
+    expect(grades.map((g) => g.grade!).reduce((a, b) => a + b) / grades.length,
         closeTo(8.2, .001));
     expect(data.activities.last.dueDate, isNull);
   });

@@ -5,6 +5,9 @@ enum ActivityStatus { pending, inProgress, done }
 class AcademicActivity {
   const AcademicActivity({
     this.demoReferenceTime,
+    this.publicationState,
+    this.instructions = '',
+    this.allowLate = false,
     required this.id,
     required this.subject,
     required this.title,
@@ -19,6 +22,9 @@ class AcademicActivity {
   });
 
   final String id;
+  final String? publicationState;
+  final String instructions;
+  final bool allowLate;
   final String subject;
   final String title;
   final String description;

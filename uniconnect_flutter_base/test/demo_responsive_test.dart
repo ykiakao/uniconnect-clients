@@ -25,6 +25,7 @@ import 'package:uniconnect/features/teacher/presentation/teacher_grades_page.dar
 
 import 'demo_day_test.dart' show demoActivity;
 import 'fakes/fake_auth_service.dart';
+import 'fakes/fake_session_storage.dart';
 
 void main() {
   testWidgets('API error remains usable on a short landscape screen',
@@ -36,6 +37,7 @@ void main() {
     await tester.pumpWidget(ProviderScope(
       retry: (_, __) => null,
       overrides: [
+        sessionStorageProvider.overrideWithValue(FakeSessionStorage()),
         syntheticDemoRequestedProvider.overrideWithValue(false),
         activitiesProvider
             .overrideWith((ref) async => throw Exception('offline'))
@@ -85,18 +87,18 @@ void main() {
             key: UniqueKey(),
             retry: (_, __) => null,
             overrides: [
+              sessionStorageProvider.overrideWithValue(FakeSessionStorage()),
               currentUserProvider.overrideWithValue(
                   entry.key.startsWith('teacher') ? fakeTeacher : fakeStudent),
               activitiesProvider.overrideWith((ref) async => [demoActivity]),
+              activityByIdProvider
+                  .overrideWith((ref, id) async => demoActivity),
               subjectGradesProvider.overrideWith((ref) async => const [
                     SubjectGrade(
                       subject: 'Pesquisa aplicada',
                       code: 'ATV001',
                       teacher: 'Professor da turma',
-                      p1: 8.5,
-                      p2: 8.5,
-                      work: 8.5,
-                      status: 'Em curso',
+                      grade: 8.5,
                     ),
                   ]),
             ],

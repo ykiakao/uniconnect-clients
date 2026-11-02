@@ -26,7 +26,7 @@ void main() {
         accessToken: 'test', tenantSlug: 'test', studentId: 'student');
     expect(result.single.activityId, 'activity-1');
     expect(result.single.feedback, 'Argumentação consistente.');
-    expect(result.single.p1, 8.5);
+    expect(result.single.grade!, 8.5);
   });
   test('missing grade is not silently converted to a real zero', () async {
     final service = AcademicApiService(ApiClient(
@@ -57,14 +57,28 @@ void main() {
                     {'id': 'class-1', 'name': 'Métodos Quantitativos'},
                   ]
                 : [
-                    {'id': 'no-deadline', 'title': 'Pesquisa'},
+                    {
+                      'id': 'no-deadline',
+                      'title': 'Pesquisa',
+                      'classId': 'class-1',
+                      'state': 'published',
+                      'allowLate': false
+                    },
                     {
                       'id': 'dated',
+                      'classId': 'class-1',
+                      'state': 'published',
+                      'allowLate': false,
                       'title': 'Entrega',
                       'dueDate': '2026-12-01T19:00:00Z',
                     },
                   ];
-        return http.Response(jsonEncode({'data': data}), 200);
+        return http.Response(
+            jsonEncode({
+              'data': data,
+              'meta': {'page': 1, 'limit': 100, 'total': data.length}
+            }),
+            200);
       }),
     ));
     final activities = await service.listActivities(

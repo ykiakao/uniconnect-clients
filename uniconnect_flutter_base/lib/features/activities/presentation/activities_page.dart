@@ -17,6 +17,7 @@ import '../../../shared/widgets/help_tooltip.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
+import '../providers/student_submission_provider.dart';
 import '../widgets/activity_card.dart';
 
 class ActivitiesPage extends ConsumerStatefulWidget {
@@ -78,7 +79,7 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => ErrorStateWidget(
-            error: 'Confira sua conexão e tente novamente.',
+            error: submissionErrorText(error),
             onRetry: () {
               invalidateSyntheticAcademicData(ref);
               ref.invalidate(activitiesProvider);

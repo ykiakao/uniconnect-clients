@@ -208,6 +208,7 @@ void main() {
         activityCalls++;
         return [demoActivity];
       }),
+      activityByIdProvider.overrideWith((ref, id) async => demoActivity),
       subjectGradesProvider.overrideWith((ref) async {
         gradeCalls++;
         return [];

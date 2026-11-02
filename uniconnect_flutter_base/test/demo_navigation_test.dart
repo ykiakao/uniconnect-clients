@@ -35,6 +35,7 @@ void main() {
           )),
           sessionStorageProvider.overrideWithValue(storage),
           activitiesProvider.overrideWith((ref) async => [demoActivity]),
+          activityByIdProvider.overrideWith((ref, id) async => demoActivity),
           subjectGradesProvider.overrideWith((ref) async => []),
         ],
         child: const UniConnectApp(),
@@ -97,7 +98,8 @@ void main() {
               .first;
           final link = find.descendant(
               of: card,
-              matching: find.widgetWithText(TextButton, 'Ver protótipo'));
+              matching: find.widgetWithText(TextButton,
+                  index == 0 ? 'Gerenciar atividades' : 'Avaliar entregas'));
           await tester.scrollUntilVisible(link.hitTestable(), 100,
               scrollable: find.byType(Scrollable).first);
           await tester.pumpAndSettle();

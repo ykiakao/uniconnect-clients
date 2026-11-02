@@ -1,259 +1,412 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/app_badge.dart';
-import '../../../shared/widgets/app_buttons.dart';
+import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
-import '../../../shared/widgets/status_banner.dart';
-import '../../../shared/widgets/academic_content.dart';
+import '../../auth/models/app_user.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../providers/teacher_activity_provider.dart';
+import '../services/teacher_activity_service.dart';
 
-class CreateActivityPage extends StatefulWidget {
+class CreateActivityPage extends ConsumerWidget {
   const CreateActivityPage({super.key});
-
   @override
-  State<CreateActivityPage> createState() => _CreateActivityPageState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final token =
+        ref.watch(authControllerProvider.select((s) => s.accessToken));
+    return Scaffold(
+      appBar: const AppHeader(
+          title: 'Atividades acadêmicas',
+          fallbackRoute: AppRoutes.teacherDashboard),
+      body: SafeArea(
+          child: AcademicContent(
+              child: user?.role != UserRole.teacher
+                  ? const Center(child: Text('Área exclusiva do professor'))
+                  : _Workspace(
+                      key: ValueKey((user!.id, user.tenant.slug, token))))),
+    );
+  }
 }
 
-class _CreateActivityPageState extends State<CreateActivityPage> {
-  final _subjectController =
-      TextEditingController(text: 'Arquitetura de Sistemas');
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _dueController = TextEditingController();
-  final _weightController = TextEditingController();
-  String? _subjectError;
-  String? _titleError;
-  String? _descriptionError;
-  String? _dueError;
-  String? _weightError;
+class _Workspace extends ConsumerStatefulWidget {
+  const _Workspace({super.key});
+  @override
+  ConsumerState<_Workspace> createState() => _WorkspaceState();
+}
+
+class _WorkspaceState extends ConsumerState<_Workspace> {
+  final _scroll = ScrollController();
+  final _form = GlobalKey<FormState>();
+  final _title = TextEditingController();
+  final _description = TextEditingController();
+  final _type = TextEditingController(text: 'assignment');
+  final _instructions = TextEditingController();
+  final _criteria = TextEditingController();
+  String? _classId;
+  String _priority = 'medium';
+  DateTime? _due;
+  bool _allowLate = false;
+  bool _busy = false;
+  bool _mustRefresh = false;
+  String? _message;
+  String? _error;
 
   @override
   void dispose() {
-    _subjectController.dispose();
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _dueController.dispose();
-    _weightController.dispose();
+    _scroll.dispose();
+    for (final c in [_title, _description, _type, _instructions, _criteria]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const AppHeader(
-        title: 'Criar atividade',
-        fallbackRoute: AppRoutes.teacherDashboard,
-      ),
-      body: SafeArea(
-        child: AcademicContent(
-            child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.xl,
-          ),
-          children: [
-            const StatusBanner(
-              title: 'Protótipo de demonstração',
-              message:
-                  'Formulário ilustrativo, sem integração de publicação. Nenhuma atividade será enviada ou salva.',
-              tone: AppBadgeTone.warning,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'PORTAL DO PROFESSOR',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: .9,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Publicar Nova Atividade Acadêmica',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    height: 1.12,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Defina os parâmetros, prazos e critérios para sua próxima avaliação. O rigor acadêmico começa no planejamento.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                    height: 1.45,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _LabeledField(
-                      label: 'Selecione a Disciplina',
-                      child: TextField(
-                        controller: _subjectController,
-                        onChanged: (_) =>
-                            _clearError(() => _subjectError = null),
-                        decoration: InputDecoration(
-                          hintText: 'Escolha o curso...',
-                          prefixIcon: const Icon(Icons.menu_book_outlined),
-                          errorText: _subjectError,
-                        ),
-                      )),
-                  const SizedBox(height: AppSpacing.md),
-                  _LabeledField(
-                      label: 'Título da Atividade',
-                      child: TextField(
-                        controller: _titleController,
-                        onChanged: (_) => _clearError(() => _titleError = null),
-                        decoration: InputDecoration(
-                          hintText: 'Ex: Projeto Semestral de Urbanismo',
-                          prefixIcon: const Icon(Icons.title),
-                          errorText: _titleError,
-                        ),
-                      )),
-                  const SizedBox(height: AppSpacing.md),
-                  _LabeledField(
-                      label: 'Descrição e Instruções',
-                      child: TextField(
-                        controller: _descriptionController,
-                        minLines: 4,
-                        maxLines: 6,
-                        onChanged: (_) =>
-                            _clearError(() => _descriptionError = null),
-                        decoration: InputDecoration(
-                          hintText:
-                              'Descreva os objetivos, metodologia e requisitos de entrega...',
-                          prefixIcon: const Icon(Icons.notes_outlined),
-                          errorText: _descriptionError,
-                        ),
-                      )),
-                  const SizedBox(height: AppSpacing.md),
-                  _LabeledField(
-                      label: 'Data de Entrega',
-                      child: TextField(
-                        controller: _dueController,
-                        onChanged: (_) => _clearError(() => _dueError = null),
-                        decoration: InputDecoration(
-                          hintText: 'mm/dd/yyyy',
-                          prefixIcon: const Icon(Icons.event_outlined),
-                          errorText: _dueError,
-                        ),
-                      )),
-                  const SizedBox(height: AppSpacing.md),
-                  _LabeledField(
-                      label: 'Valor da Atividade (Pontos)',
-                      child: TextField(
-                        controller: _weightController,
-                        keyboardType: TextInputType.number,
-                        onChanged: (_) =>
-                            _clearError(() => _weightError = null),
-                        decoration: InputDecoration(
-                          hintText: '0.0 - 10.0',
-                          prefixIcon: const Icon(Icons.percent),
-                          errorText: _weightError,
-                        ),
-                      )),
-                  const SizedBox(height: AppSpacing.lg),
-                  PrimaryButton(
-                    onPressed: null,
-                    icon: Icons.publish_outlined,
-                    label: 'Publicar Atividade',
-                  ),
-                ],
-              ),
-            ),
-            const StatusBanner(
-              title: 'Dica acadêmica',
-              message:
-                  'Certifique-se de anexar a rubrica de avaliação. Atividades com critérios claros aumentam o engajamento dos alunos.',
-              tone: AppBadgeTone.warning,
-              icon: Icons.lightbulb_outline,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const _QuickPreview(),
-          ],
-        )),
-      ),
-    );
+  String? _validate(String? value, {bool required = false}) {
+    if (required && (value == null || value.trim().isEmpty)) {
+      return 'Campo obrigatório';
+    }
+    if ((value?.trim().length ?? 0) > 102400) {
+      return 'Limite de 102400 caracteres';
+    }
+    return null;
   }
 
-  void _clearError(VoidCallback update) {
-    setState(update);
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+        context: context,
+        initialDate: _due ?? now,
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100));
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+        context: context, initialTime: TimeOfDay.fromDateTime(_due ?? now));
+    if (time == null || !mounted) return;
+    setState(() => _due =
+        DateTime(date.year, date.month, date.day, time.hour, time.minute));
   }
-}
 
-class _LabeledField extends StatelessWidget {
-  const _LabeledField({required this.label, required this.child});
-
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      ExcludeSemantics(
-          child: Text(label, style: Theme.of(context).textTheme.labelLarge)),
-      const SizedBox(height: AppSpacing.xs),
-      Semantics(label: label, child: child),
-    ]);
+  Future<void> _refresh() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      ref.invalidate(teacherOfferingsProvider);
+      final offerings = await ref.read(teacherOfferingsProvider.future);
+      if (!mounted) return;
+      if (_classId != null && !offerings.any((o) => o.id == _classId)) {
+        setState(() {
+          _classId = null;
+          _mustRefresh = false;
+        });
+      } else if (_classId != null) {
+        ref.invalidate(teacherActivitiesProvider(_classId!));
+        await ref.read(teacherActivitiesProvider(_classId!).future);
+      }
+      if (mounted) setState(() => _mustRefresh = false);
+    } catch (e) {
+      if (mounted) setState(() => _error = _errorText(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
-}
 
-class _QuickPreview extends StatelessWidget {
-  const _QuickPreview();
+  String _errorText(Object e) {
+    if (e is ApiException) {
+      if (e.statusCode == 409) {
+        return 'Conflito de versão ou estado. Atualize a lista e confira a atividade antes de tentar novamente. ${e.message}';
+      }
+      if (e.statusCode == 401) return 'Sessão expirada. Entre novamente.';
+      if (e.statusCode == 403 || e.statusCode == 404) {
+        return 'Permissão ou vínculo indisponível. Atualize as ofertas. ${e.message}';
+      }
+      return e.message;
+    }
+    return 'Não foi possível concluir a operação. Atualize a lista antes de tentar novamente.';
+  }
+
+  Future<void> _save() async {
+    if (_busy || _mustRefresh || !_form.currentState!.validate()) return;
+    final id = _classId;
+    if (id == null) return;
+    await _mutate(
+        () => ref.read(teacherActivityServiceProvider).create(id,
+            title: _title.text,
+            description: _description.text,
+            type: _type.text,
+            instructions: _instructions.text,
+            evaluationCriteria: _criteria.text,
+            dueDate: _due,
+            priority: _priority,
+            allowLate: _allowLate),
+        creating: true);
+  }
+
+  Future<void> _mutate(Future<TeacherActivity> Function() action,
+      {bool creating = false}) async {
+    if (_busy || _mustRefresh) return;
+    setState(() {
+      _busy = true;
+      _message = null;
+      _error = null;
+    });
+    try {
+      final result = await action();
+      if (!mounted) return;
+      if (creating) {
+        _title.clear();
+        _description.clear();
+        _instructions.clear();
+        _criteria.clear();
+        _type.text = 'assignment';
+        _form.currentState?.reset();
+      }
+      setState(() {
+        _message = creating
+            ? 'Rascunho salvo pela API. Publique na lista quando estiver pronto.'
+            : 'Publicação confirmada pela API.';
+        if (creating) {
+          _due = null;
+          _allowLate = false;
+          _priority = 'medium';
+        }
+      });
+      ref.invalidate(teacherActivitiesProvider(result.classId));
+      try {
+        await ref.read(teacherActivitiesProvider(result.classId).future);
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _error =
+                'Operação confirmada, mas a lista não pôde ser atualizada.';
+            _mustRefresh = true;
+          });
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            '${_errorText(e)} Confira a lista antes de repetir a operação.';
+        _mustRefresh = true;
+      });
+      if (_classId != null) {
+        ref.invalidate(teacherActivitiesProvider(_classId!));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+        if (_scroll.hasClients) _scroll.jumpTo(0);
+      }
+    }
+  }
+
+  Widget _field(String label, TextEditingController controller,
+      {bool required = false, int lines = 1}) {
+    return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: AppSpacing.xs),
+          Semantics(
+              label: label,
+              child: TextFormField(
+                  controller: controller,
+                  enabled: !_busy,
+                  minLines: lines,
+                  maxLines: lines == 1 ? 1 : lines + 2,
+                  validator: (v) => _validate(v, required: required))),
+        ]));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'VISUALIZAÇÃO RÁPIDA',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          SizedBox(height: AppSpacing.md),
-          _PreviewLine(
-            title: 'Público-alvo',
-            text:
-                'Exemplo ilustrativo de público-alvo. Não há envio de notificações neste protótipo.',
-          ),
-          SizedBox(height: AppSpacing.md),
-          _PreviewLine(
-            title: 'Histórico',
-            text:
-                'Exemplo ilustrativo de histórico. Este protótipo não salva atividades.',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreviewLine extends StatelessWidget {
-  const _PreviewLine({required this.title, required this.text});
-
-  final String title;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(text, style: const TextStyle(color: AppColors.muted)),
-      ],
-    );
+    final offerings = ref.watch(teacherOfferingsProvider);
+    final rows = offerings.asData?.value ?? const <TeacherOffering>[];
+    final selected = rows.any((o) => o.id == _classId) ? _classId : null;
+    return RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
+            controller: _scroll,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              Text('Criar atividade',
+                  style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: AppSpacing.sm),
+              const Text(
+                  'Salve um rascunho e publique para os alunos da oferta selecionada.'),
+              const SizedBox(height: AppSpacing.md),
+              if (_busy) const LinearProgressIndicator(),
+              if (_message != null) Text(_message!, semanticsLabel: _message),
+              if (_error != null)
+                Text(_error!,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
+              TextButton.icon(
+                  onPressed: _busy ? null : _refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Atualizar ofertas e atividades')),
+              offerings.when(
+                  skipLoadingOnRefresh: false,
+                  loading: () =>
+                      const Text('Carregando ofertas autorizadas...'),
+                  error: (e, _) => Text(_errorText(e)),
+                  data: (data) => data.isEmpty
+                      ? const Text(
+                          'Nenhuma oferta ativa autorizada. Solicite o vínculo à instituição.')
+                      : const SizedBox.shrink()),
+              AppCard(
+                  child: Form(
+                      key: _form,
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text('Oferta acadêmica',
+                                style: Theme.of(context).textTheme.labelLarge),
+                            const SizedBox(height: AppSpacing.xs),
+                            DropdownButtonFormField<String>(
+                                key: ValueKey(selected),
+                                initialValue: selected,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                    hintText: 'Selecione'),
+                                items: rows
+                                    .map((o) => DropdownMenuItem(
+                                        value: o.id,
+                                        child: Text('${o.name} • ${o.id}',
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis)))
+                                    .toList(),
+                                onChanged: _busy ||
+                                        offerings.isLoading ||
+                                        offerings.hasError
+                                    ? null
+                                    : (id) {
+                                        if (id == _classId) return;
+                                        setState(() {
+                                          _classId = id;
+                                          _error = null;
+                                          _message = null;
+                                          _mustRefresh = false;
+                                        });
+                                      },
+                                validator: (_) => selected == null
+                                    ? 'Selecione uma oferta autorizada'
+                                    : null),
+                            const SizedBox(height: AppSpacing.md),
+                            _field('Título da atividade', _title,
+                                required: true),
+                            _field('Tipo', _type, required: true),
+                            _field('Descrição (opcional)', _description,
+                                lines: 3),
+                            _field('Instruções (opcional)', _instructions,
+                                lines: 3),
+                            _field(
+                                'Critérios de avaliação (opcional)', _criteria,
+                                lines: 3),
+                            OutlinedButton.icon(
+                                onPressed: _busy ? null : _pickDate,
+                                icon: const Icon(Icons.event),
+                                label: Text(_due == null
+                                    ? 'Definir prazo (opcional)'
+                                    : 'Prazo local: ${_due!.toLocal()}')),
+                            if (_due != null)
+                              TextButton(
+                                  onPressed: _busy
+                                      ? null
+                                      : () => setState(() => _due = null),
+                                  child: const Text('Remover prazo')),
+                            DropdownButtonFormField<String>(
+                                key: ValueKey(_priority),
+                                initialValue: _priority,
+                                decoration: const InputDecoration(
+                                    labelText: 'Prioridade'),
+                                items: const [
+                                  DropdownMenuItem(
+                                      value: 'low', child: Text('Baixa')),
+                                  DropdownMenuItem(
+                                      value: 'medium', child: Text('Média')),
+                                  DropdownMenuItem(
+                                      value: 'high', child: Text('Alta'))
+                                ],
+                                onChanged: _busy
+                                    ? null
+                                    : (v) => setState(() => _priority = v!)),
+                            SwitchListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title:
+                                    const Text('Permitir entrega após o prazo'),
+                                value: _allowLate,
+                                onChanged: _busy
+                                    ? null
+                                    : (v) => setState(() => _allowLate = v)),
+                            ElevatedButton.icon(
+                                onPressed: _busy ||
+                                        _mustRefresh ||
+                                        selected == null ||
+                                        offerings.isLoading ||
+                                        offerings.hasError
+                                    ? null
+                                    : _save,
+                                icon: const Icon(Icons.save_outlined),
+                                label: Text(
+                                    _busy ? 'Aguarde...' : 'Salvar rascunho')),
+                          ]))),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Atividades da oferta',
+                  style: Theme.of(context).textTheme.titleLarge),
+              if (selected == null)
+                const Text('Selecione uma oferta para consultar as atividades.')
+              else
+                ref.watch(teacherActivitiesProvider(selected)).when(
+                    skipLoadingOnRefresh: false,
+                    loading: () => const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: LinearProgressIndicator()),
+                    error: (e, _) => Text(
+                        'Não foi possível carregar as atividades. ${_errorText(e)}'),
+                    data: (activities) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (activities.isEmpty)
+                                const Text('Nenhuma atividade nesta oferta.'),
+                              for (final activity in activities)
+                                AppCard(
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                      Text(activity.title,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium),
+                                      Text(
+                                          '${activity.stateLabel} • Versão ${activity.revision}'),
+                                      if (activity.state == 'draft' &&
+                                          activity.workflowEnabled)
+                                        ElevatedButton.icon(
+                                            onPressed: _busy ||
+                                                    _mustRefresh ||
+                                                    offerings.isLoading ||
+                                                    offerings.hasError
+                                                ? null
+                                                : () => _mutate(() => ref
+                                                    .read(
+                                                        teacherActivityServiceProvider)
+                                                    .publish(activity)),
+                                            icon: const Icon(
+                                                Icons.publish_outlined),
+                                            label: const Text(
+                                                'Publicar atividade')),
+                                    ])),
+                            ])),
+            ]));
   }
 }

@@ -30,21 +30,17 @@ AcademicActivity activity(String id, String title, DateTime? dueDate) =>
 
 const grades = [
   SubjectGrade(
-      subject: 'Avaliação A',
-      code: 'A',
-      teacher: '',
-      p1: 8,
-      p2: 8,
-      work: 8,
-      status: ''),
+    subject: 'Avaliação A',
+    code: 'A',
+    teacher: '',
+    grade: 8,
+  ),
   SubjectGrade(
-      subject: 'Avaliação B',
-      code: 'B',
-      teacher: '',
-      p1: 6,
-      p2: 6,
-      work: 6,
-      status: ''),
+    subject: 'Avaliação B',
+    code: 'B',
+    teacher: '',
+    grade: 6,
+  ),
 ];
 
 void main() {
@@ -65,8 +61,8 @@ void main() {
       subjectGradesProvider.overrideWith((ref) async => grades),
     ]);
     await tester.pumpAndSettle();
-    expect(find.text('Média simples'), findsOneWidget);
-    expect(find.text('7.0'), findsOneWidget);
+    expect(find.text('Média simples'), findsNothing);
+    expect(find.text('7.0'), findsNothing);
     expect(find.bySemanticsLabel('Atividades disponíveis: 4'), findsOneWidget);
     expect(
         find.bySemanticsLabel('Disciplinas nas atividades: 1'), findsOneWidget);
@@ -92,7 +88,7 @@ void main() {
           .overrideWith((ref) async => throw Exception('offline')),
     ]);
     await tester.pumpAndSettle();
-    expect(find.text('Média indisponível'), findsOneWidget);
+    expect(find.text('Notas indisponíveis'), findsOneWidget);
     expect(find.text('0.0'), findsNothing);
     expect(find.text('Ver notas'), findsOneWidget);
   });
@@ -107,7 +103,9 @@ void main() {
     expect(find.text('Atividades acadêmicas'), findsOneWidget);
     expect(find.text('Lançamento de notas'), findsOneWidget);
     expect(find.text('Comunicação com alunos'), findsOneWidget);
-    expect(find.text('Ver protótipo'), findsNWidgets(2));
+    expect(find.text('Ver protótipo'), findsNothing);
+    expect(find.text('Avaliar entregas'), findsOneWidget);
+    expect(find.text('Gerenciar atividades'), findsOneWidget);
     expect(find.text('Publicar atividade'), findsNothing);
     expect(find.text('128'), findsNothing);
   });
@@ -123,20 +121,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Prazo encerrado (1)'), findsOneWidget);
     expect(find.text('Críticas (1)'), findsNothing);
-    expect(find.text('Encerrado'), findsOneWidget);
+    expect(find.text('Prazo vencido'), findsOneWidget);
   });
 
-  testWidgets(
-      'grades retain mean and evaluation count without official coefficient',
+  testWidgets('grades retain individual evaluations without derived mean',
       (tester) async {
     await pumpDemoPage(tester, const GradesPage(), overrides: [
       subjectGradesProvider.overrideWith((ref) async => grades),
       activitiesProvider.overrideWith((ref) async => []),
     ]);
     await tester.pumpAndSettle();
-    expect(find.text('7.0'), findsOneWidget);
+    expect(find.text('7.0'), findsNothing);
     expect(find.text('2 avaliações disponíveis'), findsOneWidget);
-    expect(find.textContaining('coeficiente oficial'), findsOneWidget);
+    expect(find.textContaining('coeficiente oficial'), findsNothing);
+    expect(find.text('Simulador de média'), findsNothing);
     expect(find.text('APROVADO'), findsNothing);
   });
 
@@ -146,24 +144,20 @@ void main() {
     await pumpDemoPage(tester, const GradesPage(), overrides: [
       subjectGradesProvider.overrideWith((ref) async => const [
             SubjectGrade(
-                activityId: 'matched',
-                feedback: 'Argumentação consistente.',
-                subject: 'Pesquisa aplicada',
-                code: 'A',
-                teacher: '',
-                p1: 8,
-                p2: 8,
-                work: 8,
-                status: ''),
+              activityId: 'matched',
+              feedback: 'Argumentação consistente.',
+              subject: 'Pesquisa aplicada',
+              code: 'A',
+              teacher: '',
+              grade: 8,
+            ),
             SubjectGrade(
-                activityId: 'missing',
-                subject: 'Outra avaliação',
-                code: 'B',
-                teacher: '',
-                p1: 6,
-                p2: 6,
-                work: 6,
-                status: ''),
+              activityId: 'missing',
+              subject: 'Outra avaliação',
+              code: 'B',
+              teacher: '',
+              grade: 6,
+            ),
           ]),
       activitiesProvider.overrideWith(
           (ref) async => [activity('matched', 'Pesquisa aplicada', null)]),
@@ -205,14 +199,12 @@ void main() {
     await pumpDemoPage(tester, const GradesPage(), overrides: [
       subjectGradesProvider.overrideWith((ref) async => const [
             SubjectGrade(
-                activityId: 'matched',
-                subject: 'Pesquisa aplicada',
-                code: 'A',
-                teacher: '',
-                p1: 8,
-                p2: 8,
-                work: 8,
-                status: ''),
+              activityId: 'matched',
+              subject: 'Pesquisa aplicada',
+              code: 'A',
+              teacher: '',
+              grade: 8,
+            ),
           ]),
       activitiesProvider.overrideWith((ref) async {
         if (activityRequests++ == 0) throw Exception('offline');

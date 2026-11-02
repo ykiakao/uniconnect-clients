@@ -55,96 +55,158 @@ class AcademicApiService {
       tenantSlug: tenantSlug,
     );
     final data = response['data'];
-    if (data is! List) return const [];
-
-    return data.whereType<Map<String, dynamic>>().map((json) {
-      final grade = _toDouble(json['grade']);
-      final title = json['title'] as String? ?? 'Atividade';
-      final activityId = json['activityId'] as String? ?? 'ATV000';
-
+    if (data is! List) {
+      throw const ApiException('A API retornou uma lista de notas inválida.');
+    }
+    return data.map((row) {
+      if (row is! Map<String, dynamic> ||
+          row['activityId'] is! String ||
+          (row['activityId'] as String).isEmpty ||
+          row['title'] is! String ||
+          !row.containsKey('grade') ||
+          (row['feedback'] != null && row['feedback'] is! String)) {
+        throw const ApiException('A API retornou uma avaliação inválida.');
+      }
+      final activityId = row['activityId'] as String;
       return SubjectGrade(
-        activityId: json['activityId'] as String?,
-        feedback: json['feedback'] as String?,
-        subject: title,
-        code: _shortCode(activityId),
-        teacher: 'Professor da turma',
-        p1: grade,
-        p2: grade,
-        work: grade,
-        status: grade >= 7 ? 'Aprovado' : 'Em curso',
+        activityId: activityId,
+        feedback: row['feedback'] as String?,
+        subject: row['title'] as String,
+        code: activityId,
+        teacher: '',
+        grade: row['grade'] == null ? null : _toDouble(row['grade']),
       );
     }).toList();
   }
 
-  Future<List<_ApiCourse>> _listCourses({
-    required String accessToken,
-    required String tenantSlug,
-  }) async {
-    final response = await _apiClient.get(
-      '/tenants/$tenantSlug/courses',
-      accessToken: accessToken,
-      tenantSlug: tenantSlug,
-    );
-    final data = response['data'];
-    if (data is! List) return const [];
+  Future<List<Map<String, dynamic>>> _list(
+      String path, String accessToken, String tenantSlug) async {
+    final rows = <Map<String, dynamic>>[];
+    for (var page = 1; page <= 100000; page++) {
+      final result = await _apiClient.get(path,
+          accessToken: accessToken,
+          tenantSlug: tenantSlug,
+          queryParams: {'page': '$page', 'limit': '100'});
+      final data = result['data'];
+      final meta = result['meta'];
+      if (data is! List ||
+          data.any((r) => r is! Map<String, dynamic>) ||
+          meta is! Map<String, dynamic> ||
+          meta['page'] != page ||
+          meta['limit'] != 100 ||
+          meta['total'] is! int ||
+          (meta['total'] as int) < 0) {
+        throw const ApiException(
+            'A API retornou uma lista acadêmica inválida.');
+      }
+      rows.addAll(data.cast<Map<String, dynamic>>());
+      if (rows.length >= (meta['total'] as int)) return rows;
+      if (data.isEmpty) {
+        throw const ApiException(
+            'A lista acadêmica está incompleta. Atualize.');
+      }
+    }
+    throw const ApiException('Limite de paginação excedido.');
+  }
 
-    return data
-        .whereType<Map<String, dynamic>>()
+  Future<List<_ApiCourse>> _listCourses(
+      {required String accessToken, required String tenantSlug}) async {
+    return (await _list(
+            '/tenants/$tenantSlug/courses', accessToken, tenantSlug))
         .map(_ApiCourse.fromJson)
         .toList();
   }
 
-  Future<List<_ApiClass>> _listClasses({
-    required String accessToken,
-    required String tenantSlug,
-    required String courseId,
-  }) async {
-    final response = await _apiClient.get(
-      '/tenants/$tenantSlug/courses/$courseId/classes',
-      accessToken: accessToken,
-      tenantSlug: tenantSlug,
-    );
-    final data = response['data'];
-    if (data is! List) return const [];
-
-    return data
-        .whereType<Map<String, dynamic>>()
+  Future<List<_ApiClass>> _listClasses(
+      {required String accessToken,
+      required String tenantSlug,
+      required String courseId}) async {
+    return (await _list('/tenants/$tenantSlug/courses/$courseId/classes',
+            accessToken, tenantSlug))
         .map(_ApiClass.fromJson)
         .toList();
   }
 
-  Future<List<AcademicActivity>> _listClassActivities({
-    required String accessToken,
-    required String tenantSlug,
-    required String classId,
-    required String subject,
-  }) async {
-    final response = await _apiClient.get(
-      '/tenants/$tenantSlug/classes/$classId/activities',
-      accessToken: accessToken,
-      tenantSlug: tenantSlug,
-    );
-    final data = response['data'];
-    if (data is! List) return const [];
-
-    return data.whereType<Map<String, dynamic>>().map((json) {
-      final dueDate = DateTime.tryParse(json['dueDate'] as String? ?? '');
-
-      return AcademicActivity(
-        id: json['id'] as String,
-        subject: subject,
-        title: json['title'] as String? ?? 'Atividade',
-        description: json['description'] as String? ?? '',
-        dueLabel: dueDate == null ? 'Prazo não informado' : _dueLabel(dueDate),
-        dueDate: dueDate,
-        teacher: 'Professor da turma',
-        priority:
-            dueDate == null ? ActivityPriority.low : _priorityFor(dueDate),
-        status: ActivityStatus.pending,
-        criteria: const [],
-        attachments: const [],
-      );
+  Future<List<AcademicActivity>> _listClassActivities(
+      {required String accessToken,
+      required String tenantSlug,
+      required String classId,
+      required String subject}) async {
+    return (await _list('/tenants/$tenantSlug/classes/$classId/activities',
+            accessToken, tenantSlug))
+        .map((row) {
+      if (row['classId'] != classId) {
+        throw const ApiException(
+            'A API retornou uma atividade de outra oferta.');
+      }
+      return _activity(row, subject);
     }).toList();
+  }
+
+  Future<AcademicActivity> getActivity(
+      {required String accessToken,
+      required String tenantSlug,
+      required String id}) async {
+    final row = await _apiClient.get(
+        '/tenants/$tenantSlug/activities/${Uri.encodeComponent(id)}',
+        accessToken: accessToken,
+        tenantSlug: tenantSlug);
+    if (row['id'] != id || row['classId'] is! String) {
+      throw const ApiException('A API retornou uma atividade inválida.');
+    }
+    _activity(row, '');
+    try {
+      final offering = await _apiClient.get(
+          '/tenants/$tenantSlug/classes/${Uri.encodeComponent(row['classId'] as String)}',
+          accessToken: accessToken,
+          tenantSlug: tenantSlug);
+      if (offering['id'] != row['classId'] || offering['name'] is! String) {
+        throw const ApiException('A API retornou uma oferta inválida.');
+      }
+      return _activity(row, offering['name'] as String);
+    } on ApiException catch (error) {
+      if (error.statusCode != 403 && error.statusCode != 404) rethrow;
+      return _activity(
+          row, 'Disciplina indisponível • Oferta: ${row['classId']}');
+    }
+  }
+
+  static AcademicActivity _activity(Map<String, dynamic> row, String subject) {
+    if (row['id'] is! String ||
+        row['title'] is! String ||
+        !['published', 'closed'].contains(row['state']) ||
+        row['allowLate'] is! bool ||
+        (row['description'] != null && row['description'] is! String) ||
+        (row['instructions'] != null && row['instructions'] is! String) ||
+        (row['evaluationCriteria'] != null &&
+            row['evaluationCriteria'] is! String) ||
+        (row['dueDate'] != null &&
+            (row['dueDate'] is! String ||
+                DateTime.tryParse(row['dueDate'] as String) == null))) {
+      throw const ApiException(
+          'A API retornou uma atividade indisponível ou inválida.');
+    }
+    final due = row['dueDate'] == null
+        ? null
+        : DateTime.parse(row['dueDate'] as String);
+    return AcademicActivity(
+        id: row['id'] as String,
+        subject: subject,
+        title: row['title'] as String,
+        description: row['description'] as String? ?? '',
+        instructions: row['instructions'] as String? ?? '',
+        publicationState: row['state'] as String,
+        allowLate: row['allowLate'] as bool,
+        dueDate: due,
+        dueLabel: due == null ? 'Prazo não informado' : _dueLabel(due),
+        teacher: 'Professor da turma',
+        priority: due == null ? ActivityPriority.low : _priorityFor(due),
+        status: ActivityStatus.pending,
+        criteria: row['evaluationCriteria'] == null ||
+                (row['evaluationCriteria'] as String).isEmpty
+            ? const []
+            : [row['evaluationCriteria'] as String],
+        attachments: const []);
   }
 
   static ActivityPriority _priorityFor(DateTime dueDate) {
@@ -173,12 +235,6 @@ class AcademicApiService {
       throw const ApiException('A API não informou uma nota válida.');
     }
     return parsed;
-  }
-
-  static String _shortCode(String value) {
-    final normalized = value.replaceAll('-', '').toUpperCase();
-    if (normalized.length <= 6) return normalized;
-    return normalized.substring(0, 6);
   }
 }
 

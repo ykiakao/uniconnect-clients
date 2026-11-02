@@ -48,14 +48,19 @@ class ActivityCard extends StatelessWidget {
                       ),
                 ),
               ),
-              if (activity.dueDate != null)
+              if (activity.dueDate != null ||
+                  activity.publicationState == 'closed')
                 Flexible(
                     child: Align(
                         alignment: Alignment.centerRight,
-                        child: isExpired
-                            ? const AppBadge(
-                                label: 'Encerrado', tone: AppBadgeTone.neutral)
-                            : PriorityBadge(priority: activity.priority))),
+                        child:
+                            activity.publicationState == 'closed' || isExpired
+                                ? AppBadge(
+                                    label: activity.publicationState == 'closed'
+                                        ? 'Encerrada'
+                                        : 'Prazo vencido',
+                                    tone: AppBadgeTone.neutral)
+                                : PriorityBadge(priority: activity.priority))),
             ],
           ),
           const SizedBox(height: 8),

@@ -302,7 +302,7 @@ class _GradeSummary extends StatelessWidget {
       skipLoadingOnRefresh: false,
       loading: () => const Text('Carregando notas...',
           style: TextStyle(color: Colors.white)),
-      error: (_, __) => const Text('Média indisponível',
+      error: (_, __) => const Text('Notas indisponíveis',
           style: TextStyle(color: Colors.white)),
       data: (allItems) {
         final items = allItems.where((g) => !g.isHistorical).toList();
@@ -310,21 +310,14 @@ class _GradeSummary extends StatelessWidget {
           return const Text('Sem notas disponíveis',
               style: TextStyle(color: Colors.white));
         }
-        final average =
-            items.map((g) => g.p1).reduce((a, b) => a + b) / items.length;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Média simples', style: TextStyle(color: Colors.white)),
-            Text(average.toStringAsFixed(1),
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: Colors.white, fontWeight: FontWeight.w700)),
             Text(
                 '${items.length} ${items.length == 1 ? 'avaliação disponível' : 'avaliações disponíveis'}',
                 style: const TextStyle(color: Colors.white)),
             const SizedBox(height: AppSpacing.xs),
-            const Text(
-                'Indicador de acompanhamento, sem valor de coeficiente oficial.',
+            const Text('Consulte as avaliações individuais em Ver notas.',
                 style: TextStyle(color: Colors.white)),
           ],
         );

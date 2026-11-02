@@ -4,6 +4,7 @@ import '../../academic/services/academic_api_service.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/academic_activity.dart';
+import '../../../core/network/api_client.dart';
 
 final academicApiServiceProvider = Provider<AcademicApiService>((ref) {
   return AcademicApiService(ref.watch(apiClientProvider));
@@ -14,7 +15,10 @@ final activitiesProvider = FutureProvider<List<AcademicActivity>>((ref) async {
   final accessToken = authState.accessToken;
   final user = authState.user;
 
-  if (accessToken == null || user == null) return const [];
+  if (accessToken == null || user == null) {
+    throw const ApiException('Sessão inválida. Entre novamente.',
+        statusCode: 401);
+  }
 
   if (ref.watch(syntheticDemoEnabledProvider)) {
     return (await ref.watch(syntheticAcademicDataProvider.future)).activities;
@@ -24,12 +28,23 @@ final activitiesProvider = FutureProvider<List<AcademicActivity>>((ref) async {
         accessToken: accessToken,
         tenantSlug: user.tenant.slug,
       );
-});
+}, retry: (_, __) => null);
 
 final activityByIdProvider =
     FutureProvider.family<AcademicActivity?, String>((ref, id) async {
-  for (final activity in await ref.watch(activitiesProvider.future)) {
-    if (activity.id == id) return activity;
+  if (ref.watch(syntheticDemoEnabledProvider)) {
+    for (final activity in await ref.watch(activitiesProvider.future)) {
+      if (activity.id == id) return activity;
+    }
+    return null;
   }
-  return null;
-});
+  final auth = ref.watch(authControllerProvider);
+  if (auth.accessToken == null || auth.user == null) {
+    throw const ApiException('Sessão inválida. Entre novamente.',
+        statusCode: 401);
+  }
+  return ref.watch(academicApiServiceProvider).getActivity(
+      accessToken: auth.accessToken!,
+      tenantSlug: auth.user!.tenant.slug,
+      id: id);
+}, retry: (_, __) => null);

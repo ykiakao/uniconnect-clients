@@ -116,7 +116,8 @@ void main() {
     final (container, api) = await prepare(tester);
     final frame =
         await showPage(tester, container, const StudentDashboardPage());
-    expect(find.text('8.2'), findsOneWidget);
+    expect(find.text('8.2'), findsNothing);
+    expect(find.text('5 avaliações disponíveis'), findsOneWidget);
     expect(find.text('8.3'), findsNothing);
     expect(demoContext, findsOneWidget);
     await captureLayout(tester, frame, 'synthetic-dashboard-390');

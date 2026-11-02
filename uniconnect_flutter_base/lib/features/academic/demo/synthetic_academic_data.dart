@@ -137,10 +137,7 @@ class SyntheticAcademicData {
         periodLabel: period['label'] as String,
         isHistorical: period['id'] != current['id'],
         feedback: row['feedback'] as String,
-        p1: value,
-        p2: value,
-        work: value,
-        status: '',
+        grade: value,
       ));
     }
     return SyntheticAcademicData(

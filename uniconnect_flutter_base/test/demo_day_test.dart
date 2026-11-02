@@ -170,10 +170,7 @@ void main() {
               subject: 'Pesquisa aplicada',
               code: 'ATV001',
               teacher: 'Professor da turma',
-              p1: 0,
-              p2: 0,
-              work: 0,
-              status: 'Em curso',
+              grade: 0,
             ),
           ]),
     ]);
@@ -202,24 +199,16 @@ void main() {
     expect(find.text('Nenhuma nota disponível'), findsOneWidget);
   });
 
-  testWidgets('teacher publishing prototype cannot claim persistence',
+  testWidgets('student cannot access teacher activity creation',
       (tester) async {
     await pumpDemoPage(tester, const CreateActivityPage());
-    await tester.scrollUntilVisible(find.text('Publicar Atividade'), 250,
-        scrollable: find.byType(Scrollable).first);
-    final button = tester.widget<ElevatedButton>(
-      find.widgetWithText(ElevatedButton, 'Publicar Atividade'),
-    );
-    expect(button.onPressed, isNull);
+    expect(find.text('Área exclusiva do professor'), findsOneWidget);
+    expect(find.text('Salvar rascunho'), findsNothing);
   });
 
-  testWidgets('teacher grades prototype cannot publish simulated grades',
-      (tester) async {
+  testWidgets('student cannot access teacher reviews', (tester) async {
     await pumpDemoPage(tester, const TeacherGradesPage());
-    final button = tester.widget<ElevatedButton>(
-      find.widgetWithText(ElevatedButton, 'Publicar Notas'),
-    );
-    expect(button.onPressed, isNull);
-    expect(find.textContaining('Dados de demonstração'), findsOneWidget);
+    expect(find.text('Área exclusiva do professor'), findsOneWidget);
+    expect(find.text('Publicar avaliação'), findsNothing);
   });
 }

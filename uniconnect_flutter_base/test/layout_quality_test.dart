@@ -63,14 +63,12 @@ Future<GlobalKey> pumpLayout(WidgetTester tester, Widget page,
       activitiesProvider.overrideWith((ref) async => [demoActivity]),
       subjectGradesProvider.overrideWith((ref) async => const [
             SubjectGrade(
-                activityId: 'activity-1',
-                subject: 'Pesquisa aplicada',
-                code: 'ATV001',
-                teacher: '',
-                p1: 8.5,
-                p2: 8.5,
-                work: 8.5,
-                status: ''),
+              activityId: 'activity-1',
+              subject: 'Pesquisa aplicada',
+              code: 'ATV001',
+              teacher: '',
+              grade: 8.5,
+            ),
           ]),
     ],
     child: RepaintBoundary(
@@ -161,7 +159,7 @@ void main() {
     expect(rects[2].bottom, closeTo(rects[3].bottom, .5));
     expect(rects[0].width, closeTo(rects[1].width, .5));
     final description =
-        find.textContaining('Conheça o formulário demonstrativo.');
+        find.textContaining('Crie rascunhos, consulte atividades por oferta');
     final actionIcon = find.descendant(
         of: cards[1], matching: find.byIcon(Icons.visibility_outlined));
     expect(tester.getRect(actionIcon).left,
@@ -173,47 +171,16 @@ void main() {
   });
 
   testWidgets(
-      'teacher grade table announces scrolling and exposes the last column',
+      'teacher review controls remain inside narrow view without synthetic grades',
       (tester) async {
     final key = await pumpLayout(tester, const TeacherGradesPage(),
         width: 320, scale: 2, teacher: true);
-    await tester.scrollUntilVisible(find.byType(Scrollbar).hitTestable(), 200,
-        scrollable: verticalScroll);
-    await captureLayout(tester, key, 'teacher-table-320-text200');
-    expect(find.text('Deslize para ver todas as colunas'), findsOneWidget);
-    final horizontal = find.byWidgetPredicate((w) =>
-        w is SingleChildScrollView && w.scrollDirection == Axis.horizontal);
-    expect(horizontal, findsOneWidget);
-    await tester.drag(horizontal, const Offset(-2400, 0));
-    await tester.pumpAndSettle();
-    final status = tester.renderObject<RenderParagraph>(find.text('STATUS'));
-    final boxes = status.getBoxesForSelection(
-        const TextSelection(baseOffset: 0, extentOffset: 6));
-    expect(boxes, isNotEmpty);
-    for (final box in boxes) {
-      expect(status.localToGlobal(Offset(box.left, box.top)).dx,
-          greaterThanOrEqualTo(0));
-      expect(status.localToGlobal(Offset(box.right, box.bottom)).dx,
-          lessThanOrEqualTo(320));
-    }
-    for (final label in ['CURSANDO', 'ALERTA', 'APROVADO']) {
-      for (final element in find.text(label).evaluate()) {
-        final paragraph = element.renderObject! as RenderParagraph;
-        final boxes = paragraph.getBoxesForSelection(
-            TextSelection(baseOffset: 0, extentOffset: label.length));
-        expect(paragraph.didExceedMaxLines, isFalse);
-        for (final box in boxes) {
-          expect(paragraph.localToGlobal(Offset(box.left, box.top)).dx,
-              greaterThanOrEqualTo(0),
-              reason: label);
-          expect(paragraph.localToGlobal(Offset(box.right, box.bottom)).dx,
-              lessThanOrEqualTo(320),
-              reason: label);
-        }
-      }
-    }
+    expect(find.text('Oferta acadêmica'), findsOneWidget);
+    expect(find.text('P1'), findsNothing);
+    expect(find.text('APROVADO'), findsNothing);
+    expect(find.byType(DropdownButtonFormField<String>), findsNWidgets(2));
     expect(tester.takeException(), isNull);
-    await captureLayout(tester, key, 'teacher-table-last-column-320-text200');
+    await captureLayout(tester, key, 'teacher-reviews-320-text200');
   });
 
   testWidgets(
@@ -294,23 +261,12 @@ void main() {
     }
   });
 
-  testWidgets('prototype field labels wrap fully and field widths remain equal',
+  testWidgets(
+      'teacher form fields retain equal widths and unavailable session cannot save',
       (tester) async {
     await pumpLayout(tester, const CreateActivityPage(),
         width: 320, scale: 2, teacher: true);
     final widths = <double>[];
-    for (final label in [
-      'Selecione a Disciplina',
-      'Título da Atividade',
-      'Descrição e Instruções',
-      'Data de Entrega',
-      'Valor da Atividade (Pontos)'
-    ]) {
-      await tester.scrollUntilVisible(find.text(label).hitTestable(), 180,
-          scrollable: verticalScroll);
-      final paragraph = tester.renderObject<RenderParagraph>(find.text(label));
-      expect(paragraph.didExceedMaxLines, isFalse, reason: label);
-    }
     for (final field in find.byType(TextField).evaluate()) {
       widths.add(tester
           .getSize(find.byElementPredicate((element) => element == field))
@@ -323,7 +279,7 @@ void main() {
     expect(
         tester
             .widget<ElevatedButton>(
-                find.widgetWithText(ElevatedButton, 'Publicar Atividade'))
+                find.widgetWithText(ElevatedButton, 'Salvar rascunho'))
             .onPressed,
         isNull);
   });
@@ -360,24 +316,7 @@ void main() {
             await tester.drag(scroll.first, const Offset(0, -1600));
             await tester.pumpAndSettle();
           }
-          if (entry.key == 'grades') {
-            await tester.scrollUntilVisible(
-                find.text('Média prevista: 0.0').hitTestable(), 200,
-                scrollable: verticalScroll);
-            for (final label in ['P1', 'P2', 'Trab.']) {
-              final paragraph =
-                  tester.renderObject<RenderParagraph>(find.text(label));
-              expect(paragraph.didExceedMaxLines, isFalse,
-                  reason: '$label at $width / $scale');
-            }
-            await tester.ensureVisible(find.text('Média prevista: 0.0'));
-            await tester.pumpAndSettle();
-            final result = tester.getRect(find.text('Média prevista: 0.0'));
-            expect(
-                result.bottom,
-                lessThanOrEqualTo(
-                    tester.getRect(find.byType(NavigationBar)).top));
-          }
+
           for (final element in find.byType(AppCard).evaluate()) {
             final card =
                 find.byElementPredicate((candidate) => candidate == element);
