@@ -1,7 +1,7 @@
 ﻿const API_BASE_URL = "http://localhost:3333/api/v1";
 const DEFAULT_TENANT = "universidade-norte";
 const STORAGE_KEY = "uniconnect.admin.session";
-const ADMIN_ROLES = new Set(["admin", "coordinator", "owner"]);
+const ADMIN_ROLES = new Set(["admin", "gestor", "coordinator", "owner"]);
 
 const app = document.querySelector("#app");
 
@@ -15,6 +15,7 @@ const state = {
   sidebarOpen: false,
   showPassword: false,
 };
+let pendingSessionValidation = null;
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", glyph: "DB" },
@@ -164,6 +165,7 @@ function escapeHtml(value) {
 function formatRole(role) {
   const labels = {
     admin: "Administrador",
+    gestor: "Coordenador",
     coordinator: "Coordenador",
     owner: "Mantenedor",
     teacher: "Professor",
@@ -208,16 +210,100 @@ function getStoredSession() {
   }
 }
 
-function isAdminUser(user) {
-  return ADMIN_ROLES.has(user?.role);
+function isNonEmptyString(value) {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
-function normalizeLoginError(error) {
-  if (error.message === "Failed to fetch") {
-    return "Não foi possível conectar à API. Verifique se o backend está rodando e se a origem do painel está liberada.";
+function isAdminUser(user) {
+  return (
+    user !== null &&
+    typeof user === "object" &&
+    !Array.isArray(user) &&
+    ADMIN_ROLES.has(user.role) &&
+    ["id", "name", "email", "tenantSlug"].every((key) =>
+      isNonEmptyString(user[key]),
+    )
+  );
+}
+
+function hasTenantContext(user, tenant, expectedSlug) {
+  return (
+    tenant !== null &&
+    typeof tenant === "object" &&
+    !Array.isArray(tenant) &&
+    ["id", "name", "slug"].every((key) => isNonEmptyString(tenant[key])) &&
+    tenant.slug === expectedSlug &&
+    user.tenantSlug === tenant.slug
+  );
+}
+
+class ApiRequestError extends Error {
+  constructor(status, code, message) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
+// Only the API's reviewed public messages may appear verbatim.
+const PUBLIC_ERROR_MESSAGES = new Map([
+  ["400:TENANT_REQUIRED", ["Instituição não informada"]],
+  ["401:INVALID_CREDENTIALS", ["E-mail ou senha incorretos"]],
+  ["401:INVALID_SESSION", ["Sessao invalida ou expirada."]],
+  ["403:ADMIN_ACCESS_REQUIRED", [
+    "Acesso administrativo restrito a coordenadores e mantenedores.",
+    "Sessao sem permissao administrativa.",
+  ]],
+  ["403:USER_NOT_LINKED_TO_TENANT", ["Usuário não vinculado à instituição."]],
+  ["403:USER_INACTIVE", ["Vinculo institucional desativado."]],
+  ["403:TENANT_SUSPENDED", ["A instituicao esta suspensa."]],
+  ["404:TENANT_NOT_FOUND", ["Instituição não encontrada"]],
+  ["503:DEPENDENCY_UNAVAILABLE", [
+    "O servico de dados esta temporariamente indisponivel. Tente novamente mais tarde.",
+  ]],
+]);
+
+function httpError(status, envelope) {
+  const code = typeof envelope?.code === "string" && /^[A-Z][A-Z0-9_]{0,63}$/.test(envelope.code)
+    ? envelope.code
+    : null;
+  const message = envelope?.message;
+  const publicMessages = PUBLIC_ERROR_MESSAGES.get(`${status}:${code}`);
+  if (publicMessages?.includes(message)) {
+    return new ApiRequestError(status, code, message);
   }
 
-  return error.message;
+  const fallback = status >= 500
+    ? "A API está temporariamente indisponível. Tente novamente mais tarde."
+    : {
+        400: "Não foi possível validar os dados da solicitação.",
+        401: "Não foi possível autenticar. Confira as credenciais ou entre novamente.",
+        403: "Você não tem permissão para acessar o painel nesta instituição.",
+        404: "Instituição ou recurso não encontrado.",
+        408: "A solicitação demorou demais. Tente novamente.",
+        429: "Limite de solicitações atingido. Tente novamente mais tarde.",
+      }[status] ?? "Não foi possível concluir a solicitação.";
+  return new ApiRequestError(status, code, fallback);
+}
+
+function safeAuthError(error) {
+  return error instanceof ApiRequestError
+    ? error.message
+    : "Não foi possível concluir a autenticação.";
+}
+
+function isTemporarySessionError(error) {
+  if (!(error instanceof ApiRequestError)) return false;
+  const { status } = error;
+  return status === null || status === 408 || status === 429 ||
+    status >= 500 || (status >= 200 && status < 300);
+}
+
+function rejectsSavedSession(error) {
+  return error instanceof ApiRequestError &&
+    (error.status === 401 || (error.status === 403 && [
+      "ADMIN_ACCESS_REQUIRED", "USER_INACTIVE", "USER_NOT_LINKED_TO_TENANT",
+    ].includes(error.code)));
 }
 
 function saveStoredSession(session, remember) {
@@ -232,59 +318,103 @@ function clearStoredSession() {
 }
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${state.apiBaseUrl}${path}`, {
-    method: options.method ?? "GET",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "x-tenant-slug": state.tenantSlug,
-      ...(options.accessToken
-        ? { Authorization: `Bearer ${options.accessToken}` }
-        : {}),
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  let response;
+  try {
+    response = await fetch(`${options.apiBaseUrl ?? state.apiBaseUrl}${path}`, {
+      method: options.method ?? "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "x-tenant-slug": options.tenantSlug ?? state.tenantSlug,
+        ...(options.accessToken
+          ? { Authorization: `Bearer ${options.accessToken}` }
+          : {}),
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch {
+    throw new ApiRequestError(null, null, "Não foi possível conectar à API. Verifique a conexão e tente novamente.");
+  }
 
-  const payload = await response.json().catch(() => ({}));
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    if (!response.ok) throw httpError(response.status);
+    throw new ApiRequestError(response.status, null, "A API retornou uma resposta inválida. Tente novamente.");
+  }
 
   if (!response.ok) {
-    throw new Error(payload.message ?? "Não foi possível comunicar com a API.");
+    throw httpError(response.status, payload?.error);
   }
 
   return payload;
 }
 
-async function restoreSession() {
+function restoreSession() {
+  if (pendingSessionValidation?.session === state.session) {
+    return pendingSessionValidation.promise;
+  }
+
+  const validation = { session: state.session };
+  pendingSessionValidation = validation;
+  validation.promise = validateStoredSession(validation.session).finally(() => {
+    if (pendingSessionValidation === validation) pendingSessionValidation = null;
+  });
+  return validation.promise;
+}
+
+async function validateStoredSession(previousSession) {
   const stored = getStoredSession();
-  if (!stored?.accessToken) {
+  if (!isNonEmptyString(stored?.accessToken)) {
+    state.session = null;
+    clearStoredSession();
     renderLogin();
     return;
   }
 
-  state.session = stored;
-  state.apiBaseUrl = stored.apiBaseUrl ?? API_BASE_URL;
-  state.tenantSlug = stored.tenant?.slug ?? stored.tenantSlug ?? DEFAULT_TENANT;
+  const apiBaseUrl = stored.apiBaseUrl ?? API_BASE_URL;
+  const tenantSlug = stored.tenant?.slug ?? stored.tenantSlug ?? DEFAULT_TENANT;
 
   try {
     const payload = await apiRequest("/auth/admin/me", {
       accessToken: stored.accessToken,
+      apiBaseUrl,
+      tenantSlug,
     });
+    if (state.session !== previousSession) return;
 
-    if (!isAdminUser(payload.user)) {
-      throw new Error("Sessão sem permissão administrativa.");
+    const { tenant, ...user } = payload ?? {};
+    if (
+      !isAdminUser(user) ||
+      !hasTenantContext(user, tenant, tenantSlug)
+    ) {
+      throw new ApiRequestError(403, "ADMIN_ACCESS_REQUIRED", "Sessão sem permissão administrativa.");
     }
 
     state.session = {
       ...stored,
-      user: payload.user,
-      tenant: payload.tenant,
+      user,
+      tenant,
     };
-    renderAdmin();
-  } catch {
+    state.apiBaseUrl = apiBaseUrl;
+    state.tenantSlug = tenantSlug;
+    state.error = "";
+  } catch (error) {
+    if (state.session !== previousSession) return;
+    state.error = safeAuthError(error);
+    if (previousSession && isTemporarySessionError(error)) {
+      renderAdmin();
+      return;
+    }
     state.session = null;
-    clearStoredSession();
+    state.apiBaseUrl = apiBaseUrl;
+    state.tenantSlug = tenantSlug;
+    if (rejectsSavedSession(error)) clearStoredSession();
     renderLogin();
+    return;
   }
+  renderAdmin();
 }
 
 function togglePasswordVisibility() {
@@ -311,8 +441,14 @@ async function handleLogin(event) {
       body: { email, password },
     });
 
-    if (!isAdminUser(payload.user)) {
-      throw new Error(
+    if (
+      !isNonEmptyString(payload?.accessToken) ||
+      !isAdminUser(payload.user) ||
+      !hasTenantContext(payload.user, payload.tenant, state.tenantSlug)
+    ) {
+      throw new ApiRequestError(
+        403,
+        "ADMIN_ACCESS_REQUIRED",
         "Acesso restrito a coordenadores e mantenedores da instituição.",
       );
     }
@@ -334,7 +470,7 @@ async function handleLogin(event) {
     state.showPassword = false;
     renderAdmin();
   } catch (error) {
-    state.error = normalizeLoginError(error);
+    state.error = safeAuthError(error);
     state.isLoading = false;
     renderLogin();
   }
@@ -474,6 +610,7 @@ function renderAdmin() {
         </div>
       </header>
       <section class="content">
+        ${state.error ? `<div class="status-message" role="status">${escapeHtml(state.error)}</div>` : ""}
         ${renderActiveView()}
       </section>
     </main>
