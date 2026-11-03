@@ -37,6 +37,10 @@ class FakeAuthService extends ApiAuthService {
     this.meResult = fakeStudent,
     this.meError,
     this.loginCompleter,
+    this.refreshResult,
+    this.refreshCompleter,
+    this.refreshError,
+    this.logoutCompleter,
   }) : super(ApiClient());
 
   final AuthSession? loginResult;
@@ -44,6 +48,13 @@ class FakeAuthService extends ApiAuthService {
   final AppUser meResult;
   final Object? meError;
   final Completer<AuthSession>? loginCompleter;
+  final AuthSession? refreshResult;
+  final Completer<AuthSession>? refreshCompleter;
+  final Object? refreshError;
+  final Completer<void>? logoutCompleter;
+  final refreshCalls = <(String, String)>[];
+  final logoutCalls = <(String, String)>[];
+  String? meTenant;
   int loginCalls = 0;
   int meCalls = 0;
 
@@ -67,9 +78,31 @@ class FakeAuthService extends ApiAuthService {
   }
 
   @override
-  Future<AppUser> me(String accessToken) async {
+  Future<AppUser> me(String accessToken, {String? tenantSlug}) async {
     meCalls++;
+    meTenant = tenantSlug;
     if (meError != null) throw meError!;
     return meResult;
+  }
+
+  @override
+  Future<AuthSession> refresh(String refreshToken,
+      {required String tenantSlug}) async {
+    refreshCalls.add((refreshToken, tenantSlug));
+    if (refreshError != null) throw refreshError!;
+    if (refreshCompleter != null) return refreshCompleter!.future;
+    return refreshResult ??
+        AuthSession(
+          accessToken: 'rotated-access',
+          refreshToken: 'rotated-refresh',
+          expiresAt: null,
+          user: meResult,
+        );
+  }
+
+  @override
+  Future<void> logout(String accessToken, {required String tenantSlug}) async {
+    logoutCalls.add((accessToken, tenantSlug));
+    await logoutCompleter?.future;
   }
 }

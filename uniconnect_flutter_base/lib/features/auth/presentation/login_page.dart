@@ -12,6 +12,7 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/status_banner.dart';
 import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
+import '../services/session_storage.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -42,7 +43,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _login() async {
-    if (_isLoading) return;
+    if (_isLoading || ref.read(authControllerProvider).isRestoring) return;
 
     final email = _emailController.text.trim().toLowerCase();
     final emailError = _validateEmail(email);
@@ -86,7 +87,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   String _loginErrorMessage(Object error) {
+    if (error is UnsupportedUserRole) return error.message;
     if (error is ApiException) {
+      if (error.code == 'SESSION_STORAGE_UNAVAILABLE') {
+        return sessionStorageUnavailableMessage;
+      }
       return switch (error.statusCode) {
         401 =>
           'E-mail ou senha incorretos. Confira os dados e tente novamente.',
@@ -103,9 +108,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   void _goByRole(AppUser user) {
-    final route = user.role == UserRole.teacher
-        ? AppRoutes.teacherDashboard
-        : AppRoutes.studentDashboard;
+    final route = switch (user.role) {
+      UserRole.teacher => AppRoutes.teacherDashboard,
+      UserRole.student => AppRoutes.studentDashboard,
+    };
     context.go(route);
   }
 
@@ -118,6 +124,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authControllerProvider);
+    final authError = _authError ??
+        (auth.status == AuthStatus.unauthenticated ? auth.errorMessage : null);
+    final busy = _isLoading || auth.isRestoring;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -211,14 +221,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           errorMaxLines: 2,
                         ),
                       ),
-                      if (_authError != null) ...[
+                      if (authError != null) ...[
                         const SizedBox(height: AppSpacing.md),
                         StatusBanner(
                           title: 'Falha ao entrar',
-                          message: _authError!,
+                          message: authError,
                           tone: AppBadgeTone.danger,
                         ),
                       ],
+                      if (auth.canRetryRestore && !busy)
+                        TextButton(
+                          onPressed: () {
+                            setState(() => _authError = null);
+                            ref
+                                .read(authControllerProvider.notifier)
+                                .restoreSession();
+                          },
+                          child: const Text('Tentar restaurar sessão'),
+                        ),
                       const SizedBox(height: AppSpacing.sm),
                       Row(
                         children: [
@@ -237,10 +257,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       PrimaryButton(
-                        onPressed: _isLoading ? null : _login,
+                        onPressed: busy ? null : _login,
                         icon: Icons.login,
-                        label: _isLoading ? 'Entrando...' : 'Entrar',
-                        isLoading: _isLoading,
+                        label: auth.isRestoring
+                            ? 'Restaurando...'
+                            : _isLoading
+                                ? 'Entrando...'
+                                : 'Entrar',
+                        isLoading: busy,
                       ),
                     ],
                   ),

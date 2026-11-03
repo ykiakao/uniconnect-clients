@@ -36,34 +36,63 @@ class ApiAuthService {
       tenantSlug: tenantSlug,
     );
 
+    return _sessionFromResponse(response, tenantSlug);
+  }
+
+  Future<AuthSession> refresh(String refreshToken,
+      {required String tenantSlug}) async {
+    final response = await _apiClient.post(
+      '/auth/refresh',
+      {'refreshToken': refreshToken},
+      tenantSlug: tenantSlug,
+    );
+    return _sessionFromResponse(response, tenantSlug);
+  }
+
+  Future<void> logout(String accessToken, {required String tenantSlug}) async {
+    await _apiClient.post('/auth/logout', const {},
+        accessToken: accessToken, tenantSlug: tenantSlug);
+  }
+
+  AuthSession _sessionFromResponse(
+      Map<String, dynamic> response, String tenantSlug) {
     final userJson = response['user'] as Map<String, dynamic>;
-    final tenant = _tenantFromResponse(response, userJson);
+    final tenant = _tenantFromResponse(response, userJson, tenantSlug);
     final user = AppUser.fromJson(
       userJson,
       tenant: tenant,
     );
 
+    final accessToken = response['accessToken'];
+    final refreshToken = response['refreshToken'];
+    if (accessToken is! String ||
+        accessToken.trim().isEmpty ||
+        refreshToken is! String ||
+        refreshToken.trim().isEmpty) {
+      throw const FormatException('Resposta de sessão inválida.');
+    }
     return AuthSession(
-      accessToken: response['accessToken'] as String,
-      refreshToken: response['refreshToken'] as String,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
       expiresAt: _parseExpiresAt(response['expiresAt']),
       user: user,
     );
   }
 
-  Future<AppUser> me(String accessToken) async {
-    final tenantSlug = getActiveTenantSlug();
+  Future<AppUser> me(String accessToken, {String? tenantSlug}) async {
+    tenantSlug ??= getActiveTenantSlug();
     final response = await _apiClient.get(
       '/auth/me',
       accessToken: accessToken,
       tenantSlug: tenantSlug,
     );
-    final tenant = _tenantFromResponse(response, response);
+    final userJson = response['user'] is Map<String, dynamic>
+        ? response['user'] as Map<String, dynamic>
+        : response;
+    final tenant = _tenantFromResponse(response, userJson, tenantSlug);
 
     return AppUser.fromJson(
-      response['user'] is Map<String, dynamic>
-          ? response['user'] as Map<String, dynamic>
-          : response,
+      userJson,
       tenant: tenant,
     );
   }
@@ -71,8 +100,15 @@ class ApiAuthService {
   TenantContext _tenantFromResponse(
     Map<String, dynamic> response,
     Map<String, dynamic> userJson,
+    String expectedSlug,
   ) {
     final tenantJson = response['tenant'];
+    final userSlug = userJson['tenantSlug'];
+    if ((userSlug != null && userSlug != expectedSlug) ||
+        (tenantJson is Map<String, dynamic> &&
+            tenantJson['slug'] != expectedSlug)) {
+      throw const FormatException('Contexto institucional inválido.');
+    }
     if (tenantJson is Map<String, dynamic>) {
       return TenantContext.fromJson(tenantJson);
     }
@@ -80,7 +116,7 @@ class ApiAuthService {
     return TenantContext(
       id: '',
       name: 'Universidade Norte',
-      slug: userJson['tenantSlug'] as String? ?? getActiveTenantSlug(),
+      slug: expectedSlug,
       plan: SubscriptionPlan.growth,
       status: SubscriptionStatus.trialing,
       activeUsers: 0,

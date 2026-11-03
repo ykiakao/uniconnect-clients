@@ -10,6 +10,7 @@ class FakeSessionStorage extends SessionStorage {
     this.readCompleter,
     this.saveError,
     this.readError,
+    this.clearError,
   }) : super(const FlutterSecureStorage());
 
   StoredAuthSession? _session;
@@ -17,6 +18,7 @@ class FakeSessionStorage extends SessionStorage {
   final Completer<StoredAuthSession?>? readCompleter;
   final Object? saveError;
   final Object? readError;
+  final Object? clearError;
   bool hasLegacyPassword = false;
   int saveCount = 0;
   int clearCount = 0;
@@ -32,6 +34,8 @@ class FakeSessionStorage extends SessionStorage {
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,
       expiresAt: session.expiresAt,
+      tenantSlug: session.user.tenant.slug,
+      userId: session.user.id,
     );
   }
 
@@ -46,6 +50,7 @@ class FakeSessionStorage extends SessionStorage {
   @override
   Future<void> clear() async {
     clearCount++;
+    if (clearError != null) throw clearError!;
     _session = null;
     await clearLegacyCredentials();
   }

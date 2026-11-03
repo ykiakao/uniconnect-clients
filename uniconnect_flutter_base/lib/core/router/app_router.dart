@@ -42,7 +42,7 @@ import 'app_route_transition_page.dart';
 // Estados considerados:
 // - AuthState.isRestoring
 // - AuthState.user == null
-// - UserRole.teacher vs demais perfis tratados como aluno
+// - Papel acadêmico explícito (aluno ou professor).
 //
 // Guard de perfil:
 // - implementado em computeRedirect para bloquear /professor para aluno.
@@ -173,7 +173,7 @@ String? computeRedirect({
 
   if (isRestoring) return null;
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || userRole == null) {
     return isLogin ? null : AppRoutes.login;
   }
 
@@ -182,7 +182,6 @@ String? computeRedirect({
   final isStudentRoute = _studentOnlyRoutes.contains(location) ||
       location.startsWith('${AppRoutes.activities}/');
 
-  // TODO(produto): adicionar guard para perfil gestor/admin quando definido.
   return switch (userRole) {
     UserRole.teacher when isLogin || isLoading || isStudentRoute =>
       AppRoutes.teacherDashboard,

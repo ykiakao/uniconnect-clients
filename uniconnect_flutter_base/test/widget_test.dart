@@ -38,6 +38,7 @@ void main() {
         child: const MaterialApp(home: LoginPage()),
       ),
     );
+    await tester.pumpAndSettle();
   }
 
   void pressLoginButton(WidgetTester tester) {

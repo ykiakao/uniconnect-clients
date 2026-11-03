@@ -4,6 +4,16 @@ import 'package:uniconnect/core/router/app_router.dart';
 import 'package:uniconnect/features/auth/models/app_user.dart';
 
 void main() {
+  test('authenticated routing requires an explicit supported role', () {
+    expect(
+        computeRedirect(
+          isRestoring: false,
+          isAuthenticated: true,
+          userRole: null,
+          location: AppRoutes.studentDashboard,
+        ),
+        AppRoutes.login);
+  });
   test('professor cannot enter concrete student activity detail routes', () {
     expect(
       computeRedirect(

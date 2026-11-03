@@ -2,6 +2,16 @@ import '../../tenant/models/tenant_context.dart';
 
 enum UserRole { student, teacher }
 
+class UnsupportedUserRole implements Exception {
+  const UnsupportedUserRole({required this.administrative});
+
+  final bool administrative;
+
+  String get message => administrative
+      ? 'Use o painel web para acessar sua conta administrativa.'
+      : 'Este perfil não é compatível com o aplicativo.';
+}
+
 class AppUser {
   const AppUser({
     required this.id,
@@ -52,7 +62,12 @@ extension UserRoleX on UserRole {
     return switch (value) {
       'aluno' || 'student' => UserRole.student,
       'teacher' || 'professor' => UserRole.teacher,
-      _ => UserRole.student,
+      'gestor' ||
+      'admin' ||
+      'coordinator' ||
+      'owner' =>
+        throw const UnsupportedUserRole(administrative: true),
+      _ => throw const UnsupportedUserRole(administrative: false),
     };
   }
 }
