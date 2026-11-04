@@ -1,220 +1,59 @@
-# UniConnect Clients
+# UniConnect · Clientes
 
-Clientes do UniConnect organizados em um repositório próprio para app Flutter mobile-first e futuro painel web administrativo.
+UniConnect é um SaaS acadêmico multi-instituição desenvolvido como TCC. Este repositório reúne o aplicativo de alunos e professores e o MVP de administração institucional. O backend Express fica no repositório separado `uniconnect-api`. Referência técnica atualizada em **04/11/2026**.
 
-![Flutter](https://img.shields.io/badge/Flutter-Mobile-blue)
-![Dart](https://img.shields.io/badge/Dart-App-blue)
-![Web](https://img.shields.io/badge/Web-Admin-61DAFB)
-![REST](https://img.shields.io/badge/API-REST-green)
-![SaaS](https://img.shields.io/badge/Architecture-SaaS-purple)
+## Arquitetura e tecnologias
 
----
+| Componente | Stack confirmada | Responsabilidade |
+| --- | --- | --- |
+| [Aplicativo Flutter](uniconnect_flutter_base/README.md) | Flutter 3.44.0 no workflow, Dart, Riverpod, GoRouter e `package:http` | Navegação, sessão e jornadas acadêmicas de aluno e professor |
+| [Painel administrativo](painel_web/README.md) | HTML, CSS e JavaScript, com servidor estático Node.js | Login institucional, restauração de sessão e demonstração da interface administrativa |
+| API e dados | REST JSON em `/api/v1`, Express, Supabase Auth (GoTrue) e PostgreSQL | Autorizar o acesso e persistir os registros acadêmicos |
 
-## Sobre o Projeto
+Os clientes acessam a API por HTTP. O cabeçalho `x-tenant-slug` identifica a instituição e `Authorization: Bearer …` acompanha as chamadas protegidas. A API valida a sessão, o papel e o vínculo institucional e acadêmico. Configurar o slug no cliente não concede acesso a uma oferta.
 
-O UniConnect Clients reúne as interfaces usadas por alunos, professores e, futuramente, gestores acadêmicos.
+```text
+uniconnect_flutter_base/  App Flutter, testes e assets
+painel_web/              Painel estático, servidor Node e testes de autenticação
+docs/                    Planejamento, referências e evidências de demonstração
+.github/workflows/       Validação e publicação do Flutter Web
+```
 
-Este repositório mantém o aplicativo Flutter e a base reservada para o painel web. A API backend foi separada no repositório `uniconnect-api`, reforçando que os clientes devem consumir dados apenas via HTTP.
+## Funcionalidades por perfil
 
----
+- **Aluno** — Início com agenda e prévia de pendências, Atividades com pesquisa, filtros e entrega textual versionada, Notas com boletim N1/N2 por oferta e Acadêmico com os dados institucionais fornecidos na sessão. A nota individual e a devolutiva publicadas aparecem no detalhe da atividade. O Perfil tem entrada independente.
+- **Professor** — Início com resumo da oferta, Atividades com rascunho, publicação, encerramento, entregas e correção, e Notas com provas presenciais N1/N2, boletim e fechamento de etapa. A seleção da oferta por `classId` é compartilhada e validada. O formulário legado também permite cadastrar provas.
+- **Administração institucional** — O painel chama `POST /auth/admin/login` e `GET /auth/admin/me` para autenticar e restaurar a sessão. URL da API e slug são configuráveis no formulário. A visão geral e as tabelas ainda usam dados demonstrativos. Os módulos administrativos da API têm cobertura própria e não equivalem a CRUD integrado no painel.
 
-## Responsabilidades dos Clientes
+O Chat do aluno é demonstrativo e o destino docente informa indisponibilidade. Horários e calendário acadêmico ainda não têm integração no Flutter. A elegibilidade à prova final pode vir no boletim, mas a aplicação da prova final está fora do fluxo disponível.
 
-* Disponibilizar o app mobile para alunos e professores
-* Autenticar usuários consumindo a API UniConnect
-* Exibir dashboards por perfil
-* Centralizar atividades, notas, chat e perfil acadêmico no app
-* Preparar o painel web para gestão institucional
-* Manter a URL da API configurável por ambiente
-* Evitar dependência direta de código backend local
+## Executar e testar
 
----
-
-## Tecnologias Utilizadas
-
-| Camada | Tecnologias |
-| ------ | ----------- |
-| Mobile | Flutter, Dart, Riverpod, GoRouter, Material Design 3, Google Fonts, Intl |
-| Rede | HTTP, API REST |
-| Sessão | Flutter Secure Storage |
-| Painel Web | React ou Next.js, TypeScript, Tailwind CSS, TanStack Query, React Hook Form, Zod |
-| Arquitetura | Clientes desacoplados, REST API, SaaS mobile-first |
-
----
-
-## Estrutura do Repositório
-
-| Serviço | Pasta | Descrição |
-| ------- | ----- | --------- |
-| App Mobile | `uniconnect_flutter_base/` | Aplicativo Flutter usado por alunos e professores |
-| Painel Web | `painel_web/` | Base reservada para o painel administrativo |
-
-Principais pastas:
-
-| Pasta | Finalidade |
-| ----- | ---------- |
-| `uniconnect_flutter_base/lib/core` | Rotas, tema, rede e configuração da API |
-| `uniconnect_flutter_base/lib/features` | Funcionalidades do app Flutter |
-| `uniconnect_flutter_base/lib/shared` | Componentes compartilhados |
-| `uniconnect_flutter_base/test` | Testes do app Flutter |
-| `painel_web` | Documentação e futuro scaffold do painel |
-
----
-
-## Requisitos
-
-Antes de executar o projeto, instale:
-
-* Git
-* Flutter
-* Dart SDK
-* Android Studio ou emulador configurado
-* API `uniconnect-api` em execução para login real
-
----
-
-## Executando o App Mobile
+Para o Flutter, use o SDK do workflow como referência e tenha um dispositivo ou navegador configurado. Inicie a API local antes do login e use o slug do ambiente. Se o harness imprimir uma porta dinâmica, substitua `3333` pela porta exibida.
 
 ```bash
 cd uniconnect_flutter_base
 flutter pub get
-flutter run
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080 --dart-define=API_BASE_URL=http://127.0.0.1:3333/api/v1 --dart-define=TENANT_SLUG=uniconnect-local
+flutter analyze --no-pub
+flutter test --no-pub
 ```
 
-Para rodar no navegador como servidor web:
+Para o painel, em outro terminal, use Node.js 22. O servidor estático não exige instalação de pacotes. Abra `http://127.0.0.1:8080` e informe a URL da API, o slug e uma conta com papel administrativo no ambiente escolhido. Se o Flutter Web estiver nessa porta, inicie o painel com outra porta pela variável `PORT`.
 
 ```bash
-flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080
+cd painel_web
+node server.mjs
+node --test tests/auth.test.cjs
 ```
 
----
+Os testes Flutter cobrem serviços e widgets com respostas controladas. Os testes do painel simulam HTTP e armazenamento. Na validação local com serviços reais, o Flutter Web comprovou login, seleção de oferta, criação e publicação do trabalho, consulta pelo aluno, envio, reenvio e abertura da mesma entrega pelo professor. A conclusão do ciclo de devolutiva e o login administrativo real do painel não estão comprovados na evidência consultada. O ensaio local não qualifica homologação ou produção.
 
-## Configurando a API
+A [demonstração Flutter Web no GitHub Pages](https://ykiakao.github.io/uniconnect-clients/) tem um [roteiro de publicação, validação e recuperação](docs/demo-day/github-pages-publication.md). O workflow está configurado para um build demonstrativo e referencia uma URL de API própria. A configuração por si só não confirma a disponibilidade pública atual.
 
-A URL da API fica centralizada em:
+## Colaboração no redesign
 
-```text
-uniconnect_flutter_base/lib/core/config/api_config.dart
-```
-
-URL local padrão:
-
-```text
-http://localhost:3333/api/v1
-```
-
-Para rodar apontando para outra API:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://localhost:3333/api/v1
-```
-
-Para rodar apontando para a API publicada no Render e para o tenant EduKMais:
-
-```bash
-flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080 --dart-define=API_BASE_URL=https://uniconnect-api-ht5x.onrender.com/api/v1 --dart-define=TENANT_SLUG=edukmais
-```
-
----
-
-## Deploy Web para Apresentacao
-
-O app Flutter Web e publicado pelo GitHub Actions em GitHub Pages.
-
-No GitHub, configure o repositorio em **Settings > Pages > Build and deployment**
-com:
-
-```text
-Source: GitHub Actions
-```
-
-Pushes para `main` ou `demo-day-flutter-polish` apenas validam e geram o build
-sintetico. A publicacao exige **Actions > Deploy Flutter Web > Run workflow**,
-selecionando a branch e habilitando `publish` explicitamente.
-
-Veja o [roteiro de publicacao, validacao e recuperacao](docs/demo-day/github-pages-publication.md)
-antes de executar commit, push ou deploy.
-
-Link esperado da apresentacao:
-
-```text
-https://ykiakao.github.io/uniconnect-clients/
-```
-
----
-
-## Login de Teste
-
-As contas de apresentação são fornecidas pelo responsável em canal privado.
-Não registrar e-mails de acesso, senhas ou tokens neste repositório.
-
-Tenant demo:
-
-| Campo | Valor |
-| ----- | ----- |
-| Nome | EduKMais |
-| Slug | `edukmais` |
-| Plano | Growth |
-| Status | Teste ativo |
-
----
-
-## Validação
-
-```bash
-cd uniconnect_flutter_base
-flutter analyze
-flutter test
-```
-
----
-
-## Integração com o Backend
-
-O backend fica no repositório:
-
-```text
-uniconnect-api
-```
-
-Os clientes devem consumir a API somente por HTTP. Não deve existir importação local, script compartilhado ou dependência direta de pastas backend.
-
----
-
-## Roadmap Técnico
-
-### Concluído
-
-* App Flutter mobile-first
-* Login real via API
-* Sessão local persistida no app
-* Configuração central da URL da API
-* Repositório de clientes separado do backend
-* Base documentada para o painel web
-
-### Pendente
-
-* Evoluir o painel web administrativo
-* Adicionar seleção ou descoberta de instituição
-* Preparar builds Android, iOS e web
-* Criar testes para fluxos críticos de autenticação
-* Configurar pipeline de CI/CD
-
----
-
-## Arquivos da Entrega
-
-Este repositório contém:
-
-* `README.md`
-* `.gitignore`
-* `uniconnect_flutter_base/`
-* `painel_web/`
-
-As pastas `build/`, `.dart_tool/`, `node_modules/` e arquivos `.env` locais não devem ser enviados para o GitHub.
-
----
-
-## Contato
-
-Clientes acadêmicos em evolução como experiência mobile e administrativa do ecossistema UniConnect.
+- Trabalhe em branch própria, a partir do handoff `handoff/flutter-2026-11-04`. Preserve os contratos HTTP, os providers, as regras acadêmicas e os controles de acesso.
+- Preserve as cinco áreas do aluno, as quatro do professor e o Perfil no cabeçalho. Use os componentes compartilhados e mantenha claros os estados de carregamento, vazio, erro e sucesso.
+- A direção visual aprovada para o redesign usa Inter, azul `#60A5FA`, superfície `#E2E8F0`, texto e fundo escuro `#0F172A` e ícones lineares arredondados. Essa é a referência de design. O Flutter atual usa seus próprios tokens e Inter local.
+- Alinhe qualquer mudança de backend ou banco antes de implementá-la. Use somente credenciais autorizadas para o ambiente de teste e mantenha segredos fora do Git.

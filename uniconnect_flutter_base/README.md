@@ -1,257 +1,80 @@
-# UniConnect Mobile
+# UniConnect · Aplicativo Flutter
 
-Aplicativo Flutter mobile-first responsável pela experiência principal de alunos e professores no SaaS acadêmico UniConnect.
+Cliente acadêmico para alunos e professores. Integra-se à API REST do UniConnect e usa o contexto da instituição em cada sessão. Referência atualizada em **04/11/2026**.
 
-O app mobile é o cliente Flutter de um SaaS acadêmico multi-tenant. Suporta múltiplas instituições através de contexto de tenant isolado.
+## SDK e dependências
 
-![Flutter](https://img.shields.io/badge/Flutter-Mobile-blue)
-![Dart](https://img.shields.io/badge/Dart-%3E%3D3.4-blue)
-![Riverpod](https://img.shields.io/badge/State-Riverpod-purple)
-![GoRouter](https://img.shields.io/badge/Router-GoRouter-green)
-![REST](https://img.shields.io/badge/API-REST-green)
+O workflow usa **Flutter 3.44.0**. A instalação local inspecionada usa Flutter 3.44.0 e Dart 3.12.0. O `pubspec.yaml` declara Dart `>=3.4.0 <4.0.0`. O conjunto resolvido no `pubspec.lock` exige Dart `>=3.10.3 <4.0.0` e Flutter `>=3.38.4`.
 
----
+| Dependência | Versão resolvida | Uso |
+| --- | --- | --- |
+| `flutter_riverpod` | 3.3.1 | Estado, sessão, dependências e consultas assíncronas |
+| `go_router` | 17.2.3 | Rotas, guards e deep links |
+| `http` | 1.6.0 | Transporte REST |
+| `flutter_secure_storage` | 10.3.1 | Persistência da sessão lembrada |
+| `intl` | 0.20.2 | Formatação |
+| `google_fonts` | 8.1.0 | Dependência declarada com carregamento remoto desabilitado |
 
-## Sobre o Projeto
+O manifesto também declara `cupertino_icons`, `flutter_test` e `flutter_lints`. Inter é distribuída em assets locais. A aplicação configura o tema claro e utiliza os ícones disponíveis no Flutter.
 
-Este app centraliza a rotina acadêmica em uma interface mobile. Alunos consultam atividades, detalhes, notas e perfil. Professores consultam identidade, instituição e vínculo acadêmico disponível. Chat, criação de atividades e lançamento docente de notas são protótipos identificados, sem envio ou publicação.
+## Estrutura e sessão
 
-Preparação da Demo Day de 28/10/2026: [relatório, validação e roteiro de execução](../docs/codex-kit/DEMO_DAY_2026-10-28.md).
+- [`lib/core/`](lib/core/) contém configuração da API, roteamento, cliente HTTP e tema.
+- [`lib/features/`](lib/features/) reúne telas, modelos, serviços e providers por área. [`lib/shared/widgets/`](lib/shared/widgets/) concentra os componentes compartilhados.
+- [`test/`](test/) contém testes unitários, de serviço e de widget.
 
-O aplicativo consome a API do repositório `uniconnect-api` via HTTP e mantém a URL centralizada para facilitar troca entre ambiente local e produção.
+O `ApiClient` envia `x-tenant-slug` e adiciona o Bearer nas chamadas protegidas. O app usa `/auth/login`, `/auth/me`, `/auth/refresh` e `/auth/logout`. Quando o usuário escolhe lembrar a sessão, o app persiste o registro de tokens no armazenamento seguro da plataforma. A restauração valida a sessão com a API. O cliente coordena a rotação e pode repetir uma chamada protegida após renovação diante de `401 INVALID_SESSION`. Os guards aguardam a restauração e encaminham o usuário ao destino autorizado para o seu papel.
 
----
+## Navegação e jornadas
 
-## Responsabilidades do App
+O login fica em `/`, a restauração em `/auth/loading` e o Perfil em `/perfil`, fora da barra principal.
 
-* Autenticar aluno ou professor no tenant da instituição
-* Exibir dashboard específico por perfil
-* Listar atividades acadêmicas
-* Apresentar notas e simulações de média
-* Disponibilizar chat acadêmico
-* Exibir perfil do usuário e instituição
-* Consumir a API backend sem dependência de caminho local
+### Aluno
 
----
+| Destino | Implementação |
+| --- | --- |
+| `/aluno` | Resumo acadêmico, atalhos, agenda e prévia de entregas pendentes confirmadas pela API |
+| `/atividades` e `/atividades/:id` | Pesquisa, filtros, detalhes e entrega textual quando elegível. Envio e reenvio usam `expectedVersion`. O detalhe exibe a nota e a devolutiva publicadas |
+| `/chat` | Conversas ilustrativas, com envio e anexos indisponíveis |
+| `/notas` | Seleção da oferta e boletim oficial N1/N2, com pontos de trabalhos e provas, média, situação e elegibilidade à final quando retornadas pela API |
+| `/academico` | Instituição, matrícula, curso e semestre quando fornecidos. Horários e calendário permanecem sem integração |
 
-## Tecnologias Utilizadas
+Provas presenciais e atividades sem fluxo textual ficam sem formulário de entrega. O app apresenta o boletim do servidor, preservando notas zero, valores nulos e resultados parciais.
 
-* Flutter
-* Dart
-* Riverpod
-* GoRouter
-* Material Design 3
-* Fonte Inter local
-* Intl
-* HTTP
-* Flutter Secure Storage
+### Professor
 
----
+| Destino | Implementação |
+| --- | --- |
+| `/professor` | Oferta selecionada, trabalhos publicados, prazos e prévia limitada de entregas e correções |
+| `/professor/atividades` | Trabalhos por oferta, edição de rascunho, publicação, encerramento, matrículas e entregas. A correção separa salvamento de publicação e volta ao mesmo trabalho |
+| `/professor/criar-atividade` | Formulário legado de criação, inclusive cadastro de prova presencial |
+| `/professor/chat` | Destino com aviso de indisponibilidade |
+| `/professor/notas` | Pauta de provas N1/N2, lançamento e publicação de notas, boletim e fechamento de etapa |
 
-## Estrutura do Repositório
+A seleção por `classId` é compartilhada entre áreas docentes e isolada por sessão, usuário e tenant. Os deep links de oferta são validados. O app protege edições pendentes e descarta resultados de contextos anteriores. Escritas acadêmicas preservam os campos de versão e revisão previstos pela API.
 
-| Pasta | Finalidade |
-| ----- | ---------- |
-| `lib/core/config` | Configuração da URL da API |
-| `lib/core/constants` | Constantes de rotas |
-| `lib/core/network` | Cliente HTTP |
-| `lib/core/router` | Configuração de navegação |
-| `lib/core/tenant` | Configuração do tenant ativo |
-| `lib/core/theme` | Tema, cores e espaçamentos |
-| `lib/features/activities` | Atividades acadêmicas |
-| `lib/features/auth` | Login e usuário atual |
-| `lib/features/chat` | Mensagens do chat |
-| `lib/features/grades` | Notas e simulador de média |
-| `lib/features/profile` | Perfil e configurações |
-| `lib/features/student` | Dashboard do aluno |
-| `lib/features/teacher` | Dashboard e ações do professor |
-| `lib/features/tenant` | Contexto da instituição |
-| `lib/shared/widgets` | Componentes compartilhados |
+## Execução local
 
----
-
-## Requisitos
-
-Antes de executar o projeto, instale:
-
-* Flutter
-* Dart SDK
-* Git
-* Android Studio ou emulador configurado
-* API `uniconnect-api` em execução para autenticação real
-
----
-
-## Instalação
+Na pasta do app, com a API ativa e uma conta do ambiente local:
 
 ```bash
 flutter pub get
+flutter devices
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080 --dart-define=API_BASE_URL=http://127.0.0.1:3333/api/v1 --dart-define=TENANT_SLUG=uniconnect-local
 ```
 
----
+- `API_BASE_URL` inclui `/api/v1`. Sem override, o emulador Android usa `http://10.0.2.2:3333/api/v1` e Web/desktop usam `http://localhost:3333/api/v1`. Em aparelho físico, informe o endereço da API alcançável pela rede do aparelho.
+- `TENANT_SLUG` configura o contexto inicial de login. O padrão compilado é `edukmais`. No harness local, use `uniconnect-local` e a porta que ele exibir.
+- `DEMO_SYNTHETIC_DATA` é `false` por padrão. A opção `true` habilita o acervo demonstrativo para o aluno autenticado do tenant `edukmais`. Use o modo padrão para validar persistência real.
 
-## Executando o Projeto
-
-Rodar no dispositivo/emulador:
+## Testes e evidências
 
 ```bash
-flutter run
+flutter analyze --no-pub
+flutter test --no-pub
+flutter test --no-pub test/teacher_work_journey_test.dart test/student_submission_widget_test.dart
 ```
 
-Rodar no navegador como servidor web:
+Os testes cobrem sessão, guards, ofertas, entregas, revisões, provas, boletim e fechamento. Fixtures HTTP e testes de widget verificam o contrato do cliente. No ensaio local com API, GoTrue, PostgREST e PostgreSQL reais, o Flutter Web chegou até a abertura, pelo professor, da mesma entrega reenviada pelo aluno. A evidência consultada não confirma o salvamento e a publicação da correção, a consulta final pelo aluno ou a execução em dispositivo nativo. O app ainda não integra Supabase Realtime nem executa o fluxo de prova final.
 
-```bash
-flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080
-```
-
-Rodar apontando para uma API específica:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://localhost:3333/api/v1
-```
-
-Rodar apontando para a API publicada no Render e para o tenant EduKMais:
-
-```bash
-flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080 --dart-define=API_BASE_URL=https://uniconnect-api-ht5x.onrender.com/api/v1 --dart-define=TENANT_SLUG=edukmais
-```
-
-Para testes no emulador Android, o app usa por padrão:
-
-```text
-http://10.0.2.2:3333/api/v1
-```
-
-Esse endereço aponta do emulador para a máquina host. Para celular físico, use o IP local do computador:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://SEU_IP_LOCAL:3333/api/v1
-```
-
----
-
-## Integração com a API
-
-A URL da API fica centralizada em:
-
-```text
-lib/core/config/api_config.dart
-```
-
-URL local padrão:
-
-```text
-http://localhost:3333/api/v1
-```
-
-O backend fica no repositório separado:
-
-```text
-uniconnect-api
-```
-
----
-
-## Deploy Web para Apresentacao
-
-O app Flutter Web e publicado pelo GitHub Actions em GitHub Pages.
-
-No GitHub, configure o repositorio em **Settings > Pages > Build and deployment**
-com:
-
-```text
-Source: GitHub Actions
-```
-
-Pushes para `main` ou `demo-day-flutter-polish` apenas validam e geram o build
-sintetico. A publicacao exige **Actions > Deploy Flutter Web > Run workflow**,
-selecionando a branch e habilitando `publish` explicitamente.
-
-Veja o [roteiro de publicacao, validacao e recuperacao](../docs/demo-day/github-pages-publication.md)
-antes de executar commit, push ou deploy.
-
-Link esperado da apresentacao:
-
-```text
-https://ykiakao.github.io/uniconnect-clients/
-```
-
----
-
-## Login de Teste
-
-As contas de apresentação são fornecidas pelo responsável em canal privado.
-Não registrar e-mails de acesso, senhas ou tokens neste repositório.
-
-Tenant demo:
-
-| Campo | Valor |
-| ----- | ----- |
-| Nome | EduKMais |
-| Slug | `edukmais` |
-| Plano | Growth |
-| Status | Teste ativo |
-
----
-
-## Fluxo Principal
-
-1. O usuário acessa a tela de login.
-2. O app envia as credenciais para a API.
-3. A API retorna usuário, perfil, token e tenant.
-4. O app mantém a sessão em memória e só a persiste quando “Lembrar de mim” está selecionado.
-5. A navegação direciona para o dashboard correto.
-6. O usuário acessa atividades, notas, chat e perfil.
-
----
-
-## Testes e Validação
-
-Analisar o projeto:
-
-```bash
-flutter analyze
-```
-
-Executar testes:
-
-```bash
-flutter test
-```
-
-Formatar código:
-
-```bash
-dart format lib test
-```
-
----
-
-## Próximos Passos
-
-* Adicionar seleção ou descoberta de instituição
-* Implementar push notifications
-* Preparar builds Android e iOS
-* Expandir cobertura de autenticação, guards de perfil e contexto multi-tenant
-* Configurar URL de produção por pipeline de build
-
----
-
-## Arquivos da Entrega
-
-Este app contém:
-
-* `README.md`
-* `pubspec.yaml`
-* `pubspec.lock`
-* código-fonte em `lib/`
-* testes em `test/`
-* projetos nativos em `android/`, `ios/`, `web/`, `linux/`, `macos/` e `windows/`
-
-As pastas `build/` e `.dart_tool/` não devem ser enviadas para o GitHub.
-
----
-
-## Contato
-
-Aplicativo acadêmico desenvolvido como experiência mobile principal do ecossistema UniConnect.
+A [preparação da Demo Day de 28/10/2026](../docs/codex-kit/DEMO_DAY_2026-10-28.md) e o [roteiro de GitHub Pages](../docs/demo-day/github-pages-publication.md) documentam a demonstração histórica. O [endereço público configurado](https://ykiakao.github.io/uniconnect-clients/) é uma referência de publicação, separada do ambiente local.
