@@ -5,11 +5,13 @@ import '../../core/constants/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 
 class UniBottomNav extends StatefulWidget {
-  const UniBottomNav({super.key, required this.currentIndex});
+  const UniBottomNav(
+      {super.key, required this.currentIndex, this.isTeacher = false});
 
   final int currentIndex;
+  final bool isTeacher;
 
-  static const _destinations = [
+  static const _studentDestinations = [
     NavigationDestination(
       icon: Icon(Icons.dashboard_outlined),
       selectedIcon: Icon(Icons.dashboard_outlined),
@@ -23,7 +25,7 @@ class UniBottomNav extends StatefulWidget {
     NavigationDestination(
       icon: Icon(Icons.chat_bubble_outline),
       selectedIcon: Icon(Icons.chat_bubble_outline),
-      label: 'Chat demo',
+      label: 'Chat',
     ),
     NavigationDestination(
       icon: Icon(Icons.school_outlined),
@@ -31,11 +33,42 @@ class UniBottomNav extends StatefulWidget {
       label: 'Notas',
     ),
     NavigationDestination(
-      icon: Icon(Icons.person_outline),
-      selectedIcon: Icon(Icons.person_outline),
-      label: 'Perfil',
+      icon: Icon(Icons.account_balance_outlined),
+      selectedIcon: Icon(Icons.account_balance_outlined),
+      label: 'Acadêmico',
     ),
   ];
+
+  static const _teacherDestinations = [
+    NavigationDestination(
+        icon: Icon(Icons.dashboard_outlined), label: 'Início'),
+    NavigationDestination(
+      icon: Icon(Icons.checklist_outlined),
+      label: 'Atividades acadêmicas',
+    ),
+    NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
+    NavigationDestination(icon: Icon(Icons.school_outlined), label: 'Notas'),
+  ];
+
+  static const _studentRoutes = [
+    AppRoutes.studentDashboard,
+    AppRoutes.activities,
+    AppRoutes.chat,
+    AppRoutes.grades,
+    AppRoutes.academic,
+  ];
+
+  static const _teacherRoutes = [
+    AppRoutes.teacherDashboard,
+    AppRoutes.teacherActivities,
+    AppRoutes.teacherChat,
+    AppRoutes.teacherGrades,
+  ];
+
+  List<NavigationDestination> get destinations =>
+      isTeacher ? _teacherDestinations : _studentDestinations;
+
+  List<String> get routes => isTeacher ? _teacherRoutes : _studentRoutes;
 
   @override
   State<UniBottomNav> createState() => _UniBottomNavState();
@@ -116,21 +149,23 @@ class _UniBottomNavState extends State<UniBottomNav>
       final navTheme = NavigationBarTheme.of(context);
       final padding = MediaQuery.paddingOf(context);
       final availableWidth = constraints.maxWidth - padding.horizontal;
+      final labelWidth = availableWidth / widget.destinations.length - 4;
       final styles = {
         for (final selected in [false, true])
-          selected: _fitLabel(context, availableWidth / 5 - 4, selected),
+          selected: _fitLabel(context, labelWidth, selected),
       };
       final painter = TextPainter(
         text: TextSpan(
-            text: UniBottomNav._destinations[widget.currentIndex].label,
+            text: widget.destinations[widget.currentIndex].label,
             style: theme.textTheme.bodyMedium!.merge(styles[true])),
         textDirection: Directionality.of(context),
         textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3),
-      )..layout();
+      )..layout(maxWidth: labelWidth);
       final labelHeight = painter.height +
           (navTheme.labelPadding ?? const EdgeInsets.only(top: 4)).vertical;
       painter.dispose();
-      final indicatorTop = ((navTheme.height ?? 80) - 32 - labelHeight) / 2;
+      final height = (navTheme.height ?? 80) + (widget.isTeacher ? 12 : 0);
+      final indicatorTop = (height - 32 - labelHeight) / 2;
       return AnimatedBuilder(
           animation: _selection,
           builder: (context, child) {
@@ -147,11 +182,12 @@ class _UniBottomNavState extends State<UniBottomNav>
                 Positioned.fill(child: IgnorePointer(child: ExcludeSemantics(
                   child: SafeArea(
                       child: LayoutBuilder(builder: (context, safeConstraints) {
-                    final slotWidth = safeConstraints.maxWidth / 5;
+                    final slotWidth =
+                        safeConstraints.maxWidth / widget.destinations.length;
                     final width = slotWidth.clamp(0.0, 64.0);
                     final index =
                         Directionality.of(context) == TextDirection.rtl
-                            ? 4 - _position
+                            ? widget.destinations.length - 1 - _position
                             : _position;
                     return Stack(children: [
                       Positioned(
@@ -172,6 +208,7 @@ class _UniBottomNavState extends State<UniBottomNav>
                   })),
                 ))),
                 NavigationBar(
+                  height: height,
                   backgroundColor: Colors.transparent,
                   surfaceTintColor: Colors.transparent,
                   elevation: 0,
@@ -185,26 +222,10 @@ class _UniBottomNavState extends State<UniBottomNav>
                   selectedIndex: widget.currentIndex,
                   onDestinationSelected: (index) {
                     _animateTo(index);
-                    switch (index) {
-                      case 0:
-                        context.go(AppRoutes.studentDashboard);
-                        break;
-                      case 1:
-                        context.go(AppRoutes.activities);
-                        break;
-                      case 2:
-                        context.go(AppRoutes.chat);
-                        break;
-                      case 3:
-                        context.go(AppRoutes.grades);
-                        break;
-                      case 4:
-                        context.go(AppRoutes.profile);
-                        break;
-                    }
+                    GoRouter.maybeOf(context)?.go(widget.routes[index]);
                   },
                   destinations: [
-                    for (final destination in UniBottomNav._destinations)
+                    for (final destination in widget.destinations)
                       NavigationDestination(
                         icon: IconTheme.merge(
                             data: const IconThemeData(color: AppColors.muted),
@@ -213,7 +234,8 @@ class _UniBottomNavState extends State<UniBottomNav>
                           scale: .96 + .04 * progress,
                           child: IconTheme.merge(
                               data: IconThemeData(color: activeColor),
-                              child: destination.selectedIcon!),
+                              child:
+                                  destination.selectedIcon ?? destination.icon),
                         ),
                         label: destination.label,
                       ),
@@ -233,13 +255,15 @@ class _UniBottomNavState extends State<UniBottomNav>
             .copyWith(letterSpacing: 0);
     final scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3);
     var widest = 0.0;
-    for (final destination in UniBottomNav._destinations) {
+    for (final destination in widget.destinations) {
       final painter = TextPainter(
         text: TextSpan(text: destination.label, style: style),
         textDirection: Directionality.of(context),
         textScaler: scaler,
       )..layout();
-      if (painter.width > widest) widest = painter.width;
+      final width =
+          widget.isTeacher ? painter.minIntrinsicWidth : painter.width;
+      if (width > widest) widest = width;
       painter.dispose();
     }
     final fit = (width / widest).clamp(0.0, 1.0);

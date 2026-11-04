@@ -13,25 +13,46 @@ import '../../../shared/widgets/error_state_widget.dart';
 import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/academic_demo_frame.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
 import '../providers/student_submission_provider.dart';
 import '../widgets/student_submission_panel.dart';
 
-class ActivityDetailPage extends ConsumerWidget {
+class ActivityDetailPage extends ConsumerStatefulWidget {
   const ActivityDetailPage({super.key, required this.activityId});
 
   final String activityId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final activityAsync = ref.watch(activityByIdProvider(activityId));
+  ConsumerState<ActivityDetailPage> createState() => _ActivityDetailPageState();
+}
 
+class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
+  (String, int, String?, String?, String?)? _lastVerifiedScope;
+
+  @override
+  Widget build(BuildContext context) {
+    final activityId = widget.activityId;
+    final user = ref.watch(currentUserProvider);
+    final controller = ref.watch(authControllerProvider.notifier);
+    final generation = ref.watch(
+        authControllerProvider.select((_) => controller.sessionGeneration));
+    final scope =
+        (activityId, generation, user?.id, user?.tenant.id, user?.tenant.slug);
+    final activityAsync = ref.watch(activityByIdProvider(activityId));
+    if (!activityAsync.isLoading && activityAsync.asData != null) {
+      _lastVerifiedScope = scope;
+    }
+
+    final sameScope = _lastVerifiedScope == scope;
     final refreshError = activityAsync.error;
-    final preserveOnRefreshError = refreshError is ApiException &&
+    final preserveOnRefreshError = sameScope &&
+        refreshError is ApiException &&
         ![401, 403, 404].contains(refreshError.statusCode);
     return activityAsync.when(
+      skipLoadingOnRefresh: sameScope,
       skipError: preserveOnRefreshError,
       loading: () => const Scaffold(
         appBar: AppHeader(
@@ -88,7 +109,7 @@ class ActivityDetailPage extends ConsumerWidget {
   }
 }
 
-class _ActivityDetailContent extends StatelessWidget {
+class _ActivityDetailContent extends ConsumerWidget {
   const _ActivityDetailContent(
       {required this.activity,
       required this.activityIsCurrent,
@@ -99,7 +120,8 @@ class _ActivityDetailContent extends StatelessWidget {
   final String? refreshError;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = ref.watch(activityClockProvider);
     return Scaffold(
       appBar: const AppHeader(
         title: 'Detalhes da atividade',
@@ -143,8 +165,8 @@ class _ActivityDetailContent extends StatelessWidget {
               icon: Icons.event_outlined,
               label: 'Prazo',
               value: activity.dueDate == null
-                  ? activity.dueLabel
-                  : '${DateFormat('dd/MM/yyyy • HH:mm').format(activity.displayDueDate!)}\n${activity.dueLabel} • ${activity.timeZoneLabel}',
+                  ? activity.dueLabelAt(now)
+                  : '${DateFormat('dd/MM/yyyy • HH:mm').format(activity.displayDueDate!)}\n${activity.dueLabelAt(now)} • ${activity.timeZoneLabel}',
             ),
             const SizedBox(height: AppSpacing.lg),
             AppCard(

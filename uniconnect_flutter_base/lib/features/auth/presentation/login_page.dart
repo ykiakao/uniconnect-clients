@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_routes.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -60,13 +58,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final user = await ref.read(authControllerProvider.notifier).login(
+      await ref.read(authControllerProvider.notifier).login(
             email: email,
             password: _passwordController.text,
             rememberSession: _rememberMe,
           );
-      if (!mounted) return;
-      _goByRole(user);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -105,14 +101,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
 
     return 'Não foi possível conectar à API. Verifique sua conexão ou tente novamente.';
-  }
-
-  void _goByRole(AppUser user) {
-    final route = switch (user.role) {
-      UserRole.teacher => AppRoutes.teacherDashboard,
-      UserRole.student => AppRoutes.studentDashboard,
-    };
-    context.go(route);
   }
 
   @override

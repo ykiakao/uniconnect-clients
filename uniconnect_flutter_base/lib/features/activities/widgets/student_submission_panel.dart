@@ -5,6 +5,7 @@ import '../../../shared/widgets/app_card.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../grades/providers/grades_provider.dart';
 import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
 import '../providers/student_submission_provider.dart';
@@ -22,14 +23,13 @@ class StudentSubmissionPanel extends ConsumerWidget {
           child: Text(
               'Dados sintéticos: consulta e envio de entregas persistentes indisponíveis neste modo.'));
     }
-    if (activity.publicationState == null) {
+    if (!['published', 'closed'].contains(activity.publicationState)) {
       return const AppCard(
-          child: Text(
-              'Envio indisponível: o estado da atividade não foi informado.'));
+          child: Text('Envio indisponível para o estado atual da atividade.'));
     }
     final auth = ref.watch(authControllerProvider);
     final user = auth.user;
-    if (user == null || auth.accessToken == null) {
+    if (!auth.isAuthenticated || user == null || auth.accessToken == null) {
       return const AppCard(
           child: Text('Sessão inválida ou expirada. Entre novamente.'));
     }
@@ -39,8 +39,14 @@ class StudentSubmissionPanel extends ConsumerWidget {
               'Consulta e envio pessoais disponíveis apenas para alunos.'));
     }
     return _SubmissionEditor(
-        key: ValueKey(
-            (activity.id, user.id, user.tenant.slug, auth.accessToken)),
+        key: ValueKey((
+          activity.id,
+          user.id,
+          user.tenant.id,
+          user.tenant.slug,
+          auth.accessToken,
+          ref.read(authControllerProvider.notifier).sessionGeneration
+        )),
         activity: activity,
         activityIsCurrent: activityIsCurrent);
   }
@@ -86,6 +92,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
     try {
       ref.invalidate(ownSubmissionProvider(_id));
       ref.invalidate(activityByIdProvider(_id));
+      ref.invalidate(subjectGradesProvider);
       await Future.wait<Object?>([
         ref.read(ownSubmissionProvider(_id).future),
         ref.read(activityByIdProvider(_id).future)
@@ -108,8 +115,11 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
     if (_busy ||
         !widget.activityIsCurrent ||
         _mustRefresh ||
+        !activity.acceptsTextSubmission ||
         activity.publicationState != 'published' ||
-        (activity.isExpired && !activity.allowLate) ||
+        (activity.priorityAt(ref.read(activityClockProvider)) ==
+                ActivityPriority.expired &&
+            !activity.allowLate) ||
         (previous != null && !previous.canRevise)) {
       return;
     }
@@ -165,12 +175,17 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
     super.build(context);
     final own = ref.watch(ownSubmissionProvider(_id));
     final activity = widget.activity;
+    final expired = activity.priorityAt(ref.watch(activityClockProvider)) ==
+        ActivityPriority.expired;
     return AppCard(
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Text('Sua entrega', style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: AppSpacing.sm),
-      if (_confirmation != null) Text(_confirmation!),
+      if (!activity.acceptsTextSubmission)
+        const Text('Esta atividade não aceita entrega textual.'),
+      if (_confirmation != null)
+        Semantics(liveRegion: true, child: Text(_confirmation!)),
       if (_error != null)
         Text(_error!,
             style: TextStyle(color: Theme.of(context).colorScheme.error)),
@@ -182,8 +197,16 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
       own.when(
           skipLoadingOnRefresh: false,
           loading: () => const Text('Carregando sua entrega...'),
-          error: (e, _) =>
-              Text('Erro ao consultar sua entrega. ${submissionErrorText(e)}'),
+          error: (e, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                      'Erro ao consultar sua entrega. ${submissionErrorText(e)}'),
+                  if (widget.activityIsCurrent &&
+                      !activity.acceptsTextSubmission)
+                    _PublishedActivityGrade(activityId: _id),
+                ],
+              ),
           data: (submission) {
             final version = submission?.version ?? 0;
             if (_seededVersion != version && !_dirty) {
@@ -191,8 +214,9 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
               _seededVersion = version;
             }
             final closed = activity.publicationState != 'published';
-            final deadline = activity.isExpired && !activity.allowLate;
+            final deadline = expired && !activity.allowLate;
             final locked = submission != null && !submission.canRevise;
+            final result = submission?.result;
             return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -207,7 +231,20 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                     const SizedBox(height: AppSpacing.sm),
                     const Text('Resposta registrada:'),
                     Text(submission.answer),
+                    if (result != null) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(result.grade == null
+                          ? 'Nota indisponível'
+                          : 'Nota: ${result.grade}'),
+                      if (result.feedback case final feedback?
+                          when feedback.trim().isNotEmpty) ...[
+                        const Text('Feedback:'),
+                        Text(feedback),
+                      ],
+                    ],
                   ],
+                  if (result == null && widget.activityIsCurrent)
+                    _PublishedActivityGrade(activityId: _id),
                   if (closed)
                     const Text(
                         'Atividade encerrada ou indisponível para envio.')
@@ -217,8 +254,8 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                   else if (locked)
                     const Text(
                         'Reenvio indisponível: a entrega está em avaliação ou atingiu o limite de versões.')
-                  else ...[
-                    if (activity.isExpired && activity.allowLate)
+                  else if (activity.acceptsTextSubmission) ...[
+                    if (expired && activity.allowLate)
                       const Text(
                           'O prazo passou, mas a atividade permite envio em atraso.'),
                     const SizedBox(height: AppSpacing.md),
@@ -269,5 +306,43 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                 ]);
           }),
     ]));
+  }
+}
+
+class _PublishedActivityGrade extends ConsumerWidget {
+  const _PublishedActivityGrade({required this.activityId});
+
+  final String activityId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ref.watch(subjectGradesProvider).when(
+          skipLoadingOnRefresh: false,
+          skipLoadingOnReload: false,
+          loading: () => const Text('Consultando avaliação publicada…'),
+          error: (_, __) =>
+              const Text('Avaliação individual indisponível para consulta.'),
+          data: (grades) {
+            for (final grade in grades) {
+              if (grade.activityId != activityId) continue;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: AppSpacing.sm),
+                  const Text('Avaliação publicada'),
+                  Text(grade.grade == null
+                      ? 'Nota indisponível'
+                      : 'Nota: ${grade.grade}'),
+                  if (grade.feedback case final feedback?
+                      when feedback.trim().isNotEmpty) ...[
+                    const Text('Devolutiva'),
+                    Text(feedback),
+                  ],
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        );
   }
 }

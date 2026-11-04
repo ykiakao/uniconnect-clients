@@ -139,22 +139,15 @@ void main() {
     expect(container.read(currentUserProvider), same(syntheticStudent));
   });
 
-  testWidgets(
-      'all evaluations have discipline and period, with history outside current mean',
+  testWidgets('demo clearly marks the official report as unavailable',
       (tester) async {
     final (container, _) = await prepare(tester);
     final frame = await showPage(tester, container, const GradesPage());
-    expect(find.textContaining('Referência: AVL'), findsNWidgets(6));
-    expect(find.text('8.2'), findsWidgets);
-    expect(find.text('Histórico acadêmico demonstrativo'), findsOneWidget);
-    expect(find.text('Disciplina/turma: Testes de Software'), findsOneWidget);
-    expect(find.text('Período acadêmico: 2026.1'), findsOneWidget);
-    expect(find.text('Período acadêmico: 2026.2'), findsNWidgets(5));
-    expect(find.text('Nota da avaliação'), findsNWidgets(2));
-    await tester.scrollUntilVisible(
-        find.text('Histórico acadêmico demonstrativo').hitTestable(), 400,
-        scrollable: verticalScroll);
-    await captureLayout(tester, frame, 'synthetic-grades-history-390');
+    expect(find.text('Boletim acadêmico indisponível'), findsOneWidget);
+    expect(find.text('O modo de demonstração não consulta o boletim oficial.'),
+        findsOneWidget);
+    expect(find.textContaining('Referência: AVL'), findsNothing);
+    await captureLayout(tester, frame, 'synthetic-grades-unavailable-390');
     expect(demoContext, findsOneWidget);
   });
 
@@ -238,7 +231,7 @@ void main() {
     await showPage(tester, container, const StudentDashboardPage(),
         topInset: 32);
     expect(tester.getRect(find.text('UniConnect • Área do aluno')).top,
-        closeTo(48, .5));
+        closeTo(32 + kToolbarHeight + 16, .5));
     expect(tester.getSemantics(demoContext).label, demoExplanation);
   });
 

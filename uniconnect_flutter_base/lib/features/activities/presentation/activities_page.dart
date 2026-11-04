@@ -31,6 +31,8 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
   late final TextEditingController _searchController;
   String _searchQuery = '';
   ActivityPriority? _priorityFilter;
+  String? _subjectFilter;
+  String? _publicationFilter;
 
   @override
   void initState() {
@@ -47,10 +49,12 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
   @override
   Widget build(BuildContext context) {
     final activitiesAsync = ref.watch(activitiesProvider);
+    final now = ref.watch(activityClockProvider);
 
     return Scaffold(
       appBar: const AppHeader(
         title: 'Atividades',
+        showProfile: true,
         fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 1),
@@ -61,9 +65,15 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
           skipLoadingOnRefresh: false,
           data: (allActivities) => _ActivitiesContent(
             allActivities: allActivities,
+            now: now,
             searchController: _searchController,
             searchQuery: _searchQuery,
             priorityFilter: _priorityFilter,
+            subjectFilter: _subjectFilter,
+            publicationFilter: _publicationFilter,
+            onSubjectChanged: (value) => setState(() => _subjectFilter = value),
+            onPublicationChanged: (value) =>
+                setState(() => _publicationFilter = value),
             onSearchChanged: (value) => setState(() => _searchQuery = value),
             onPriorityChanged: (value) {
               setState(() => _priorityFilter = value);
@@ -95,6 +105,8 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
     setState(() {
       _searchQuery = '';
       _priorityFilter = null;
+      _subjectFilter = null;
+      _publicationFilter = null;
     });
   }
 }
@@ -102,9 +114,14 @@ class _ActivitiesPageState extends ConsumerState<ActivitiesPage> {
 class _ActivitiesContent extends StatelessWidget {
   const _ActivitiesContent({
     required this.allActivities,
+    required this.now,
     required this.searchController,
     required this.searchQuery,
     required this.priorityFilter,
+    required this.subjectFilter,
+    required this.publicationFilter,
+    required this.onSubjectChanged,
+    required this.onPublicationChanged,
     required this.onSearchChanged,
     required this.onPriorityChanged,
     required this.onClearFilters,
@@ -112,9 +129,14 @@ class _ActivitiesContent extends StatelessWidget {
   });
 
   final List<AcademicActivity> allActivities;
+  final DateTime now;
   final TextEditingController searchController;
   final String searchQuery;
   final ActivityPriority? priorityFilter;
+  final String? subjectFilter;
+  final String? publicationFilter;
+  final ValueChanged<String?> onSubjectChanged;
+  final ValueChanged<String?> onPublicationChanged;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<ActivityPriority?> onPriorityChanged;
   final VoidCallback onClearFilters;
@@ -123,16 +145,30 @@ class _ActivitiesContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final normalizedQuery = searchQuery.trim().toLowerCase();
-    final filteredActivities = allActivities.where((activity) {
+    final groups = <ActivityPriority, List<AcademicActivity>>{};
+    final subjects = allActivities
+        .map((activity) => activity.subject)
+        .toSet()
+        .toList()
+      ..sort();
+    final subject = subjects.contains(subjectFilter) ? subjectFilter : null;
+    var filteredCount = 0;
+    for (final activity in allActivities) {
       final matchesSearch = normalizedQuery.isEmpty ||
           activity.title.toLowerCase().contains(normalizedQuery) ||
           activity.subject.toLowerCase().contains(normalizedQuery) ||
           activity.teacher.toLowerCase().contains(normalizedQuery);
-      final matchesPriority = priorityFilter == null ||
-          (activity.dueDate != null && activity.priority == priorityFilter);
-
-      return matchesSearch && matchesPriority;
-    }).toList();
+      if (!matchesSearch ||
+          (subject != null && activity.subject != subject) ||
+          (publicationFilter != null &&
+              activity.publicationState != publicationFilter)) {
+        continue;
+      }
+      final priority = activity.priorityAt(now);
+      if (priorityFilter != null && priority != priorityFilter) continue;
+      (groups[priority] ??= []).add(activity);
+      filteredCount++;
+    }
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -196,9 +232,43 @@ class _ActivitiesContent extends StatelessWidget {
                   label: Text('Baixas'),
                   icon: Icon(Icons.check_circle_outline),
                 ),
+                ButtonSegment(
+                  value: ActivityPriority.expired,
+                  label: Text('Expiradas'),
+                  icon: Icon(Icons.event_busy_outlined),
+                ),
+                ButtonSegment(
+                  value: ActivityPriority.noDeadline,
+                  label: Text('Sem prazo'),
+                  icon: Icon(Icons.event_outlined),
+                ),
               ],
             ),
           ),
+          if (allActivities.isNotEmpty)
+            ExpansionTile(
+              title: const Text('Mais filtros'),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              children: [
+                _ActivityFilter(
+                  label: 'Disciplina',
+                  value: subject,
+                  options: {for (final name in subjects) name: name},
+                  onChanged: onSubjectChanged,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _ActivityFilter(
+                  label: 'Situação da atividade',
+                  value: publicationFilter,
+                  options: const {
+                    'published': 'Publicada',
+                    'closed': 'Encerrada'
+                  },
+                  onChanged: onPublicationChanged,
+                ),
+              ],
+            ),
           const SizedBox(height: AppSpacing.lg),
           AppCard(
             backgroundColor: AppColors.primarySoft,
@@ -206,7 +276,7 @@ class _ActivitiesContent extends StatelessWidget {
               children: [
                 const HelpTooltip(
                   message:
-                      'Filtragem em tempo real por titulo, disciplina, professor e prioridade.',
+                      'Combine a busca com filtros de prazo, disciplina e situação da atividade.',
                   child: Icon(
                     Icons.filter_alt_outlined,
                     color: AppColors.primary,
@@ -215,7 +285,7 @@ class _ActivitiesContent extends StatelessWidget {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
-                    'Exibindo ${filteredActivities.length} de ${allActivities.length} atividade(s)',
+                    'Exibindo $filteredCount de ${allActivities.length} atividade(s)',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.primaryDark,
                           fontWeight: FontWeight.w700,
@@ -226,69 +296,52 @@ class _ActivitiesContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          if (filteredActivities.isEmpty)
+          if (filteredCount == 0)
             EmptyStateWidget(
               icon: Icons.checklist_outlined,
               title: 'Nenhuma atividade encontrada',
               subtitle: allActivities.isEmpty
                   ? 'Não há atividades disponíveis para consulta neste momento.'
                   : 'Tente outras palavras-chave ou limpe os filtros.',
-              action: normalizedQuery.isNotEmpty || priorityFilter != null
+              action: normalizedQuery.isNotEmpty ||
+                      priorityFilter != null ||
+                      subject != null ||
+                      publicationFilter != null
                   ? onClearFilters
                   : null,
               actionLabel: 'Limpar filtros',
             )
           else ...[
             _ActivityGroup(
+              now: now,
               title: 'Prazo encerrado',
               subtitle:
                   'A data passou; a situação de entrega não foi informada',
-              activities: filteredActivities
-                  .where((activity) => activity.isExpired)
-                  .toList(),
+              activities: groups[ActivityPriority.expired] ?? const [],
             ),
             _ActivityGroup(
+              now: now,
               title: 'Críticas',
               subtitle: 'Atividades com prazo próximo',
-              activities: filteredActivities
-                  .where(
-                    (activity) =>
-                        activity.dueDate != null &&
-                        !activity.isExpired &&
-                        activity.priority == ActivityPriority.critical,
-                  )
-                  .toList(),
+              activities: groups[ActivityPriority.critical] ?? const [],
             ),
             _ActivityGroup(
+              now: now,
               title: 'Prioridade média',
               subtitle: 'Importantes, mas com respiro',
-              activities: filteredActivities
-                  .where(
-                    (activity) =>
-                        activity.dueDate != null &&
-                        !activity.isExpired &&
-                        activity.priority == ActivityPriority.medium,
-                  )
-                  .toList(),
+              activities: groups[ActivityPriority.medium] ?? const [],
             ),
             _ActivityGroup(
+              now: now,
               title: 'Baixa prioridade',
               subtitle: 'Acompanhar sem interromper seu foco',
-              activities: filteredActivities
-                  .where(
-                    (activity) =>
-                        activity.dueDate != null &&
-                        !activity.isExpired &&
-                        activity.priority == ActivityPriority.low,
-                  )
-                  .toList(),
+              activities: groups[ActivityPriority.low] ?? const [],
             ),
             _ActivityGroup(
+              now: now,
               title: 'Prazo não informado',
               subtitle: 'Consulte as orientações da disciplina',
-              activities: filteredActivities
-                  .where((activity) => activity.dueDate == null)
-                  .toList(),
+              activities: groups[ActivityPriority.noDeadline] ?? const [],
             ),
           ],
         ],
@@ -297,13 +350,49 @@ class _ActivitiesContent extends StatelessWidget {
   }
 }
 
+class _ActivityFilter extends StatelessWidget {
+  const _ActivityFilter({
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String? value;
+  final Map<String, String> options;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      key: ValueKey((label, value)),
+      initialValue: value ?? '',
+      isExpanded: true,
+      decoration: InputDecoration(labelText: label),
+      items: [
+        const DropdownMenuItem(value: '', child: Text('Todas')),
+        for (final option in options.entries)
+          DropdownMenuItem(
+            value: option.key,
+            child: Text(option.value,
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+      ],
+      onChanged: (value) => onChanged(value == '' ? null : value),
+    );
+  }
+}
+
 class _ActivityGroup extends StatelessWidget {
   const _ActivityGroup({
+    required this.now,
     required this.title,
     required this.subtitle,
     required this.activities,
   });
 
+  final DateTime now;
   final String title;
   final String subtitle;
   final List<AcademicActivity> activities;
@@ -322,6 +411,7 @@ class _ActivityGroup extends StatelessWidget {
         ...activities.map(
           (activity) => ActivityCard(
             activity: activity,
+            now: now,
             onTap: () => context.push('/atividades/${activity.id}'),
           ),
         ),

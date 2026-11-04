@@ -132,42 +132,26 @@ void main() {
   });
 
   testWidgets(
-      'teacher card rows share edges and align action icons with descriptions',
+      'teacher shortcuts stay inside the content at wide widths',
       (tester) async {
     final key = await pumpLayout(tester, const TeacherDashboardPage(),
         width: 768, teacher: true);
     await tester.scrollUntilVisible(
-        find.text('Turmas e disciplinas').hitTestable(), 200,
+        find.text('Ver trabalhos e entregas').hitTestable(), 200,
         scrollable: verticalScroll);
     await captureLayout(tester, key, 'teacher-workspace-768');
-    final titles = [
-      'Turmas e disciplinas',
-      'Atividades acadêmicas',
-      'Lançamento de notas',
-      'Comunicação com alunos'
+    final shortcuts = [
+      find.widgetWithText(FilledButton, 'Criar atividade'),
+      find.widgetWithText(OutlinedButton, 'Lançar notas de prova'),
+      find.widgetWithText(TextButton, 'Ver trabalhos e entregas'),
     ];
-    final cards = [
-      for (final title in titles)
-        find
-            .ancestor(of: find.text(title), matching: find.byType(AppCard))
-            .first
-    ];
-    final rects = [for (final card in cards) tester.getRect(card)];
-    expect(rects[0].top, closeTo(rects[1].top, .5));
-    expect(rects[0].bottom, closeTo(rects[1].bottom, .5));
-    expect(rects[2].top, closeTo(rects[3].top, .5));
-    expect(rects[2].bottom, closeTo(rects[3].bottom, .5));
-    expect(rects[0].width, closeTo(rects[1].width, .5));
-    final description =
-        find.textContaining('Crie rascunhos, consulte atividades por oferta');
-    final actionIcon = find.descendant(
-        of: cards[1], matching: find.byIcon(Icons.visibility_outlined));
-    expect(tester.getRect(actionIcon).left,
-        closeTo(tester.getRect(description).left, .5));
-    final headerIcon = find.descendant(
-        of: cards[0], matching: find.byIcon(Icons.groups_outlined));
-    expect(tester.getRect(headerIcon).center.dy,
-        closeTo(tester.getRect(find.text(titles[0])).center.dy, .5));
+    for (final target in shortcuts) {
+      final rect = tester.getRect(target);
+      expect(rect.left, greaterThanOrEqualTo(0));
+      expect(rect.right, lessThanOrEqualTo(768));
+      expect(rect.height, greaterThanOrEqualTo(40));
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(
@@ -175,10 +159,10 @@ void main() {
       (tester) async {
     final key = await pumpLayout(tester, const TeacherGradesPage(),
         width: 320, scale: 2, teacher: true);
-    expect(find.text('Oferta acadêmica'), findsOneWidget);
+    expect(find.text('Disciplina'), findsOneWidget);
     expect(find.text('P1'), findsNothing);
     expect(find.text('APROVADO'), findsNothing);
-    expect(find.byType(DropdownButtonFormField<String>), findsNWidgets(2));
+    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
     expect(tester.takeException(), isNull);
     await captureLayout(tester, key, 'teacher-reviews-320-text200');
   });

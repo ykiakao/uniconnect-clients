@@ -10,12 +10,14 @@ import '../../../shared/widgets/academic_demo_frame.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../../shared/widgets/academic_metric_grid.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../../../shared/widgets/error_state_widget.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../activities/models/academic_activity.dart';
 import '../../activities/providers/activity_provider.dart';
+import '../../activities/providers/student_submission_provider.dart';
 import '../../activities/widgets/activity_card.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../tenant/providers/tenant_provider.dart';
@@ -30,9 +32,12 @@ class StudentDashboardPage extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
     final activitiesAsync = ref.watch(activitiesProvider);
+    final now = ref.watch(activityClockProvider);
     final gradesAsync = ref.watch(subjectGradesProvider);
+    final demo = ref.watch(syntheticDemoEnabledProvider);
 
     return Scaffold(
+      appBar: const AppHeader(title: 'Início', showProfile: true),
       bottomNavigationBar: const UniBottomNav(currentIndex: 0),
       body: SafeArea(
           child: AcademicDemoFrame(
@@ -42,6 +47,7 @@ class StudentDashboardPage extends ConsumerWidget {
               invalidateSyntheticAcademicData(ref);
               ref.invalidate(activitiesProvider);
               ref.invalidate(subjectGradesProvider);
+              ref.invalidate(ownSubmissionProvider);
               try {
                 await Future.wait([
                   ref.read(activitiesProvider.future),
@@ -78,11 +84,6 @@ class StudentDashboardPage extends ConsumerWidget {
                                   ?.copyWith(fontWeight: FontWeight.w700)),
                         ],
                       ),
-                    ),
-                    IconButton.filledTonal(
-                      tooltip: 'Meu perfil',
-                      onPressed: () => context.go(AppRoutes.profile),
-                      icon: const Icon(Icons.person_outline),
                     ),
                   ],
                 ),
@@ -137,7 +138,7 @@ class StudentDashboardPage extends ConsumerWidget {
                           AcademicMetric(
                               label: 'Prazos futuros',
                               value:
-                                  '${items.where((a) => a.isUpcoming).length}',
+                                  '${items.where((a) => a.isUpcomingAt(now)).length}',
                               icon: Icons.event_outlined),
                         ]),
                         loading: () => const Text('Carregando indicadores...',
@@ -171,6 +172,14 @@ class StudentDashboardPage extends ConsumerWidget {
                       icon: const Icon(Icons.school_outlined),
                       label: const Text('Ver notas'),
                     ),
+                    TextButton(
+                      onPressed: () => context.go(AppRoutes.chat),
+                      child: const Text('Abrir chat'),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go(AppRoutes.academic),
+                      child: const Text('Ver acadêmico'),
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -196,7 +205,11 @@ class StudentDashboardPage extends ConsumerWidget {
                       ref.invalidate(activitiesProvider);
                     },
                   ),
-                  data: (activities) => _AcademicAgenda(activities: activities),
+                  data: (activities) => _AcademicAgenda(
+                    activities: activities,
+                    now: now,
+                    demo: demo,
+                  ),
                 ),
               ],
             ),
@@ -208,9 +221,12 @@ class StudentDashboardPage extends ConsumerWidget {
 }
 
 class _AcademicAgenda extends StatelessWidget {
-  const _AcademicAgenda({required this.activities});
+  const _AcademicAgenda(
+      {required this.activities, required this.now, required this.demo});
 
   final List<AcademicActivity> activities;
+  final DateTime now;
+  final bool demo;
 
   @override
   Widget build(BuildContext context) {
@@ -222,20 +238,36 @@ class _AcademicAgenda extends StatelessWidget {
             'As atividades aparecerão aqui quando estiverem disponíveis para consulta.',
       );
     }
-    final soon = activities.where((a) => a.isDueSoon).length;
-    final expired = activities.where((a) => a.isExpired).length;
+    final soon = activities.where((a) => a.isDueSoonAt(now)).length;
+    final expired = activities
+        .where((a) => a.priorityAt(now) == ActivityPriority.expired)
+        .length;
     final undated = activities.where((a) => a.dueDate == null).length;
     final subjects = activities.map((a) => a.subject).toSet().toList()..sort();
-    final preview = activities.any((a) => a.demoReferenceTime != null)
-        ? [
-            ...activities.where((a) => a.isUpcoming),
-            ...activities.where((a) => !a.isUpcoming)
-          ]
-        : activities;
+    final upcoming = activities.where((a) => a.isUpcomingAt(now)).toList()
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+    final preview = [
+      ...upcoming,
+      ...activities.where((a) => !a.isUpcomingAt(now)),
+    ];
+    final candidates = [
+      ...upcoming,
+      ...activities.where((a) => a.dueDate == null),
+      ...activities.where(
+          (a) => a.priorityAt(now) == ActivityPriority.expired && a.allowLate),
+    ]
+        .where(
+            (a) => a.publicationState == 'published' && a.acceptsTextSubmission)
+        .take(3)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!demo) ...[
+          _PendingActivities(candidates: candidates, now: now),
+          const SizedBox(height: AppSpacing.md),
+        ],
         const SectionHeader(
             title: 'Quadro de prazos',
             subtitle: 'Datas informadas nas atividades disponíveis'),
@@ -271,6 +303,7 @@ class _AcademicAgenda extends StatelessWidget {
         for (final activity in preview.take(3))
           ActivityCard(
             activity: activity,
+            now: now,
             compact: true,
             onTap: () => context.push('/atividades/${activity.id}'),
           ),
@@ -285,6 +318,75 @@ class _AcademicAgenda extends StatelessWidget {
             leading:
                 const Icon(Icons.menu_book_outlined, color: AppColors.primary),
             title: Text(subject),
+          ),
+      ],
+    );
+  }
+}
+
+class _PendingActivities extends ConsumerWidget {
+  const _PendingActivities({required this.candidates, required this.now});
+
+  final List<AcademicActivity> candidates;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pending = <AcademicActivity>[];
+    final failures = <String>[];
+    var loading = false;
+    for (final activity in candidates) {
+      final submission = ref.watch(ownSubmissionProvider(activity.id));
+      if (submission.isLoading) {
+        loading = true;
+      } else if (submission.hasError) {
+        failures.add(activity.id);
+      } else if (submission.hasValue && submission.requireValue == null) {
+        pending.add(activity);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          title: 'Entregas pendentes',
+          subtitle: 'Prévia de até três atividades abertas para envio',
+          actionLabel: 'Ver lista',
+          onAction: () => context.go(AppRoutes.activities),
+        ),
+        if (candidates.isEmpty)
+          const Text('Nenhuma atividade aberta para entrega textual.'),
+        if (loading)
+          const LinearProgressIndicator(semanticsLabel: 'Consultando entregas'),
+        if (failures.isNotEmpty)
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Algumas entregas não puderam ser consultadas'),
+                TextButton(
+                  onPressed: () {
+                    for (final id in failures) {
+                      ref.invalidate(ownSubmissionProvider(id));
+                    }
+                  },
+                  child: const Text('Tentar novamente'),
+                ),
+              ],
+            ),
+          ),
+        if (candidates.isNotEmpty &&
+            !loading &&
+            failures.isEmpty &&
+            pending.isEmpty)
+          const Text('Nenhuma pendência nas atividades consultadas.'),
+        for (final activity in pending)
+          ActivityCard(
+            activity: activity,
+            now: now,
+            compact: true,
+            onTap: () => context.push('/atividades/${activity.id}'),
           ),
       ],
     );
@@ -317,7 +419,7 @@ class _GradeSummary extends StatelessWidget {
                 '${items.length} ${items.length == 1 ? 'avaliação disponível' : 'avaliações disponíveis'}',
                 style: const TextStyle(color: Colors.white)),
             const SizedBox(height: AppSpacing.xs),
-            const Text('Consulte as avaliações individuais em Ver notas.',
+            const Text('Consulte o boletim por disciplina em Ver notas.',
                 style: TextStyle(color: Colors.white)),
           ],
         );

@@ -9,15 +9,18 @@ import '../../../shared/widgets/app_header.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/teacher_activity_provider.dart';
+import '../providers/teacher_offering_selection.dart';
 import '../services/teacher_activity_service.dart';
+import '../services/teacher_assessment.dart';
+import '../widgets/assessment_fields.dart';
+import '../widgets/teacher_offering_picker.dart';
 
 class CreateActivityPage extends ConsumerWidget {
   const CreateActivityPage({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final token =
-        ref.watch(authControllerProvider.select((s) => s.accessToken));
+    final session = ref.watch(teacherNotesSessionProvider);
     return Scaffold(
       appBar: const AppHeader(
           title: 'Atividades acadêmicas',
@@ -26,8 +29,7 @@ class CreateActivityPage extends ConsumerWidget {
           child: AcademicContent(
               child: user?.role != UserRole.teacher
                   ? const Center(child: Text('Área exclusiva do professor'))
-                  : _Workspace(
-                      key: ValueKey((user!.id, user.tenant.slug, token))))),
+                  : _Workspace(key: ValueKey(session)))),
     );
   }
 }
@@ -46,22 +48,107 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
   final _type = TextEditingController(text: 'assignment');
   final _instructions = TextEditingController();
   final _criteria = TextEditingController();
-  String? _classId;
-  String _priority = 'medium';
+  late final TeacherDraftGuard _guard;
+  late final Future<bool> Function() _exitCallback;
+  Future<bool>? _confirmation;
+  String? _draftClassId;
+
+  String? get _classId => ref.read(selectedTeacherClassIdProvider);
+
+  bool get _hasDraft =>
+      [_title, _description, _instructions, _criteria]
+          .any((field) => field.text.isNotEmpty) ||
+      _type.text != 'assignment' ||
+      _due != null ||
+      _allowLate ||
+      _assessment != null;
   DateTime? _due;
   bool _allowLate = false;
+  TeacherAssessment? _assessment;
+  int _assessmentFormVersion = 0;
   bool _busy = false;
   bool _mustRefresh = false;
   String? _message;
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    _guard = ref.read(teacherDraftGuardProvider);
+    _exitCallback = _confirmChange;
+    _guard.confirmExit = _exitCallback;
+  }
+
+  @override
   void dispose() {
+    if (identical(_guard.confirmExit, _exitCallback)) {
+      _guard.confirmExit = null;
+    }
     _scroll.dispose();
     for (final c in [_title, _description, _type, _instructions, _criteria]) {
       c.dispose();
     }
     super.dispose();
+  }
+
+  Future<bool> _confirmChange() {
+    if (!mounted || !identical(ref.read(teacherDraftGuardProvider), _guard)) {
+      return Future.value(true);
+    }
+    if (_confirmation != null) return _confirmation!;
+    if (ModalRoute.isCurrentOf(context) == false) {
+      return Future.value(false);
+    }
+    if (_busy) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text('Aguarde a operação em andamento.')),
+      );
+      return Future.value(false);
+    }
+    return _confirmation ??=
+        _confirmDiscard().whenComplete(() => _confirmation = null);
+  }
+
+  Future<bool> _confirmDiscard() async {
+    if (_hasDraft) {
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Descartar alterações não salvas?'),
+          content: const Text('A edição pertence à oferta atual.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Descartar alterações'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || discard != true) return false;
+      _clearDraft();
+    }
+    setState(() {
+      _message = null;
+      _error = null;
+      _mustRefresh = false;
+    });
+    return true;
+  }
+
+  void _clearDraft() {
+    for (final field in [_title, _description, _instructions, _criteria]) {
+      field.clear();
+    }
+    _type.text = 'assignment';
+    _form.currentState?.reset();
+    _due = null;
+    _allowLate = false;
+    _assessment = null;
+    _assessmentFormVersion++;
   }
 
   String? _validate(String? value, {bool required = false}) {
@@ -97,16 +184,12 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
     });
     try {
       ref.invalidate(teacherOfferingsProvider);
-      final offerings = await ref.read(teacherOfferingsProvider.future);
+      await ref.read(teacherOfferingsProvider.future);
       if (!mounted) return;
-      if (_classId != null && !offerings.any((o) => o.id == _classId)) {
-        setState(() {
-          _classId = null;
-          _mustRefresh = false;
-        });
-      } else if (_classId != null) {
-        ref.invalidate(teacherActivitiesProvider(_classId!));
-        await ref.read(teacherActivitiesProvider(_classId!).future);
+      final classId = _classId;
+      if (classId != null) {
+        ref.invalidate(teacherActivitiesProvider(classId));
+        await ref.read(teacherActivitiesProvider(classId).future);
       }
       if (mounted) setState(() => _mustRefresh = false);
     } catch (e) {
@@ -133,7 +216,8 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
   Future<void> _save() async {
     if (_busy || _mustRefresh || !_form.currentState!.validate()) return;
     final id = _classId;
-    if (id == null) return;
+    if (id == null || id != _draftClassId) return;
+    FocusScope.of(context).unfocus();
     await _mutate(
         () => ref.read(teacherActivityServiceProvider).create(id,
             title: _title.text,
@@ -142,13 +226,56 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
             instructions: _instructions.text,
             evaluationCriteria: _criteria.text,
             dueDate: _due,
-            priority: _priority,
-            allowLate: _allowLate),
-        creating: true);
+            allowLate: _allowLate,
+            assessment: _assessment),
+        creating: true,
+        academicPlan: _assessment != null);
+  }
+
+  Future<void> _editAssessment(TeacherActivity activity) async {
+    if (_busy || _mustRefresh) return;
+    final form = GlobalKey<FormState>();
+    var assessment = activity.assessment;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Editar dados da avaliação'),
+        content: SingleChildScrollView(
+            child: Form(
+          key: form,
+          child: AssessmentFields(
+            initial: assessment,
+            enabled: true,
+            onChanged: (value) => assessment = value,
+          ),
+        )),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () {
+              if (form.currentState!.validate()) Navigator.pop(context, true);
+            },
+            child: const Text('Salvar alteração'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true || _classId != activity.classId) return;
+    await _mutate(
+      () => ref
+          .read(teacherActivityServiceProvider)
+          .updateAssessment(activity, assessment),
+      success: 'Dados da avaliação atualizados pela API.',
+      academicPlan: true,
+    );
   }
 
   Future<void> _mutate(Future<TeacherActivity> Function() action,
-      {bool creating = false}) async {
+      {bool creating = false,
+      String? success,
+      bool academicPlan = false}) async {
     if (_busy || _mustRefresh) return;
     setState(() {
       _busy = true;
@@ -158,25 +285,17 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
     try {
       final result = await action();
       if (!mounted) return;
-      if (creating) {
-        _title.clear();
-        _description.clear();
-        _instructions.clear();
-        _criteria.clear();
-        _type.text = 'assignment';
-        _form.currentState?.reset();
-      }
+      if (creating) _clearDraft();
       setState(() {
-        _message = creating
-            ? 'Rascunho salvo pela API. Publique na lista quando estiver pronto.'
-            : 'Publicação confirmada pela API.';
-        if (creating) {
-          _due = null;
-          _allowLate = false;
-          _priority = 'medium';
-        }
+        _message = success ??
+            (creating
+                ? result.isExam
+                    ? 'Rascunho salvo pela API. Abra a pauta na tela de notas.'
+                    : 'Rascunho salvo pela API. Publique na lista quando estiver pronto.'
+                : 'Publicação confirmada pela API.');
       });
       ref.invalidate(teacherActivitiesProvider(result.classId));
+      ref.invalidate(teacherActivityPreviewProvider(result.classId));
       try {
         await ref.read(teacherActivitiesProvider(result.classId).future);
       } catch (_) {
@@ -193,10 +312,18 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
       setState(() {
         _error =
             '${_errorText(e)} Confira a lista antes de repetir a operação.';
+        if (academicPlan && e is ApiException && e.statusCode == 409) {
+          _error = '$_error Confira a etapa e a distribuição da oferta: até '
+              '7,00 pontos de provas e 3,00 de atividades por etapa.';
+        }
         _mustRefresh = true;
       });
-      if (_classId != null) {
-        ref.invalidate(teacherActivitiesProvider(_classId!));
+      final classId = _classId;
+      if (classId != null) {
+        ref.invalidate(teacherActivitiesProvider(classId));
+      }
+      if (e is ApiException && e.statusCode == 403) {
+        ref.invalidate(teacherOfferingsProvider);
       }
     } finally {
       if (mounted) {
@@ -228,8 +355,8 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
   @override
   Widget build(BuildContext context) {
     final offerings = ref.watch(teacherOfferingsProvider);
-    final rows = offerings.asData?.value ?? const <TeacherOffering>[];
-    final selected = rows.any((o) => o.id == _classId) ? _classId : null;
+    final selected = ref.watch(selectedTeacherClassIdProvider);
+    if (!_hasDraft) _draftClassId = selected;
     return RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
@@ -253,53 +380,16 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                   onPressed: _busy ? null : _refresh,
                   icon: const Icon(Icons.refresh),
                   label: const Text('Atualizar ofertas e atividades')),
-              offerings.when(
-                  skipLoadingOnRefresh: false,
-                  loading: () =>
-                      const Text('Carregando ofertas autorizadas...'),
-                  error: (e, _) => Text(_errorText(e)),
-                  data: (data) => data.isEmpty
-                      ? const Text(
-                          'Nenhuma oferta ativa autorizada. Solicite o vínculo à instituição.')
-                      : const SizedBox.shrink()),
               AppCard(
                   child: Form(
                       key: _form,
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text('Oferta acadêmica',
-                                style: Theme.of(context).textTheme.labelLarge),
-                            const SizedBox(height: AppSpacing.xs),
-                            DropdownButtonFormField<String>(
-                                key: ValueKey(selected),
-                                initialValue: selected,
-                                isExpanded: true,
-                                decoration: const InputDecoration(
-                                    hintText: 'Selecione'),
-                                items: rows
-                                    .map((o) => DropdownMenuItem(
-                                        value: o.id,
-                                        child: Text('${o.name} • ${o.id}',
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis)))
-                                    .toList(),
-                                onChanged: _busy ||
-                                        offerings.isLoading ||
-                                        offerings.hasError
-                                    ? null
-                                    : (id) {
-                                        if (id == _classId) return;
-                                        setState(() {
-                                          _classId = id;
-                                          _error = null;
-                                          _message = null;
-                                          _mustRefresh = false;
-                                        });
-                                      },
-                                validator: (_) => selected == null
-                                    ? 'Selecione uma oferta autorizada'
-                                    : null),
+                            TeacherOfferingPicker(
+                              enabled: !_busy,
+                              confirmChange: _confirmChange,
+                            ),
                             const SizedBox(height: AppSpacing.md),
                             _field('Título da atividade', _title,
                                 required: true),
@@ -311,6 +401,11 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                             _field(
                                 'Critérios de avaliação (opcional)', _criteria,
                                 lines: 3),
+                            AssessmentFields(
+                              key: ValueKey(_assessmentFormVersion),
+                              enabled: !_busy,
+                              onChanged: (value) => _assessment = value,
+                            ),
                             OutlinedButton.icon(
                                 onPressed: _busy ? null : _pickDate,
                                 icon: const Icon(Icons.event),
@@ -323,22 +418,6 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                       ? null
                                       : () => setState(() => _due = null),
                                   child: const Text('Remover prazo')),
-                            DropdownButtonFormField<String>(
-                                key: ValueKey(_priority),
-                                initialValue: _priority,
-                                decoration: const InputDecoration(
-                                    labelText: 'Prioridade'),
-                                items: const [
-                                  DropdownMenuItem(
-                                      value: 'low', child: Text('Baixa')),
-                                  DropdownMenuItem(
-                                      value: 'medium', child: Text('Média')),
-                                  DropdownMenuItem(
-                                      value: 'high', child: Text('Alta'))
-                                ],
-                                onChanged: _busy
-                                    ? null
-                                    : (v) => setState(() => _priority = v!)),
                             SwitchListTile(
                                 contentPadding: EdgeInsets.zero,
                                 title:
@@ -351,6 +430,7 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                 onPressed: _busy ||
                                         _mustRefresh ||
                                         selected == null ||
+                                        selected != _draftClassId ||
                                         offerings.isLoading ||
                                         offerings.hasError
                                     ? null
@@ -389,7 +469,21 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                               .titleMedium),
                                       Text(
                                           '${activity.stateLabel} • Versão ${activity.revision}'),
-                                      if (activity.state == 'draft' &&
+                                      if (activity.assessment != null)
+                                        Text(activity.assessment!.label),
+                                      if (activity.canEditAssessment)
+                                        TextButton(
+                                          onPressed: _busy ||
+                                                  _mustRefresh ||
+                                                  offerings.isLoading ||
+                                                  offerings.hasError
+                                              ? null
+                                              : () => _editAssessment(activity),
+                                          child: const Text(
+                                              'Editar dados da avaliação'),
+                                        ),
+                                      if (!activity.isExam &&
+                                          activity.state == 'draft' &&
                                           activity.workflowEnabled)
                                         ElevatedButton.icon(
                                             onPressed: _busy ||

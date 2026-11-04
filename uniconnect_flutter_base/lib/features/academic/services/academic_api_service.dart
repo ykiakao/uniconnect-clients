@@ -1,5 +1,6 @@
 import '../../../core/network/api_client.dart';
 import '../../activities/models/academic_activity.dart';
+import '../../grades/models/student_report_card.dart';
 import '../../grades/models/subject_grade.dart';
 
 class AcademicApiService {
@@ -79,6 +80,38 @@ class AcademicApiService {
     }).toList();
   }
 
+  Future<List<StudentReportOffering>> listStudentReportOfferings({
+    required String accessToken,
+    required String tenantSlug,
+    required String tenantId,
+  }) async {
+    final rows = await _list(
+        '/tenants/${Uri.encodeComponent(tenantSlug)}/offerings',
+        accessToken,
+        tenantSlug);
+    final ids = <String>{};
+    return rows.map((row) {
+      final offering = StudentReportOffering.fromJson(row, tenantId);
+      if (!ids.add(offering.id)) throw invalidStudentReport;
+      return offering;
+    }).toList();
+  }
+
+  Future<StudentReportCard> getStudentReportCard({
+    required String accessToken,
+    required String tenantSlug,
+    required String classId,
+    required String studentId,
+  }) async {
+    final response = await _apiClient.get(
+      '/tenants/${Uri.encodeComponent(tenantSlug)}/classes/${Uri.encodeComponent(classId)}/report-card/me',
+      accessToken: accessToken,
+      tenantSlug: tenantSlug,
+    );
+    return StudentReportCard.fromJson(response,
+        classId: classId, studentId: studentId);
+  }
+
   Future<List<Map<String, dynamic>>> _list(
       String path, String accessToken, String tenantSlug) async {
     final rows = <Map<String, dynamic>>[];
@@ -132,15 +165,18 @@ class AcademicApiService {
       required String tenantSlug,
       required String classId,
       required String subject}) async {
-    return (await _list('/tenants/$tenantSlug/classes/$classId/activities',
-            accessToken, tenantSlug))
-        .map((row) {
+    final rows = await _list('/tenants/$tenantSlug/classes/$classId/activities',
+        accessToken, tenantSlug);
+    final activities = <AcademicActivity>[];
+    for (final row in rows) {
       if (row['classId'] != classId) {
         throw const ApiException(
             'A API retornou uma atividade de outra oferta.');
       }
-      return _activity(row, subject);
-    }).toList();
+      if (row['state'] == 'draft') continue;
+      activities.add(_activity(row, subject));
+    }
+    return activities;
   }
 
   Future<AcademicActivity> getActivity(
@@ -172,7 +208,11 @@ class AcademicApiService {
   }
 
   static AcademicActivity _activity(Map<String, dynamic> row, String subject) {
+    final assessment = row['assessment'];
     if (row['id'] is! String ||
+        (assessment != null &&
+            (assessment is! Map<String, dynamic> ||
+                assessment['category'] is! String)) ||
         row['title'] is! String ||
         !['published', 'closed'].contains(row['state']) ||
         row['allowLate'] is! bool ||
@@ -196,33 +236,19 @@ class AcademicApiService {
         description: row['description'] as String? ?? '',
         instructions: row['instructions'] as String? ?? '',
         publicationState: row['state'] as String,
+        workflowEnabled: row['workflowEnabled'] == true,
+        assessmentCategory: assessment is Map<String, dynamic>
+            ? assessment['category'] as String
+            : null,
         allowLate: row['allowLate'] as bool,
         dueDate: due,
-        dueLabel: due == null ? 'Prazo não informado' : _dueLabel(due),
         teacher: 'Professor da turma',
-        priority: due == null ? ActivityPriority.low : _priorityFor(due),
         status: ActivityStatus.pending,
         criteria: row['evaluationCriteria'] == null ||
                 (row['evaluationCriteria'] as String).isEmpty
             ? const []
             : [row['evaluationCriteria'] as String],
         attachments: const []);
-  }
-
-  static ActivityPriority _priorityFor(DateTime dueDate) {
-    final remaining = dueDate.difference(DateTime.now());
-    if (remaining.inHours <= 24) return ActivityPriority.critical;
-    if (remaining.inDays <= 7) return ActivityPriority.medium;
-    return ActivityPriority.low;
-  }
-
-  static String _dueLabel(DateTime dueDate) {
-    final remaining = dueDate.difference(DateTime.now());
-    if (remaining.isNegative) return 'Prazo encerrado';
-    if (remaining.inHours < 1) return 'Vence em menos de 1 hora';
-    if (remaining.inHours <= 24) return 'Vence em ${remaining.inHours} h';
-    if (remaining.inDays == 1) return 'Vence em 1 dia';
-    return 'Vence em ${remaining.inDays} dias';
   }
 
   static double _toDouble(Object? value) {

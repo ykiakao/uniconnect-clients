@@ -1,5 +1,12 @@
 import '../../../core/network/api_client.dart';
 
+class PublishedSubmissionResult {
+  const PublishedSubmissionResult({this.grade, this.feedback});
+
+  final double? grade;
+  final String? feedback;
+}
+
 class StudentSubmission {
   const StudentSubmission(
       {required this.id,
@@ -8,7 +15,8 @@ class StudentSubmission {
       required this.answer,
       required this.submittedAt,
       required this.isLate,
-      required this.status});
+      required this.status,
+      this.result});
   final String id;
   final String activityId;
   final int version;
@@ -16,14 +24,14 @@ class StudentSubmission {
   final DateTime submittedAt;
   final bool isLate;
   final String status;
+  final PublishedSubmissionResult? result;
   bool get canRevise =>
       ['submitted', 'late'].contains(status) && version <= 2147483646;
   String get statusLabel => switch (status) {
         'submitted' => 'Resposta enviada',
         'late' => 'Resposta enviada com atraso',
-        'in_review' => 'Em avaliação',
-        'corrected' => 'Corrigida',
-        _ => 'Resultado publicado',
+        'in_review' || 'corrected' => 'Em avaliação',
+        _ => result == null ? 'Resultado indisponível' : 'Resultado publicado',
       };
 }
 
@@ -62,7 +70,29 @@ class StudentSubmissionService {
         answer: row['answer'] as String,
         submittedAt: DateTime.parse(row['submittedAt'] as String),
         isLate: row['isLate'] as bool,
-        status: row['status'] as String);
+        status: row['status'] as String,
+        result: row['status'] == 'result_published'
+            ? _publishedResult(row['result'])
+            : null);
+  }
+
+  PublishedSubmissionResult? _publishedResult(Object? row) {
+    if (row is! Map<String, dynamic> ||
+        row['publicationState'] != 'published' ||
+        !row.containsKey('grade')) {
+      return null;
+    }
+    final grade = row['grade'];
+    final feedback = row['feedback'];
+    if ((grade != null &&
+            (grade is! num || !grade.isFinite || grade < 0 || grade > 10)) ||
+        (feedback != null && feedback is! String)) {
+      return null;
+    }
+    return PublishedSubmissionResult(
+      grade: (grade as num?)?.toDouble(),
+      feedback: feedback as String?,
+    );
   }
 
   Future<StudentSubmission?> own(String activityId) async {

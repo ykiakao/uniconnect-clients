@@ -7,6 +7,9 @@ class AppRoutes {
   static const chat = '/chat';
   static const grades = '/notas';
   static const profile = '/perfil';
+  static const academic = '/academico';
+  static const teacherActivities = '/professor/atividades';
+  static const teacherChat = '/professor/chat';
   static const teacherDashboard = '/professor';
   static const teacherCreateActivity = '/professor/criar-atividade';
   static const teacherGrades = '/professor/notas';

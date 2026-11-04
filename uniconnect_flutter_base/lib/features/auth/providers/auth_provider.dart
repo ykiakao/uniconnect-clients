@@ -1,4 +1,5 @@
 // TODO(tech-debt): migrar para NotifierProvider quando estável.
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -38,6 +39,8 @@ final currentUserProvider = Provider<AppUser?>((ref) {
   return ref.watch(authControllerProvider).user;
 });
 
+enum SessionRenewal { idle, pending, failed }
+
 class AuthController extends StateNotifier<AuthState> {
   AuthController(
     this._authService,
@@ -48,18 +51,25 @@ class AuthController extends StateNotifier<AuthState> {
   final ApiAuthService _authService;
   final SessionStorage _sessionStorage;
   final Duration storageTimeout;
+  final _renewal = ValueNotifier(SessionRenewal.idle);
+  ValueListenable<SessionRenewal> get renewal => _renewal;
 
   AuthSession? _session;
   String? _previousAccessToken;
   bool _rememberSession = false;
   bool _allowRestore = true;
   int _generation = 0;
+  int _logoutGeneration = 0;
   Future<void>? _restoring;
   Future<void>? _loggingOut;
   Future<AuthSession>? _refreshing;
   Future<void> _storageWrites = Future<void>.value();
 
   String? get accessToken => state.accessToken;
+
+  /// Identifies a sign-in lifecycle across access token renewals.
+  int get sessionGeneration => _generation;
+  int get logoutGeneration => _logoutGeneration;
 
   bool _isCurrent(int generation) => mounted && generation == _generation;
 
@@ -175,6 +185,12 @@ class AuthController extends StateNotifier<AuthState> {
     return session.user;
   }
 
+  Future<void> retryRenewal() async {
+    final session = _session;
+    if (session == null || _renewal.value != SessionRenewal.failed) return;
+    await refreshAccessToken(session.accessToken, session.user.tenant.slug);
+  }
+
   Future<String?> refreshAccessToken(
       String rejectedToken, String? tenantSlug) async {
     final session = _session;
@@ -184,6 +200,7 @@ class AuthController extends StateNotifier<AuthState> {
     }
 
     final generation = _generation;
+    _renewal.value = SessionRenewal.pending;
     try {
       final renewed = await _rotate(
         refreshToken: session.refreshToken,
@@ -192,12 +209,16 @@ class AuthController extends StateNotifier<AuthState> {
         remember: _rememberSession,
         userId: session.user.id,
       );
-      return _isCurrent(generation) ? renewed.accessToken : null;
+      if (!_isCurrent(generation)) return null;
+      _renewal.value = SessionRenewal.idle;
+      return renewed.accessToken;
     } catch (error) {
-      if (_isCurrent(generation) &&
-          (_isInvalidSession(error) || error is UnsupportedUserRole)) {
+      if (!_isCurrent(generation)) return null;
+      if (_isInvalidSession(error) || error is UnsupportedUserRole) {
         await _endSession(
             message: error is UnsupportedUserRole ? error.message : null);
+      } else {
+        _renewal.value = SessionRenewal.failed;
       }
       return null;
     }
@@ -261,6 +282,7 @@ class AuthController extends StateNotifier<AuthState> {
       _loggingOut ??= _logout().whenComplete(() => _loggingOut = null);
 
   Future<void> _logout() async {
+    _logoutGeneration++;
     final session = _session;
     final pending = _refreshing;
     final localCleanup = _endSession();
@@ -299,6 +321,7 @@ class AuthController extends StateNotifier<AuthState> {
     _refreshing = null;
     _rememberSession = false;
     state = AuthState.unauthenticated(message: message);
+    _renewal.value = SessionRenewal.idle;
     return _clearStoredSessionSafely();
   }
 
@@ -333,6 +356,12 @@ class AuthController extends StateNotifier<AuthState> {
     } catch (_) {
       return false;
     }
+  }
+
+  @override
+  void dispose() {
+    _renewal.dispose();
+    super.dispose();
   }
 
   String _friendlyAuthError(Object error) {

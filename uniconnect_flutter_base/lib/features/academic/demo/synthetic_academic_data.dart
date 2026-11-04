@@ -92,9 +92,7 @@ class SyntheticAcademicData {
         description: row['description'] as String,
         teacher: teacher['displayName'] as String,
         dueDate: due,
-        dueLabel: _dueLabel(due, reference),
         demoReferenceTime: reference,
-        priority: ActivityPriority.values.byName(row['priority'] as String),
         status: ActivityStatus.values.byName(row['status'] as String),
         criteria: List<String>.from(row['criteria'] as List),
         attachments: List<String>.from(row['attachments'] as List),
@@ -148,24 +146,5 @@ class SyntheticAcademicData {
             .map((s) => s['name'] as String)),
         activities: List.unmodifiable(activities),
         grades: List.unmodifiable(grades));
-  }
-
-  static String _dueLabel(DateTime? due, DateTime reference) {
-    if (due == null) {
-      return 'Prazo não informado';
-    }
-    final remaining = due.difference(reference);
-    if (remaining.isNegative) {
-      return 'Prazo encerrado';
-    }
-    if (remaining.inHours < 1) {
-      return 'Vence em menos de 1 hora';
-    }
-    if (remaining <= const Duration(hours: 24)) {
-      return 'Vence em ${remaining.inHours} h';
-    }
-    return remaining.inDays == 1
-        ? 'Vence em 1 dia'
-        : 'Vence em ${remaining.inDays} dias';
   }
 }

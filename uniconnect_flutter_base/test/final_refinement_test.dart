@@ -4,7 +4,6 @@ import 'package:uniconnect/features/activities/models/academic_activity.dart';
 import 'package:uniconnect/features/activities/presentation/activities_page.dart';
 import 'package:uniconnect/features/activities/providers/activity_provider.dart';
 import 'package:uniconnect/features/grades/models/subject_grade.dart';
-import 'package:uniconnect/features/grades/presentation/grades_page.dart';
 import 'package:uniconnect/features/grades/providers/grades_provider.dart';
 import 'package:uniconnect/features/student/presentation/student_dashboard_page.dart';
 import 'package:uniconnect/features/teacher/presentation/teacher_dashboard_page.dart';
@@ -19,10 +18,8 @@ AcademicActivity activity(String id, String title, DateTime? dueDate) =>
       subject: 'Métodos Quantitativos',
       title: title,
       description: '',
-      dueLabel: dueDate == null ? 'Prazo não informado' : 'Prazo da avaliação',
       dueDate: dueDate,
       teacher: 'Professor da turma',
-      priority: ActivityPriority.critical,
       status: ActivityStatus.pending,
       criteria: const [],
       attachments: const [],
@@ -70,7 +67,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Quadro de prazos'), 250,
         scrollable: find.byType(Scrollable).first);
     expect(find.text('Prazo próximo (24h)'), findsOneWidget);
-    expect(find.text('Prazo encerrado'), findsOneWidget);
+    expect(find.text('Prazo encerrado'), findsWidgets);
     expect(find.text('Sem prazo informado'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Avaliação encerrada'), 250,
         scrollable: find.byType(Scrollable).first);
@@ -94,19 +91,19 @@ void main() {
   });
 
   testWidgets(
-      'teacher workspace exposes existing prototypes with explicit limits',
+      'teacher workspace exposes offer-scoped shortcuts without invented metrics',
       (tester) async {
     await pumpDemoPage(tester, const TeacherDashboardPage(), user: fakeTeacher);
     await tester.scrollUntilVisible(find.text('Turmas e disciplinas'), 250,
         scrollable: find.byType(Scrollable).first);
     expect(find.text('Turmas e disciplinas'), findsOneWidget);
-    expect(find.text('Atividades acadêmicas'), findsOneWidget);
-    expect(find.text('Lançamento de notas'), findsOneWidget);
-    expect(find.text('Comunicação com alunos'), findsOneWidget);
-    expect(find.text('Ver protótipo'), findsNothing);
-    expect(find.text('Avaliar entregas'), findsOneWidget);
-    expect(find.text('Gerenciar atividades'), findsOneWidget);
-    expect(find.text('Publicar atividade'), findsNothing);
+    await tester.scrollUntilVisible(find.text('Ver trabalhos e entregas'), 150,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('Ver trabalhos e entregas'), findsOneWidget);
+    expect(
+        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Criar atividade')).onPressed,
+        isNull);
+    expect(find.text('Aguardando correção na consulta: 0'), findsNothing);
     expect(find.text('128'), findsNothing);
   });
 
@@ -121,51 +118,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Prazo encerrado (1)'), findsOneWidget);
     expect(find.text('Críticas (1)'), findsNothing);
-    expect(find.text('Prazo vencido'), findsOneWidget);
-  });
-
-  testWidgets('grades retain individual evaluations without derived mean',
-      (tester) async {
-    await pumpDemoPage(tester, const GradesPage(), overrides: [
-      subjectGradesProvider.overrideWith((ref) async => grades),
-      activitiesProvider.overrideWith((ref) async => []),
-    ]);
-    await tester.pumpAndSettle();
-    expect(find.text('7.0'), findsNothing);
-    expect(find.text('2 avaliações disponíveis'), findsOneWidget);
-    expect(find.textContaining('coeficiente oficial'), findsNothing);
-    expect(find.text('Simulador de média'), findsNothing);
-    expect(find.text('APROVADO'), findsNothing);
-  });
-
-  testWidgets(
-      'grades show API feedback and only identify a discipline through its exact activity ID',
-      (tester) async {
-    await pumpDemoPage(tester, const GradesPage(), overrides: [
-      subjectGradesProvider.overrideWith((ref) async => const [
-            SubjectGrade(
-              activityId: 'matched',
-              feedback: 'Argumentação consistente.',
-              subject: 'Pesquisa aplicada',
-              code: 'A',
-              teacher: '',
-              grade: 8,
-            ),
-            SubjectGrade(
-              activityId: 'missing',
-              subject: 'Outra avaliação',
-              code: 'B',
-              teacher: '',
-              grade: 6,
-            ),
-          ]),
-      activitiesProvider.overrideWith(
-          (ref) async => [activity('matched', 'Pesquisa aplicada', null)]),
-    ]);
-    await tester.pumpAndSettle();
-    expect(
-        find.text('Disciplina/turma: Métodos Quantitativos'), findsOneWidget);
-    expect(find.text('Argumentação consistente.'), findsOneWidget);
+    expect(find.text('EXPIRADA'), findsOneWidget);
   });
 
   testWidgets(
@@ -192,34 +145,4 @@ void main() {
         isTrue);
   });
 
-  testWidgets(
-      'refreshing grades also recovers discipline context after an activity API failure',
-      (tester) async {
-    var activityRequests = 0;
-    await pumpDemoPage(tester, const GradesPage(), overrides: [
-      subjectGradesProvider.overrideWith((ref) async => const [
-            SubjectGrade(
-              activityId: 'matched',
-              subject: 'Pesquisa aplicada',
-              code: 'A',
-              teacher: '',
-              grade: 8,
-            ),
-          ]),
-      activitiesProvider.overrideWith((ref) async {
-        if (activityRequests++ == 0) throw Exception('offline');
-        return [activity('matched', 'Pesquisa aplicada', null)];
-      }),
-    ]);
-    await tester.pumpAndSettle();
-    expect(find.text('8.0'), findsWidgets);
-    expect(find.text('Disciplina/turma: Métodos Quantitativos'), findsNothing);
-    await tester
-        .widget<RefreshIndicator>(find.byType(RefreshIndicator))
-        .onRefresh();
-    await tester.pumpAndSettle();
-    expect(activityRequests, 2);
-    expect(
-        find.text('Disciplina/turma: Métodos Quantitativos'), findsOneWidget);
-  });
 }

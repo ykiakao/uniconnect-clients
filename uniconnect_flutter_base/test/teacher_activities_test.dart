@@ -16,7 +16,7 @@ void main() {
     await tester.ensureVisible(dropdown);
     await tester.tap(dropdown);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Métodos • class-1').last);
+    await tester.tap(find.text('Métodos').last);
     await tester.pumpAndSettle();
   }
 
@@ -99,6 +99,9 @@ void main() {
         published = true;
         return jsonResponse(activityRow(state: 'published', revision: 2));
       }
+      final payload = jsonDecode(r.body) as Map<String, dynamic>;
+      expect(payload.containsKey('priority'), isFalse);
+      expect(payload['allowLate'], isTrue);
       creates++;
       await confirmation.future;
       created = true;
@@ -109,12 +112,16 @@ void main() {
         overrides: [teacherActivityServiceProvider.overrideWithValue(api)]);
     await tester.pumpAndSettle();
     await selectOffering(tester);
+    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+    expect(find.text('Prioridade'), findsNothing);
+    expect(find.text('Definir prazo (opcional)'), findsOneWidget);
     await tapVisible(tester, 'Salvar rascunho');
     expect(find.text('Campo obrigatório'), findsOneWidget);
     expect(creates, 0);
     final title = find.byType(TextFormField).first;
     await tester.ensureVisible(title);
     await tester.enterText(title, 'Pesquisa');
+    await tapVisible(tester, 'Permitir entrega após o prazo');
     await tapVisible(tester, 'Salvar rascunho');
     expect(creates, 1);
     expect(find.textContaining('Rascunho salvo pela API.'), findsNothing);

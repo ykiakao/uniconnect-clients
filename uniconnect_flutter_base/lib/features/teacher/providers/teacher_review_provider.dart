@@ -21,10 +21,23 @@ final teacherSubmissionsProvider = FutureProvider.autoDispose
   final service = ref.watch(teacherReviewServiceProvider);
   final activities =
       await ref.watch(teacherActivitiesProvider(key.classId).future);
-  if (!activities.any((a) => a.id == key.activityId)) {
+  if (!activities.any((a) => a.id == key.activityId && a.hasSubmissions)) {
     throw const ApiException('Atividade não autorizada.');
   }
   return service.list(key.activityId);
+}, retry: (_, __) => null);
+
+final teacherSubmissionPreviewProvider = FutureProvider.autoDispose.family<
+    ({List<TeacherSubmission> rows, int total}),
+    ({String classId, String activityId})>((ref, key) async {
+  final service = ref.watch(teacherReviewServiceProvider);
+  final preview =
+      await ref.watch(teacherActivityPreviewProvider(key.classId).future);
+  if (!preview.rows
+      .any((work) => work.id == key.activityId && work.hasSubmissions)) {
+    throw const ApiException('Atividade não autorizada.');
+  }
+  return service.preview(key.activityId);
 }, retry: (_, __) => null);
 
 String teacherReviewError(Object error) {

@@ -12,12 +12,12 @@ class PriorityBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, tone, icon) = switch (priority) {
       ActivityPriority.critical => (
-          'URGENTE',
+          'CRÍTICA',
           AppBadgeTone.danger,
           Icons.priority_high,
         ),
       ActivityPriority.medium => (
-          'MEDIA',
+          'MÉDIA',
           AppBadgeTone.warning,
           Icons.schedule,
         ),
@@ -25,6 +25,16 @@ class PriorityBadge extends StatelessWidget {
           'BAIXA',
           AppBadgeTone.success,
           Icons.check_circle_outline,
+        ),
+      ActivityPriority.expired => (
+          'EXPIRADA',
+          AppBadgeTone.neutral,
+          Icons.event_busy_outlined,
+        ),
+      ActivityPriority.noDeadline => (
+          'SEM PRAZO',
+          AppBadgeTone.neutral,
+          Icons.event_outlined,
         ),
     };
 

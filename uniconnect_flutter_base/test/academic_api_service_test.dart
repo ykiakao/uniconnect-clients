@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:uniconnect/core/network/api_client.dart';
 import 'package:uniconnect/features/academic/services/academic_api_service.dart';
+import 'package:uniconnect/features/activities/models/academic_activity.dart';
 
 void main() {
   test('grade consultation retains activity identity and feedback from the API',
@@ -70,7 +71,8 @@ void main() {
                       'state': 'published',
                       'allowLate': false,
                       'title': 'Entrega',
-                      'dueDate': '2026-12-01T19:00:00Z',
+                      'dueDate': '2026-12-01T14:00:00-05:00',
+                      'priority': 'high',
                     },
                   ];
         return http.Response(
@@ -87,7 +89,24 @@ void main() {
     );
     final undated = activities.singleWhere((a) => a.id == 'no-deadline');
     expect(undated.dueDate, isNull);
-    expect(undated.dueLabel, 'Prazo não informado');
+    final due = DateTime.utc(2026, 12, 1, 19);
+    expect(undated.dueLabelAt(due), 'Prazo não informado');
+    expect(undated.priorityAt(due), ActivityPriority.noDeadline);
     expect(activities.last.id, 'no-deadline');
+    final dated = activities.first;
+    expect(dated.dueDate, due);
+    for (final (remaining, expected) in [
+      (const Duration(days: 3), ActivityPriority.critical),
+      (const Duration(days: 3, microseconds: 1), ActivityPriority.medium),
+      (const Duration(days: 4), ActivityPriority.medium),
+      (const Duration(days: 5), ActivityPriority.medium),
+      (const Duration(days: 5, microseconds: 1), ActivityPriority.low),
+      (const Duration(days: 6), ActivityPriority.low),
+      (Duration.zero, ActivityPriority.critical),
+      (const Duration(microseconds: -1), ActivityPriority.expired),
+    ]) {
+      expect(dated.priorityAt(due.subtract(remaining)), expected,
+          reason: 'Tempo restante: $remaining');
+    }
   });
 }

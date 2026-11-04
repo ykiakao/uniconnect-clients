@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,7 +7,6 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
-import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/academic_content.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -17,8 +15,8 @@ import '../../academic/demo/synthetic_academic_providers.dart';
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
-  void _handleLogout(BuildContext context, WidgetRef ref) {
-    showDialog(
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sair da conta?'),
@@ -27,16 +25,11 @@ class ProfilePage extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () async {
-              await ref.read(authControllerProvider.notifier).logout();
-              if (!context.mounted) return;
-              Navigator.pop(dialogContext);
-              context.go(AppRoutes.login);
-            },
+            onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
             ),
@@ -45,6 +38,8 @@ class ProfilePage extends ConsumerWidget {
         ],
       ),
     );
+    if (confirmed != true || !context.mounted) return;
+    await ref.read(authControllerProvider.notifier).logout();
   }
 
   void _showSettings(BuildContext context) {
@@ -114,8 +109,6 @@ class ProfilePage extends ConsumerWidget {
         fallbackRoute:
             isTeacher ? AppRoutes.teacherDashboard : AppRoutes.studentDashboard,
       ),
-      bottomNavigationBar:
-          isTeacher ? null : const UniBottomNav(currentIndex: 4),
       body: SafeArea(
         child: AcademicContent(
             child: ListView(

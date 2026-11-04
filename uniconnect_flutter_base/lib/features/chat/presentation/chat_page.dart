@@ -20,6 +20,7 @@ class ChatPage extends ConsumerWidget {
     return Scaffold(
       appBar: const AppHeader(
         title: 'Conversas • Demonstração',
+        showProfile: true,
         fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 2),

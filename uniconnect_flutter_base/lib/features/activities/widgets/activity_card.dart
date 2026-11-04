@@ -11,24 +11,27 @@ class ActivityCard extends StatelessWidget {
   const ActivityCard({
     super.key,
     required this.activity,
+    required this.now,
     this.onTap,
     this.compact = false,
   });
 
   final AcademicActivity activity;
+  final DateTime now;
   final VoidCallback? onTap;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final isExpired = activity.isExpired;
-    final priorityColor = activity.dueDate == null || isExpired
-        ? AppColors.muted
-        : switch (activity.priority) {
-            ActivityPriority.critical => AppColors.danger,
-            ActivityPriority.medium => AppColors.warning,
-            ActivityPriority.low => AppColors.success,
-          };
+    final priority = activity.priorityAt(now);
+    final priorityColor = switch (priority) {
+      ActivityPriority.critical => AppColors.danger,
+      ActivityPriority.medium => AppColors.warning,
+      ActivityPriority.low => AppColors.success,
+      ActivityPriority.expired ||
+      ActivityPriority.noDeadline =>
+        AppColors.muted,
+    };
 
     return AppCard(
       onTap: onTap,
@@ -48,19 +51,22 @@ class ActivityCard extends StatelessWidget {
                       ),
                 ),
               ),
-              if (activity.dueDate != null ||
-                  activity.publicationState == 'closed')
-                Flexible(
-                    child: Align(
-                        alignment: Alignment.centerRight,
-                        child:
-                            activity.publicationState == 'closed' || isExpired
-                                ? AppBadge(
-                                    label: activity.publicationState == 'closed'
-                                        ? 'Encerrada'
-                                        : 'Prazo vencido',
-                                    tone: AppBadgeTone.neutral)
-                                : PriorityBadge(priority: activity.priority))),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      PriorityBadge(priority: priority),
+                      if (activity.publicationState == 'closed')
+                        const AppBadge(
+                            label: 'Encerrada', tone: AppBadgeTone.neutral),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -90,7 +96,7 @@ class ActivityCard extends StatelessWidget {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(activity.dueLabel,
+                      Text(activity.dueLabelAt(now),
                           style: const TextStyle(fontWeight: FontWeight.w700)),
                       if (activity.dueDate != null)
                         Text(

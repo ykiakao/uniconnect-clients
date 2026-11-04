@@ -58,6 +58,42 @@ void main() {
       expect(result.canRevise, ['submitted', 'late'].contains(status));
     }
   });
+  test('result requires publication in both the receipt and the evaluation',
+      () async {
+    for (final (status, publicationState) in [
+      ('corrected', 'draft'),
+      ('result_published', 'draft'),
+      ('in_review', 'published'),
+    ]) {
+      final receipt = await api((_) async => response({
+            ...submissionJson(status: status),
+            'result': {
+              'publicationState': publicationState,
+              'grade': 9.75,
+              'feedback': 'Comentário do professor.',
+            },
+          })).own(activityId);
+      expect(receipt!.result, isNull);
+      expect(receipt.statusLabel, isNot('Resultado publicado'));
+      expect(receipt.canRevise, isFalse);
+    }
+  });
+  test('published result preserves zero, decimals, absence and feedback',
+      () async {
+    for (final grade in [0, 8.75, null]) {
+      final receipt = await api((_) async => response({
+            ...submissionJson(status: 'result_published'),
+            'result': {
+              'publicationState': 'published',
+              'grade': grade,
+              'feedback': 'Boa análise.\nRevise a conclusão.',
+            },
+          })).own(activityId);
+      expect(receipt!.result!.grade, grade);
+      expect(receipt.result!.feedback, 'Boa análise.\nRevise a conclusão.');
+      expect(receipt.statusLabel, 'Resultado publicado');
+    }
+  });
   test(
       'initial answer sends version zero and no student or tenant identity in body',
       () async {

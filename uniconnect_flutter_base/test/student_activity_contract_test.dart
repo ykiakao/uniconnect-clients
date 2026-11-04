@@ -7,7 +7,10 @@ import 'package:uniconnect/features/academic/services/academic_api_service.dart'
 
 const activityId = '00000000-0000-4000-8000-000000000001';
 Map<String, dynamic> activityJson(
-        {String state = 'published', bool allowLate = false}) =>
+        {String state = 'published',
+        bool allowLate = false,
+        bool workflowEnabled = true,
+        String? assessmentCategory}) =>
     {
       'id': activityId,
       'classId': 'class-1',
@@ -17,7 +20,13 @@ Map<String, dynamic> activityJson(
       'evaluationCriteria': 'Clareza',
       'state': state,
       'allowLate': allowLate,
-      'workflowEnabled': true,
+      'workflowEnabled': workflowEnabled,
+      if (assessmentCategory != null)
+        'assessment': {
+          'stage': 'N1',
+          'category': assessmentCategory,
+          'maxPoints': '3.00'
+        },
       'revision': 2,
       'priority': 'medium',
       'type': 'assignment',
@@ -40,13 +49,16 @@ void main() {
       expect(r.headers['x-tenant-slug'], 'campus');
       return r.url.path.endsWith('/classes/class-1')
           ? response({'id': 'class-1', 'name': 'Métodos'})
-          : response(activityJson(state: 'closed'));
+          : response(activityJson(state: 'closed', assessmentCategory: 'exam'));
     })));
     final detail = await service.getActivity(
         accessToken: 'token', tenantSlug: 'campus', id: activityId);
     expect(detail.subject, 'Métodos');
     expect(detail.instructions, 'Responda em texto');
     expect(detail.publicationState, 'closed');
+    expect(detail.workflowEnabled, isTrue);
+    expect(detail.assessmentCategory, 'exam');
+    expect(detail.acceptsTextSubmission, isFalse);
   });
   test(
       'authorized historical activity remains readable when class metadata is denied',
@@ -93,7 +105,7 @@ void main() {
     expect(pages, 2);
     for (final payload in [
       {},
-      listJson([activityJson(state: 'draft')])
+      listJson([activityJson(state: 'unexpected')])
     ]) {
       final invalid =
           AcademicApiService(ApiClient(httpClient: MockClient((r) async {
@@ -114,7 +126,7 @@ void main() {
           throwsA(isA<ApiException>()));
     }
   });
-  test('student activity list retains real evaluation criteria', () async {
+  test('student activity list hides drafts and retains published evaluation criteria', () async {
     final service =
         AcademicApiService(ApiClient(httpClient: MockClient((r) async {
       if (r.url.path.endsWith('/courses')) {
@@ -127,10 +139,16 @@ void main() {
           {'id': 'class-1', 'name': 'Métodos'}
         ]));
       }
-      return response(listJson([activityJson()]));
+      return response(listJson([
+        activityJson(state: 'draft'),
+        activityJson(assessmentCategory: 'activity'),
+      ]));
     })));
     final result = await service.listActivities(
         accessToken: 'token', tenantSlug: 'campus');
     expect(result.single.criteria, ['Clareza']);
+    expect(result.single.workflowEnabled, isTrue);
+    expect(result.single.assessmentCategory, 'activity');
+    expect(result.single.acceptsTextSubmission, isTrue);
   });
 }

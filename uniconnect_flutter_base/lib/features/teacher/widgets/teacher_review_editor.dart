@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/app_routes.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/app_header.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/teacher_review_provider.dart';
+import '../providers/teacher_activity_provider.dart';
+import '../providers/teacher_offering_selection.dart';
 import '../services/teacher_review_service.dart';
 import '../services/grade_precision.dart';
 
@@ -21,8 +21,20 @@ class TeacherReviewPage extends ConsumerWidget {
     final allowed =
         auth.user?.role == UserRole.teacher && auth.accessToken != null;
     return Scaffold(
-        appBar: const AppHeader(
-            title: 'Avaliar entrega', fallbackRoute: AppRoutes.teacherGrades),
+        appBar: AppBar(
+          title: const Text('Avaliar entrega'),
+          leading: IconButton(
+            tooltip: 'Retornar',
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              final confirm =
+                  ref.read(teacherDraftGuardProvider).confirmReviewExit;
+              if ((confirm == null || await confirm()) && context.mounted) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+        ),
         body: SafeArea(
             child: AcademicContent(
                 child: !allowed
@@ -31,9 +43,7 @@ class TeacherReviewPage extends ConsumerWidget {
                             'Sessão de professor inválida. Entre novamente.'))
                     : _ReviewEditor(
                         key: ValueKey((
-                          auth.user!.id,
-                          auth.user!.tenant.slug,
-                          auth.accessToken,
+                          ref.watch(teacherNotesSessionProvider),
                           submission.id
                         )),
                         submission: submission))));
@@ -59,19 +69,64 @@ class _ReviewEditorState extends ConsumerState<_ReviewEditor> {
       _mustRefresh = false,
       _denied = false;
   String? _error, _message;
+  late final TeacherDraftGuard _guard;
+  late final Future<bool> Function() _exitCallback;
+  Future<bool>? _confirmation;
   @override
   void initState() {
     super.initState();
     _current = widget.submission;
+    _guard = ref.read(teacherDraftGuardProvider);
+    _exitCallback = _confirmExit;
+    _guard.confirmReviewExit = _exitCallback;
     Future.microtask(_refresh);
   }
 
   @override
   void dispose() {
+    if (identical(_guard.confirmReviewExit, _exitCallback)) {
+      _guard.confirmReviewExit = null;
+    }
     _scroll.dispose();
     _grade.dispose();
     _feedback.dispose();
     super.dispose();
+  }
+
+  Future<bool> _confirmExit() {
+    if (_busy) return Future.value(false);
+    if (!_dirty) return Future.value(true);
+    return _confirmation ??=
+        _confirmDiscard().whenComplete(() => _confirmation = null);
+  }
+
+  Future<bool> _confirmDiscard() async {
+    final discard = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Descartar alterações da correção?'),
+            content: const Text(
+                'A nota e a devolutiva digitadas ainda não foram salvas.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Continuar corrigindo'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Descartar alterações'),
+              ),
+            ],
+          ),
+        ) ==
+        true;
+    if (!mounted || !discard) return false;
+    setState(() {
+      _dirty = false;
+      _grade.text = _current.result?.grade?.toString() ?? '';
+      _feedback.text = _current.result?.feedback ?? '';
+    });
+    return true;
   }
 
   Future<void> _read() async {
@@ -193,101 +248,115 @@ class _ReviewEditorState extends ConsumerState<_ReviewEditor> {
   Widget build(BuildContext context) {
     final review = _current.result;
     final published = review?.publicationState == 'published';
-    return ListView(
-        controller: _scroll,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          if (_busy) const LinearProgressIndicator(),
-          TextButton.icon(
-              onPressed: _busy ? null : _refresh,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Atualizar entrega e avaliação')),
-          if (_error != null)
-            Text(_error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          if (_message != null && !_denied) Text(_message!),
-          if (!_ready && _busy) const Text('Carregando entrega...'),
-          if (_ready && !_denied) ...[
-            AppCard(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text('Aluno: ${_current.studentId}'),
-                  Text('Entrega: ${_current.id}'),
-                  Text('Versão da resposta: ${_current.version}'),
-                  Text('Enviada em: ${_current.submittedAt.toLocal()}'),
-                  if (_current.isLate) const Text('Entrega em atraso'),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Text('Resposta textual'),
-                  Text(_current.answer),
-                ])),
-            AppCard(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                  Text(review == null
-                      ? 'Sem avaliação'
-                      : published
-                          ? 'Avaliação publicada'
-                          : 'Avaliação salva — não publicada'),
-                  if (review != null) ...[
-                    Text('Revisão da avaliação: ${review.revision}'),
-                    Text(
-                        'Nota registrada: ${review.grade?.toString() ?? 'Sem nota'}'),
-                    if (review.feedback != null)
-                      Text('Feedback registrado: ${review.feedback}'),
-                  ],
-                  if (published)
-                    const Text(
-                        'Resultado publicado. A API não permite retornar esta avaliação a rascunho.')
-                  else
-                    Form(
-                        key: _form,
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const Text('Nota (0 a 10; em branco = sem nota)'),
-                              TextFormField(
-                                  controller: _grade,
-                                  enabled: !_busy && !_mustRefresh,
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                          decimal: true),
-                                  onChanged: (_) =>
-                                      setState(() => _dirty = true),
-                                  validator: _validateGrade),
-                              const SizedBox(height: AppSpacing.sm),
-                              const Text('Feedback (opcional)'),
-                              TextFormField(
-                                  controller: _feedback,
-                                  enabled: !_busy && !_mustRefresh,
-                                  minLines: 3,
-                                  maxLines: 8,
-                                  onChanged: (_) =>
-                                      setState(() => _dirty = true),
-                                  validator: (v) =>
-                                      (v?.trim().length ?? 0) > 20000
-                                          ? 'Limite de 20000 caracteres.'
-                                          : null),
-                              const SizedBox(height: AppSpacing.md),
-                              ElevatedButton(
-                                  onPressed: _busy || _mustRefresh
-                                      ? null
-                                      : () => _mutate(publish: false),
-                                  child: const Text('Salvar correção')),
-                              if (review != null) ...[
-                                if (_dirty)
-                                  const Text(
-                                      'Salve as alterações antes de publicar.'),
+    return PopScope(
+      canPop: !_dirty && !_busy,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop && await _confirmExit() && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: ListView(
+          controller: _scroll,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            if (_busy) const LinearProgressIndicator(),
+            TextButton.icon(
+                onPressed: _busy ? null : _refresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Atualizar entrega e avaliação')),
+            if (_error != null)
+              Text(_error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            if (_message != null && !_denied)
+              Semantics(liveRegion: true, child: Text(_message!)),
+            if (!_ready && _busy) const Text('Carregando entrega...'),
+            if (_ready && !_denied) ...[
+              AppCard(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text('Aluno: ${_current.studentId}'),
+                    Text('Entrega: ${_current.id}'),
+                    Text('Versão da resposta: ${_current.version}'),
+                    Text('Enviada em: ${_current.submittedAt.toLocal()}'),
+                    if (_current.isLate) const Text('Entrega em atraso'),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Text('Resposta textual'),
+                    Text(_current.answer),
+                  ])),
+              AppCard(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                    Text(review == null
+                        ? 'Sem avaliação'
+                        : published
+                            ? 'Avaliação publicada'
+                            : 'Avaliação salva — não publicada'),
+                    if (review != null) ...[
+                      Text('Revisão da avaliação: ${review.revision}'),
+                      Text(
+                          'Nota registrada: ${review.grade?.toString() ?? 'Sem nota'}'),
+                      if (review.feedback != null)
+                        Text('Feedback registrado: ${review.feedback}'),
+                    ],
+                    if (published)
+                      const Text(
+                          'Resultado publicado. A API não permite retornar esta avaliação a rascunho.')
+                    else
+                      Form(
+                          key: _form,
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Text(
+                                    'Nota (0 a 10; em branco = sem nota)'),
+                                TextFormField(
+                                    controller: _grade,
+                                    decoration: const InputDecoration(
+                                        labelText: 'Nota'),
+                                    enabled: !_busy && !_mustRefresh,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    onChanged: (_) =>
+                                        setState(() => _dirty = true),
+                                    validator: _validateGrade),
+                                const SizedBox(height: AppSpacing.sm),
+                                const Text('Feedback (opcional)'),
+                                TextFormField(
+                                    controller: _feedback,
+                                    decoration: const InputDecoration(
+                                        labelText: 'Devolutiva'),
+                                    enabled: !_busy && !_mustRefresh,
+                                    minLines: 3,
+                                    maxLines: 8,
+                                    onChanged: (_) =>
+                                        setState(() => _dirty = true),
+                                    validator: (v) =>
+                                        (v?.trim().length ?? 0) > 20000
+                                            ? 'Limite de 20000 caracteres.'
+                                            : null),
+                                const SizedBox(height: AppSpacing.md),
                                 ElevatedButton(
-                                    onPressed: _busy || _mustRefresh || _dirty
+                                    onPressed: _busy || _mustRefresh
                                         ? null
-                                        : () => _mutate(publish: true),
-                                    child: const Text('Publicar avaliação')),
-                              ],
-                            ])),
-                ])),
-          ],
-        ]);
+                                        : () => _mutate(publish: false),
+                                    child: const Text('Salvar correção')),
+                                if (review != null) ...[
+                                  if (_dirty)
+                                    const Text(
+                                        'Salve as alterações antes de publicar.'),
+                                  ElevatedButton(
+                                      onPressed: _busy || _mustRefresh || _dirty
+                                          ? null
+                                          : () => _mutate(publish: true),
+                                      child: const Text('Publicar avaliação')),
+                                ],
+                              ])),
+                  ])),
+            ],
+          ]),
+    );
   }
 }

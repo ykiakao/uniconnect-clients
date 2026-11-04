@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:uniconnect/features/teacher/presentation/teacher_grades_page.dart';
+import 'package:uniconnect/features/teacher/presentation/teacher_activities_page.dart';
 import 'demo_day_test.dart' show pumpDemoPage;
 import 'fakes/fake_auth_service.dart';
 import 'dart:async';
@@ -22,7 +22,10 @@ import 'layout_quality_test.dart' show captureLayout;
 
 Future<AuthController> pumpReviews(
     WidgetTester tester, Future<http.Response> Function(http.Request) handler,
-    {double width = 390, double scale = 1, GlobalKey? frame}) async {
+    {double width = 390,
+    double scale = 1,
+    GlobalKey? frame,
+    bool mockEnrollments = true}) async {
   GoogleFonts.config.allowRuntimeFetching = false;
   tester.view.physicalSize = Size(width, 1000);
   tester.view.devicePixelRatio = 1;
@@ -54,6 +57,9 @@ Future<AuthController> pumpReviews(
           if (r.url.path.endsWith('/classes/class-1/activities')) {
             return Future.value(response(listJson([activityJson()])));
           }
+          if (mockEnrollments && r.url.path.endsWith('/enrollments')) {
+            return Future.value(response(listJson([])));
+          }
           return handler(r);
         }))),
       ],
@@ -66,16 +72,11 @@ Future<AuthController> pumpReviews(
                   data: MediaQuery.of(context)
                       .copyWith(textScaler: TextScaler.linear(scale)),
                   child: child!),
-              home: const TeacherGradesPage()))));
+              home: const TeacherActivitiesPage()))));
   await tester.pumpAndSettle();
-  for (final item in [(0, 'Métodos • class-1'), (1, 'Pesquisa • Publicada')]) {
-    final dropdown = find.byType(DropdownButtonFormField<String>).at(item.$1);
-    await tester.ensureVisible(dropdown);
-    await tester.tap(dropdown);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(item.$2).last);
-    await tester.pumpAndSettle();
-  }
+  await tester.ensureVisible(find.text('Ver entregas'));
+  await tester.tap(find.text('Ver entregas'));
+  await tester.pumpAndSettle();
   return auth;
 }
 
@@ -428,6 +429,68 @@ void main() {
         findsOneWidget);
     expect(find.text('Nota registrada: 0.0'), findsOneWidget);
   });
+  testWidgets(
+      'paginated enrollments show only active students without delivery',
+      (tester) async {
+    final pages = <String>[];
+    await pumpReviews(tester, (r) async {
+      if (!r.url.path.endsWith('/enrollments')) {
+        return response(listJson([reviewedSubmission()]));
+      }
+      final page = r.url.queryParameters['page']!;
+      pages.add(page);
+      expect(r.url.queryParameters['classId'], 'class-1');
+      expect(r.url.queryParameters['status'], 'active');
+      Map<String, dynamic> enrollment(String id) => {
+            'classId': 'class-1',
+            'tenantId': fakeTeacher.tenant.id,
+            'studentId': id,
+            'status': 'active',
+          };
+      return response(listJson(
+        page == '1'
+            ? [
+                enrollment('student-test'),
+                ...List.generate(99, (i) => enrollment('aluno-$i'))
+              ]
+            : [enrollment('sem-entrega-pagina-2')],
+        page: int.parse(page),
+        total: 101,
+      ));
+    }, mockEnrollments: false);
+    expect(pages, ['1', '2']);
+    expect(find.text('Aluno: student-test'), findsOneWidget);
+    expect(find.text('Aluno: sem-entrega-pagina-2'), findsOneWidget);
+    expect(find.text('Alunos sem entrega'), findsOneWidget);
+    expect(find.text('submitted'), findsNothing);
+  });
+
+  testWidgets('review discard can be canceled and returns to the same work',
+      (tester) async {
+    await pumpReviews(
+        tester,
+        (r) async => response(r.url.path.endsWith('/submissions')
+            ? listJson([reviewedSubmission()])
+            : reviewedSubmission()));
+    await openReview(tester);
+    await tester.enterText(
+        find.byType(TextFormField).last, 'Devolutiva pendente');
+    tester.testTextInput.hide();
+    await tester.tap(find.byTooltip('Retornar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Descartar alterações da correção?'), findsOneWidget);
+    await tester.tap(find.text('Continuar corrigindo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Devolutiva pendente'), findsOneWidget);
+    await tester.tap(find.byTooltip('Retornar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Descartar alterações'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pesquisa'), findsOneWidget);
+    expect(find.text('Abrir entrega'), findsOneWidget);
+    expect(find.text('Devolutiva pendente'), findsNothing);
+  });
+
   testWidgets('empty and denied lists are different states', (tester) async {
     await pumpReviews(tester, (_) async => response(listJson([])));
     expect(find.text('Nenhuma entrega nesta atividade.'), findsOneWidget);
@@ -477,7 +540,7 @@ void main() {
   });
   testWidgets('student cannot view teacher submission list', (tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
-    await pumpDemoPage(tester, const TeacherGradesPage());
+    await pumpDemoPage(tester, const TeacherActivitiesPage());
     expect(find.text('Área exclusiva do professor'), findsOneWidget);
     expect(find.text('Ana Clara Oliveira'), findsNothing);
   });
@@ -485,9 +548,10 @@ void main() {
       'teacher selects authorized offering rather than synthetic student rows',
       (tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
-    await pumpDemoPage(tester, const TeacherGradesPage(), user: fakeTeacher);
+    await pumpDemoPage(tester, const TeacherActivitiesPage(),
+        user: fakeTeacher);
     await tester.pumpAndSettle();
-    expect(find.text('Oferta acadêmica'), findsOneWidget);
+    expect(find.text('Disciplina'), findsOneWidget);
     expect(find.text('P1'), findsNothing);
     expect(find.text('Média da Turma'), findsNothing);
   });

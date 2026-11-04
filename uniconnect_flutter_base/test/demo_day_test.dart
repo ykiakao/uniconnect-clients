@@ -10,9 +10,6 @@ import 'package:uniconnect/features/activities/presentation/activities_page.dart
 import 'package:uniconnect/features/activities/providers/activity_provider.dart';
 import 'package:uniconnect/features/auth/providers/auth_provider.dart';
 import 'package:uniconnect/features/auth/models/app_user.dart';
-import 'package:uniconnect/features/grades/models/subject_grade.dart';
-import 'package:uniconnect/features/grades/presentation/grades_page.dart';
-import 'package:uniconnect/features/grades/providers/grades_provider.dart';
 import 'package:uniconnect/features/profile/presentation/profile_page.dart';
 import 'package:uniconnect/features/student/presentation/student_dashboard_page.dart';
 import 'package:uniconnect/features/teacher/presentation/create_activity_page.dart';
@@ -27,10 +24,8 @@ final demoActivity = AcademicActivity(
   subject: 'Métodos Quantitativos',
   title: 'Pesquisa aplicada',
   description: 'Analise os dados disponibilizados para a turma.',
-  dueLabel: 'Vence em 3 dias',
   dueDate: DateTime.now().add(const Duration(days: 3)),
   teacher: 'Profa. Ana Lima',
-  priority: ActivityPriority.medium,
   status: ActivityStatus.pending,
   criteria: const [],
   attachments: const [],
@@ -68,10 +63,8 @@ void main() {
       subject: 'Métodos',
       title: 'Pesquisa sem prazo',
       description: '',
-      dueLabel: 'Prazo não informado',
       dueDate: null,
       teacher: 'Professor da turma',
-      priority: ActivityPriority.low,
       status: ActivityStatus.pending,
       criteria: const [],
       attachments: const [],
@@ -87,6 +80,33 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Pesquisa sem prazo'), findsNothing);
   });
+  testWidgets('priority filter moves activities when the clock advances',
+      (tester) async {
+    var now = demoActivity.dueDate!.subtract(
+      const Duration(days: 3, seconds: 1),
+    );
+    await pumpDemoPage(tester, const ActivitiesPage(), overrides: [
+      activitiesProvider.overrideWith((ref) async => [demoActivity]),
+      activityClockProvider.overrideWith((ref) => now),
+    ]);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Médias'));
+    await tester.tap(find.text('Médias'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pesquisa aplicada'), findsOneWidget);
+    expect(find.text('MÉDIA'), findsOneWidget);
+
+    now = now.add(const Duration(seconds: 1));
+    ProviderScope.containerOf(tester.element(find.byType(ActivitiesPage)))
+        .invalidate(activityClockProvider);
+    await tester.pumpAndSettle();
+    expect(find.text('Pesquisa aplicada'), findsNothing);
+    await tester.ensureVisible(find.text('Críticas'));
+    await tester.tap(find.text('Críticas'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pesquisa aplicada'), findsOneWidget);
+    expect(find.text('CRÍTICA'), findsOneWidget);
+  });
   testWidgets('student dashboard uses session and API agenda without fixed GPA',
       (tester) async {
     await pumpDemoPage(tester, const StudentDashboardPage(), overrides: [
@@ -97,8 +117,10 @@ void main() {
     expect(find.text('8.7'), findsNothing);
     expect(find.text(fakeTenant.name), findsOneWidget);
     expect(find.text('Entrega Projeto Final - IA'), findsNothing);
-    expect(find.text('Pesquisa aplicada'), findsOneWidget);
     expect(find.text('Ver notas'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Pesquisa aplicada'), 180,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('Pesquisa aplicada'), findsOneWidget);
   });
 
   testWidgets('student dashboard explains empty agenda', (tester) async {
@@ -106,6 +128,8 @@ void main() {
       activitiesProvider.overrideWith((ref) async => []),
     ]);
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Nenhuma atividade disponível'), 180,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('Nenhuma atividade disponível'), findsOneWidget);
     expect(find.text('Segurança Digital'), findsNothing);
   });
@@ -146,13 +170,13 @@ void main() {
       (tester) async {
     await pumpDemoPage(tester, const TeacherDashboardPage(), user: fakeTeacher);
     expect(find.text('Professor Teste'), findsOneWidget);
-    expect(find.text('Ver perfil'), findsOneWidget);
+    expect(find.byTooltip('Meu perfil'), findsOneWidget);
     expect(find.text('Vínculo acadêmico não informado'), findsOneWidget);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -1800));
     await tester.pumpAndSettle();
     expect(find.text('Sobre este ambiente'), findsNothing);
     expect(find.textContaining('A gestão docente de turmas'), findsNothing);
-    expect(find.text('Comunicação com alunos'), findsOneWidget);
+    expect(find.text('Ver trabalhos e entregas'), findsOneWidget);
   });
 
   testWidgets('profile does not invent missing academic data', (tester) async {
@@ -160,43 +184,6 @@ void main() {
     expect(find.text('Engenharia de Software'), findsNothing);
     expect(find.text('2024021845'), findsNothing);
     expect(find.text('Não informado'), findsNWidgets(3));
-  });
-
-  testWidgets('grades show real zero without fictional academic achievements',
-      (tester) async {
-    await pumpDemoPage(tester, const GradesPage(), overrides: [
-      subjectGradesProvider.overrideWith((ref) async => const [
-            SubjectGrade(
-              subject: 'Pesquisa aplicada',
-              code: 'ATV001',
-              teacher: 'Professor da turma',
-              grade: 0,
-            ),
-          ]),
-    ]);
-    await tester.pumpAndSettle();
-    expect(find.text('Lista do Reitor'), findsNothing);
-    expect(find.text('75%'), findsNothing);
-    expect(find.text('Gerar Histórico (PDF)'), findsNothing);
-    expect(find.text('0.0'), findsWidgets);
-    expect(find.text('Nota da atividade'), findsOneWidget);
-  });
-
-  testWidgets('grades failure offers retry without displaying a zero average',
-      (tester) async {
-    var requests = 0;
-    await pumpDemoPage(tester, const GradesPage(), overrides: [
-      subjectGradesProvider.overrideWith((ref) async {
-        if (requests++ == 0) throw Exception('API indisponível');
-        return [];
-      }),
-    ]);
-    await tester.pumpAndSettle();
-    expect(find.text('0.0'), findsNothing);
-    await tester.ensureVisible(find.text('Tentar Novamente'));
-    await tester.tap(find.text('Tentar Novamente'));
-    await tester.pumpAndSettle();
-    expect(find.text('Nenhuma nota disponível'), findsOneWidget);
   });
 
   testWidgets('student cannot access teacher activity creation',

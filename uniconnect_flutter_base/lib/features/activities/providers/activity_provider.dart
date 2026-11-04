@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../academic/services/academic_api_service.dart';
@@ -8,6 +10,14 @@ import '../../../core/network/api_client.dart';
 
 final academicApiServiceProvider = Provider<AcademicApiService>((ref) {
   return AcademicApiService(ref.watch(apiClientProvider));
+});
+
+final activityClockProvider = Provider.autoDispose<DateTime>((ref) {
+  final timer = Timer(const Duration(seconds: 1), ref.invalidateSelf);
+  ref.onCancel(timer.cancel);
+  ref.onResume(ref.invalidateSelf);
+  ref.onDispose(timer.cancel);
+  return DateTime.now();
 });
 
 final activitiesProvider = FutureProvider<List<AcademicActivity>>((ref) async {

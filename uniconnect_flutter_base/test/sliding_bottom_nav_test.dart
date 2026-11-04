@@ -62,11 +62,11 @@ void main() {
     expect(
         end.center.dx,
         closeTo(
-            tester.getRect(find.byIcon(Icons.person_outline)).center.dx, .5));
+            tester.getRect(find.byIcon(Icons.account_balance_outlined)).center.dx, .5));
     expect(
         end.center.dy,
         closeTo(
-            tester.getRect(find.byIcon(Icons.person_outline)).center.dy, .5));
+            tester.getRect(find.byIcon(Icons.account_balance_outlined)).center.dy, .5));
     await captureLayout(tester, frame, 'sliding-nav-final');
     expect(tester.takeException(), isNull);
   });
@@ -108,7 +108,7 @@ void main() {
         (1, '/atividades'),
         (2, '/chat'),
         (3, '/notas'),
-        (4, '/perfil')
+        (4, '/academico')
       ])
         GoRoute(
             path: path,
@@ -126,7 +126,7 @@ void main() {
         MaterialApp.router(theme: AppTheme.lightTheme, routerConfig: router));
     await tester.pumpAndSettle();
     final start = tester.getRect(capsule).center.dx;
-    await tester.tap(find.text('Perfil'));
+    await tester.tap(find.text('Acadêmico'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 90));
     final inFlight = tester.getRect(capsule.last).center.dx;
@@ -181,7 +181,7 @@ void main() {
     expect(
         tester.getRect(capsule).center.dx,
         closeTo(
-            tester.getRect(find.byIcon(Icons.person_outline)).center.dx, .5));
+            tester.getRect(find.byIcon(Icons.account_balance_outlined)).center.dx, .5));
     expect(
         tester
             .widget<NavigationBar>(find.byType(NavigationBar))
@@ -210,7 +210,7 @@ void main() {
                       bottomNavigationBar: UniBottomNav(currentIndex: 4))))));
       await tester.pumpAndSettle();
       final rect = tester.getRect(capsule);
-      final icon = tester.getRect(find.byIcon(Icons.person_outline));
+      final icon = tester.getRect(find.byIcon(Icons.account_balance_outlined));
       expect(rect.center.dx, closeTo(icon.center.dx, .5));
       expect(rect.center.dy, closeTo(icon.center.dy, .5));
       expect(rect.left, greaterThanOrEqualTo(16));

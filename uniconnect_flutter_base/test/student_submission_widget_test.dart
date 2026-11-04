@@ -14,12 +14,26 @@ import 'package:uniconnect/features/activities/presentation/activity_detail_page
 import 'package:uniconnect/features/auth/models/app_user.dart';
 import 'package:uniconnect/features/auth/providers/auth_provider.dart';
 import 'package:uniconnect/features/auth/services/api_auth_service.dart';
+import 'package:uniconnect/features/tenant/models/tenant_context.dart';
 import 'fakes/fake_auth_service.dart';
 import 'fakes/fake_session_storage.dart';
 import 'student_activity_contract_test.dart'
     show activityId, activityJson, listJson, response;
 import 'student_submission_service_test.dart' show submissionJson, noSubmission;
 import 'layout_quality_test.dart' show captureLayout;
+
+class _SwitchingStudentAuth extends FakeAuthService {
+  _SwitchingStudentAuth(this.session);
+
+  AuthSession session;
+
+  @override
+  Future<AuthSession> login({
+    required String email,
+    required String password,
+  }) async =>
+      session;
+}
 
 Future<AuthController> pumpStudentDetail(
     WidgetTester tester, Future<http.Response> Function(http.Request) handler,
@@ -28,6 +42,7 @@ Future<AuthController> pumpStudentDetail(
     double width = 390,
     double scale = 1,
     Map<String, dynamic>? activity,
+    List<Map<String, dynamic>> publishedGrades = const [],
     Future<http.Response> Function()? detailResponse}) async {
   GoogleFonts.config.allowRuntimeFetching = false;
   tester.view.physicalSize = Size(width, 1000);
@@ -62,6 +77,9 @@ Future<AuthController> pumpStudentDetail(
           }
           if (r.url.path.endsWith('/courses')) {
             return Future.value(response(listJson([])));
+          }
+          if (r.url.path.endsWith('/students/${user.id}/grades')) {
+            return Future.value(response({'data': publishedGrades}));
           }
           return handler(r);
         }))),
@@ -182,6 +200,86 @@ void main() {
                 find.widgetWithText(ElevatedButton, 'Enviar resposta'))
             .onPressed,
         isNotNull);
+  });
+
+  testWidgets('a new tenant detail failure cannot expose the previous activity',
+      (tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    const otherTenant = TenantContext(
+      id: 'other-tenant-id',
+      slug: 'other-campus',
+      name: 'Outro campus',
+      plan: SubscriptionPlan.growth,
+      status: SubscriptionStatus.trialing,
+      activeUsers: 1,
+    );
+    const otherStudent = AppUser(
+      id: 'other-student',
+      name: 'Outro aluno',
+      email: 'other@example.invalid',
+      role: UserRole.student,
+      tenant: otherTenant,
+    );
+    AuthSession session(AppUser user, String token) => AuthSession(
+          user: user,
+          accessToken: token,
+          refreshToken: 'fixture',
+          expiresAt: 4102444800,
+        );
+    final authService =
+        _SwitchingStudentAuth(session(fakeStudent, 'old-token'));
+    final auth = AuthController(authService, FakeSessionStorage());
+    final oldReceipt = Completer<http.Response>();
+    final newTenantRequests = <(String, String?)>[];
+    await auth.login(
+        email: fakeStudent.email, password: 'fixture', rememberSession: false);
+    await tester.pumpWidget(ProviderScope(
+      retry: (_, __) => null,
+      overrides: [
+        authControllerProvider.overrideWith((ref) => auth),
+        syntheticDemoRequestedProvider.overrideWithValue(false),
+        apiClientProvider
+            .overrideWithValue(ApiClient(httpClient: MockClient((r) async {
+          if (r.headers['x-tenant-slug'] == otherTenant.slug) {
+            newTenantRequests.add((r.url.path, r.headers['Authorization']));
+            return response({
+              'error': {'message': 'Atividade temporariamente indisponível'}
+            }, 503);
+          }
+          expect(r.headers['Authorization'], 'Bearer old-token');
+          if (r.url.path.endsWith('/activities/$activityId')) {
+            return response({
+              ...activityJson(),
+              'title': 'Trabalho privado do primeiro aluno'
+            });
+          }
+          if (r.url.path.endsWith('/classes/class-1')) {
+            return response({'id': 'class-1', 'name': 'Métodos'});
+          }
+          expect(r.url.path, endsWith('/submissions/me'));
+          return oldReceipt.future;
+        }))),
+      ],
+      child:
+          const MaterialApp(home: ActivityDetailPage(activityId: activityId)),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Trabalho privado do primeiro aluno'), findsOneWidget);
+    authService.session = session(otherStudent, 'new-token');
+    await auth.login(
+        email: otherStudent.email, password: 'fixture', rememberSession: false);
+    oldReceipt.complete(response(submissionJson(answer: 'Resposta privada')));
+    await tester.pumpAndSettle();
+    expect(find.text('Trabalho privado do primeiro aluno'), findsNothing);
+    expect(find.text('Resposta privada'), findsNothing);
+    expect(
+        newTenantRequests
+            .where((call) => call.$1
+                .endsWith('/tenants/other-campus/activities/$activityId'))
+            .map((call) => call.$2),
+        ['Bearer new-token']);
+    expect(find.text('Tentar Novamente'), findsOneWidget);
+    expect(find.byType(TextFormField), findsNothing);
   });
 
   testWidgets('inaccessible activity never exposes an editor', (tester) async {
@@ -361,6 +459,96 @@ void main() {
         isNull);
   });
 
+  for (final (name, activity) in [
+    ('published in-person exam', activityJson(assessmentCategory: 'exam')),
+    ('legacy activity', activityJson(workflowEnabled: false)),
+    (
+      'activity with unspecified workflow',
+      activityJson()..remove('workflowEnabled')
+    ),
+  ]) {
+    testWidgets('$name does not offer textual submission', (tester) async {
+      await pumpStudentDetail(tester, (request) async {
+        expect(request.method, 'GET');
+        return response(noSubmission);
+      }, activity: activity);
+      await showDelivery(tester);
+      expect(find.text('Esta atividade não aceita entrega textual.'),
+          findsOneWidget);
+      expect(find.byType(TextFormField), findsNothing);
+      expect(find.text('Enviar resposta'), findsNothing);
+    });
+  }
+
+  testWidgets('unpublished activity does not open the submission panel',
+      (tester) async {
+    await pumpStudentDetail(
+      tester,
+      (_) async => throw StateError('Must not query a draft submission'),
+      activity: activityJson(state: 'draft'),
+    );
+    expect(find.text('A API retornou uma atividade indisponível ou inválida.'),
+        findsOneWidget);
+    expect(find.text('Sua entrega'), findsNothing);
+    expect(find.byType(TextFormField), findsNothing);
+  });
+
+  testWidgets('ineligible activity still shows a published receipt',
+      (tester) async {
+    await pumpStudentDetail(
+      tester,
+      (request) async {
+        expect(request.method, 'GET');
+        return response({
+          ...submissionJson(status: 'result_published'),
+          'result': {
+            'publicationState': 'published',
+            'grade': 7.25,
+            'feedback': 'Devolutiva registrada',
+          },
+        });
+      },
+      activity: activityJson(workflowEnabled: false),
+    );
+    await showDelivery(tester);
+    expect(find.text('Resultado publicado • Versão 1'), findsOneWidget);
+    expect(find.text('Nota: 7.25'), findsOneWidget);
+    expect(find.text('Devolutiva registrada'), findsOneWidget);
+    expect(find.byType(TextFormField), findsNothing);
+  });
+
+  for (final grade in [0, null]) {
+    testWidgets('published legacy grade $grade stays on its own activity',
+        (tester) async {
+      await pumpStudentDetail(
+        tester,
+        (_) async => response(noSubmission),
+        activity: activityJson(workflowEnabled: false),
+        publishedGrades: [
+          {
+            'activityId': 'other',
+            'title': 'Outro trabalho',
+            'grade': 8,
+            'feedback': 'Devolutiva de outra atividade'
+          },
+          {
+            'activityId': activityId,
+            'title': 'Pesquisa',
+            'grade': grade,
+            'feedback': 'Devolutiva da pesquisa'
+          },
+        ],
+      );
+      await showDelivery(tester);
+      expect(find.text('Avaliação publicada'), findsOneWidget);
+      expect(find.text(grade == null ? 'Nota indisponível' : 'Nota: 0.0'),
+          findsOneWidget);
+      expect(find.text('Devolutiva da pesquisa'), findsOneWidget);
+      expect(find.text('Devolutiva de outra atividade'), findsNothing);
+      expect(find.byType(TextFormField), findsNothing);
+    });
+  }
+
   testWidgets('closed activity can be consulted but not submitted',
       (tester) async {
     await pumpStudentDetail(tester, (_) async => response(noSubmission),
@@ -395,6 +583,33 @@ void main() {
     await showDelivery(tester);
     expect(find.text('Em avaliação • Versão 1'), findsOneWidget);
     expect(find.byType(TextFormField), findsNothing);
+  });
+  testWidgets('refresh reveals grade and feedback only after publication',
+      (tester) async {
+    var published = false;
+    const feedback = 'Boa análise. Revise a conclusão.';
+    await pumpStudentDetail(
+        tester,
+        (_) async => response({
+              ...submissionJson(
+                  status: published ? 'result_published' : 'corrected'),
+              'result': {
+                'publicationState': published ? 'published' : 'draft',
+                'grade': 0,
+                'feedback': feedback,
+              },
+            }));
+    await showDelivery(tester);
+    expect(find.text('Em avaliação • Versão 1'), findsOneWidget);
+    expect(find.text('Nota: 0.0'), findsNothing);
+    expect(find.text(feedback), findsNothing);
+
+    published = true;
+    await tapDelivery(tester, 'Atualizar minha entrega');
+    await tester.pumpAndSettle();
+    expect(find.text('Resultado publicado • Versão 1'), findsOneWidget);
+    expect(find.text('Nota: 0.0'), findsOneWidget);
+    expect(find.text(feedback), findsOneWidget);
   });
   testWidgets('teacher cannot query personal student submission',
       (tester) async {

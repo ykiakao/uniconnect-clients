@@ -52,6 +52,23 @@ class TeacherSubmission {
   final DateTime submittedAt;
   final bool isLate;
   final SubmissionReview? result;
+
+  bool get awaitingPublication => result?.publicationState == 'draft';
+  bool get awaitingReview =>
+      result == null && ['submitted', 'late', 'in_review'].contains(status);
+
+  String get statusLabel {
+    if (result?.publicationState == 'published') return 'Avaliação publicada';
+    if (awaitingPublication) return 'Avaliação salva — não publicada';
+    return switch (status) {
+      'submitted' => 'Entregue • Aguardando correção',
+      'late' => 'Entregue com atraso • Aguardando correção',
+      'in_review' => 'Em correção',
+      'corrected' => 'Corrigida',
+      _ => 'Resultado indisponível',
+    };
+  }
+
   factory TeacherSubmission.fromJson(
       Map<String, dynamic> row, String activityId) {
     if (row['id'] is! String ||
@@ -92,31 +109,46 @@ class TeacherReviewService {
   final String accessToken, tenantSlug;
   String get _base => '/tenants/${Uri.encodeComponent(tenantSlug)}';
 
+  Future<({List<TeacherSubmission> rows, int total})> _page(
+      String activityId, int page, int limit) async {
+    final response = await client.get(
+      '$_base/activities/${Uri.encodeComponent(activityId)}/submissions',
+      accessToken: accessToken,
+      tenantSlug: tenantSlug,
+      queryParams: {'page': '$page', 'limit': '$limit'},
+    );
+    final data = response['data'];
+    final meta = response['meta'];
+    if (data is! List ||
+        data.any((r) => r is! Map<String, dynamic>) ||
+        meta is! Map<String, dynamic> ||
+        meta['page'] != page ||
+        meta['limit'] != limit ||
+        meta['total'] is! int ||
+        (meta['total'] as int) < 0) {
+      throw const ApiException(
+          'A API retornou uma lista de entregas inválida.');
+    }
+    return (
+      rows: data
+          .cast<Map<String, dynamic>>()
+          .map((row) => TeacherSubmission.fromJson(row, activityId))
+          .toList(),
+      total: meta['total'] as int,
+    );
+  }
+
+  Future<({List<TeacherSubmission> rows, int total})> preview(
+          String activityId) =>
+      _page(activityId, 1, 20);
+
   Future<List<TeacherSubmission>> list(String activityId) async {
     final rows = <TeacherSubmission>[];
     for (var page = 1; page <= 100000; page++) {
-      final response = await client.get(
-          '$_base/activities/${Uri.encodeComponent(activityId)}/submissions',
-          accessToken: accessToken,
-          tenantSlug: tenantSlug,
-          queryParams: {'page': '$page', 'limit': '100'});
-      final data = response['data'];
-      final meta = response['meta'];
-      if (data is! List ||
-          data.any((r) => r is! Map<String, dynamic>) ||
-          meta is! Map<String, dynamic> ||
-          meta['page'] != page ||
-          meta['limit'] != 100 ||
-          meta['total'] is! int ||
-          (meta['total'] as int) < 0) {
-        throw const ApiException(
-            'A API retornou uma lista de entregas inválida.');
-      }
-      rows.addAll(data
-          .cast<Map<String, dynamic>>()
-          .map((r) => TeacherSubmission.fromJson(r, activityId)));
-      if (rows.length >= (meta['total'] as int)) return rows;
-      if (data.isEmpty) {
+      final result = await _page(activityId, page, 100);
+      rows.addAll(result.rows);
+      if (rows.length >= result.total) return rows;
+      if (result.rows.isEmpty) {
         throw const ApiException(
             'A lista de entregas está incompleta. Atualize.');
       }

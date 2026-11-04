@@ -5,8 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:uniconnect/features/auth/models/app_user.dart';
 import 'package:uniconnect/features/auth/providers/auth_provider.dart';
 import 'package:uniconnect/features/teacher/presentation/teacher_dashboard_page.dart';
+import 'package:uniconnect/features/teacher/providers/teacher_activity_provider.dart';
 import 'package:uniconnect/features/tenant/models/tenant_context.dart';
 import 'package:uniconnect/features/tenant/providers/tenant_provider.dart';
+
+import 'fakes/fake_session_storage.dart';
 
 void main() {
   const tenant = TenantContext(
@@ -37,6 +40,8 @@ void main() {
         overrides: [
           currentUserProvider.overrideWith((ref) => teacher),
           currentTenantProvider.overrideWith((ref) => tenant),
+          sessionStorageProvider.overrideWithValue(FakeSessionStorage()),
+          teacherOfferingsProvider.overrideWith((ref) async => []),
         ],
         child: const MaterialApp(home: TeacherDashboardPage()),
       ),

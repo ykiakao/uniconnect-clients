@@ -4,6 +4,55 @@ import 'package:uniconnect/core/router/app_router.dart';
 import 'package:uniconnect/features/auth/models/app_user.dart';
 
 void main() {
+  test('all registered routes enforce the navigation roles', () {
+    const studentOnly = [
+      AppRoutes.studentDashboard,
+      AppRoutes.activities,
+      '/atividades/activity-1',
+      AppRoutes.chat,
+      AppRoutes.grades,
+      AppRoutes.academic,
+    ];
+    const teacherOnly = [
+      AppRoutes.teacherDashboard,
+      AppRoutes.teacherActivities,
+      AppRoutes.teacherChat,
+      AppRoutes.teacherCreateActivity,
+      AppRoutes.teacherGrades,
+    ];
+    for (final path in [...studentOnly, ...teacherOnly, AppRoutes.profile]) {
+      expect(
+        computeRedirect(
+          isRestoring: false,
+          isAuthenticated: false,
+          userRole: null,
+          location: path,
+        ),
+        AppRoutes.login,
+        reason: path,
+      );
+      for (final role in UserRole.values) {
+        final otherRole = role == UserRole.teacher
+            ? studentOnly.contains(path)
+            : teacherOnly.contains(path);
+        expect(
+          computeRedirect(
+            isRestoring: false,
+            isAuthenticated: true,
+            userRole: role,
+            location: path,
+          ),
+          otherRole
+              ? role == UserRole.teacher
+                  ? AppRoutes.teacherDashboard
+                  : AppRoutes.studentDashboard
+              : null,
+          reason: '${role.name} at $path',
+        );
+      }
+    }
+  });
+
   test('authenticated routing requires an explicit supported role', () {
     expect(
         computeRedirect(
@@ -25,7 +74,7 @@ void main() {
       AppRoutes.teacherDashboard,
     );
   });
-  test('sessao em restauracao nao redireciona', () {
+  test('sessao em restauracao redireciona para a tela neutra', () {
     final redirect = computeRedirect(
       isRestoring: true,
       isAuthenticated: false,
@@ -33,7 +82,7 @@ void main() {
       location: AppRoutes.studentDashboard,
     );
 
-    expect(redirect, isNull);
+    expect(redirect, AppRoutes.authLoading);
   });
 
   test('nao autenticado em rota privada vai para login', () {

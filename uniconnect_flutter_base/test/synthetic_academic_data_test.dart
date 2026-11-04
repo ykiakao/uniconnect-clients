@@ -141,7 +141,7 @@ void main() {
     expect(next.dueDate, DateTime.parse('2026-10-28T22:00:00-05:00'));
     expect(next.displayDueDate!.day, 28);
     expect(next.displayDueDate!.hour, 22);
-    expect(next.dueLabel, 'Vence em 3 h');
+    expect(next.dueLabelAt(DateTime.now()), 'Vence em 3 h');
     final grades = data.grades.where((g) => !g.isHistorical).toList();
     expect(grades.map((g) => g.grade!).reduce((a, b) => a + b) / grades.length,
         closeTo(8.2, .001));

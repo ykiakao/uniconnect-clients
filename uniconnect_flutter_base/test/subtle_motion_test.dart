@@ -225,7 +225,7 @@ void main() {
     await tester.pumpAndSettle();
     final filter = tester.widget<SegmentedButton<ActivityPriority?>>(
         find.byType(SegmentedButton<ActivityPriority?>));
-    filter.onSelectionChanged!({ActivityPriority.medium});
+    filter.onSelectionChanged!({ActivityPriority.critical});
     await tester.pumpAndSettle();
     final pageState = tester.state(find.byType(ActivitiesPage));
     await tester.scrollUntilVisible(
@@ -244,7 +244,7 @@ void main() {
             .widget<SegmentedButton<ActivityPriority?>>(
                 find.byType(SegmentedButton<ActivityPriority?>))
             .selected,
-        {ActivityPriority.medium});
+        {ActivityPriority.critical});
     expect(tester.state(find.byType(ActivitiesPage)), same(pageState));
     final router = GoRouter.of(tester.element(find.byType(UniBottomNav)));
     for (final route in [

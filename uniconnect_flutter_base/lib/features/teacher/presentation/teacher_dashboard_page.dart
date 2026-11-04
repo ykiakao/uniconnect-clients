@@ -7,6 +7,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/bottom_nav.dart';
+import '../widgets/teacher_offering_picker.dart';
+import '../providers/teacher_offering_selection.dart';
+import '../widgets/teacher_work_overview.dart';
 import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/section_header.dart';
@@ -16,8 +20,8 @@ import '../../tenant/providers/tenant_provider.dart';
 class TeacherDashboardPage extends ConsumerWidget {
   const TeacherDashboardPage({super.key});
 
-  void _confirmLogout(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sair da conta?'),
@@ -26,34 +30,33 @@ class TeacherDashboardPage extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
             ),
-            onPressed: () async {
-              await ref.read(authControllerProvider.notifier).logout();
-              if (!context.mounted) return;
-              Navigator.pop(dialogContext);
-              context.go(AppRoutes.login);
-            },
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Sair'),
           ),
         ],
       ),
     );
+    if (confirmed != true || !context.mounted) return;
+    await ref.read(authControllerProvider.notifier).logout();
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
+    final classId = ref.watch(selectedTeacherClassIdProvider);
 
     return Scaffold(
       appBar: AppHeader(
         title: 'Área do professor',
+        showProfile: true,
         actions: [
           IconButton(
             tooltip: 'Sair',
@@ -62,6 +65,7 @@ class TeacherDashboardPage extends ConsumerWidget {
           ),
         ],
       ),
+      bottomNavigationBar: const UniBottomNav(currentIndex: 0, isTeacher: true),
       body: SafeArea(
         child: AcademicContent(
             child: ListView(
@@ -117,18 +121,7 @@ class TeacherDashboardPage extends ConsumerWidget {
                   Text(user?.email ?? 'E-mail não informado',
                       style: const TextStyle(color: Colors.white)),
                   const SizedBox(height: AppSpacing.md),
-                  Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.xs,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        AppBadge(label: user?.roleLabel ?? 'Professor'),
-                        FilledButton.tonalIcon(
-                          onPressed: () => context.push(AppRoutes.profile),
-                          icon: const Icon(Icons.person_outline),
-                          label: const Text('Ver perfil'),
-                        ),
-                      ]),
+                  AppBadge(label: user?.roleLabel ?? 'Professor'),
                 ],
               ),
             ),
@@ -187,130 +180,46 @@ class TeacherDashboardPage extends ConsumerWidget {
               ),
             ],
             const SizedBox(height: AppSpacing.md),
-            const SectionHeader(
-              title: 'Área de trabalho docente',
-              subtitle: 'Consulte a disponibilidade de cada ferramenta',
+            const SectionHeader(title: 'Turmas e disciplinas'),
+            const TeacherOfferingPicker(),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              children: [
+                FilledButton(
+                  onPressed: classId == null
+                      ? null
+                      : () => GoRouter.maybeOf(context)
+                          ?.push(AppRoutes.teacherCreateActivity),
+                  child: const Text('Criar atividade'),
+                ),
+                OutlinedButton(
+                  onPressed: classId == null
+                      ? null
+                      : () => GoRouter.maybeOf(context)?.go(
+                            Uri(
+                                path: AppRoutes.teacherGrades,
+                                queryParameters: {
+                                  'classId': classId,
+                                  'modo': 'provas',
+                                }).toString(),
+                          ),
+                  child: const Text('Lançar notas de prova'),
+                ),
+                TextButton(
+                  onPressed: () => GoRouter.maybeOf(context)
+                      ?.go(AppRoutes.teacherActivities),
+                  child: const Text('Ver trabalhos e entregas'),
+                ),
+              ],
             ),
-            LayoutBuilder(builder: (context, constraints) {
-              final scale = MediaQuery.textScalerOf(context).scale(1);
-              final twoColumns = constraints.maxWidth >= 560 * scale;
-              const tools = [
-                _TeacherWorkspaceCard(
-                  title: 'Turmas e disciplinas',
-                  icon: Icons.groups_outlined,
-                  description:
-                      'O vínculo disponível aparece acima. A consulta de turmas ainda não está integrada nesta tela.',
-                  status: 'Consulta indisponível',
-                ),
-                _TeacherWorkspaceCard(
-                  title: 'Atividades acadêmicas',
-                  icon: Icons.assignment_outlined,
-                  description:
-                      'Crie rascunhos, consulte atividades por oferta e publique após a confirmação da API.',
-                  status: 'Integrado à API',
-                  route: AppRoutes.teacherCreateActivity,
-                ),
-                _TeacherWorkspaceCard(
-                  title: 'Lançamento de notas',
-                  icon: Icons.grading_outlined,
-                  description:
-                      'Consulte respostas textuais, salve correções e publique avaliações por atividade.',
-                  status: 'Integrado à API',
-                  route: AppRoutes.teacherGrades,
-                ),
-                _TeacherWorkspaceCard(
-                  title: 'Comunicação com alunos',
-                  icon: Icons.forum_outlined,
-                  description:
-                      'Envio de mensagens e comunicados ainda indisponível. Nenhum envio é simulado.',
-                  status: 'Indisponível',
-                ),
-              ];
-              if (!twoColumns) {
-                return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: tools);
-              }
-              return Column(children: [
-                for (var index = 0; index < tools.length; index += 2)
-                  IntrinsicHeight(
-                      child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(child: tools[index]),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(child: tools[index + 1]),
-                    ],
-                  )),
-              ]);
-            }),
+            const SizedBox(height: AppSpacing.md),
+            if (classId != null)
+              TeacherWorkOverview(key: ValueKey(classId), classId: classId),
           ],
         )),
       ),
-    );
-  }
-}
-
-class _TeacherWorkspaceCard extends StatelessWidget {
-  const _TeacherWorkspaceCard(
-      {required this.title,
-      required this.icon,
-      required this.description,
-      required this.status,
-      this.route});
-
-  final String title;
-  final IconData icon;
-  final String description;
-  final String status;
-  final String? route;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      accentColor: route == null ? AppColors.border : AppColors.primary,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: AppColors.primary),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-              child: Text(title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700))),
-        ]),
-        const SizedBox(height: AppSpacing.sm),
-        Align(
-            alignment: Alignment.centerLeft,
-            child: AppBadge(
-                label: status,
-                tone: route == null
-                    ? AppBadgeTone.neutral
-                    : AppBadgeTone.warning)),
-        const SizedBox(height: AppSpacing.sm),
-        Text(description, style: const TextStyle(color: AppColors.muted)),
-        if (route != null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          TextButton.icon(
-            style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                alignment: Alignment.centerLeft,
-                minimumSize: const Size(0, 48)),
-            onPressed: () => context.push(route!),
-            icon: const Icon(Icons.visibility_outlined),
-            label: Text(route == AppRoutes.teacherCreateActivity
-                ? 'Gerenciar atividades'
-                : 'Avaliar entregas'),
-          ),
-        ],
-      ]),
     );
   }
 }
