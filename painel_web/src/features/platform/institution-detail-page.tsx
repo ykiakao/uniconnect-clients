@@ -57,6 +57,7 @@ const PROVISION_LABELS: Record<string, string> = {
   ready: "Pronto",
   needs_review: "Requer revisão",
 }
+const REACTIVATE_ACTION = "reactivate"
 const dateFormat = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" })
 const formatDate = (value?: string) => (value ? dateFormat.format(new Date(value)) : "—")
 const person = (values: FormValues) => ({ name: values.name.trim(), email: values.email.trim() })
@@ -113,8 +114,9 @@ export function InstitutionDetailPage() {
   const api = usePlatformApi()
   const client = useQueryClient()
   const base = `${INSTITUTIONS_PATH}/${encodeURIComponent(id)}`
-  const [form, setForm] = useState<{ kind: FormKind; key: string } | null>(null)
+  const [form, setForm] = useState<{ kind: FormKind; key: string; institutionVersion: number; responsibleVersion?: number } | null>(null)
   const [isSuspending, setIsSuspending] = useState(false)
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
   const key = (suffix: string) => ["platform", "institution", id, suffix]
 
   const institution = useQuery({ queryKey: key("detail"), queryFn: () => api<Institution>(base) })
@@ -134,19 +136,20 @@ export function InstitutionDetailPage() {
 
   const refresh = () => client.invalidateQueries({ queryKey: ["platform"] })
   const idempotent = () => ({ "Idempotency-Key": crypto.randomUUID() })
-  const openForm = (kind: FormKind) => setForm({ kind, key: crypto.randomUUID() })
 
   if (institution.isError) return <StateMessage role="alert" message={errorMessage(institution.error)} action={{ label: "Tentar novamente", onClick: () => void institution.refetch() }} />
   if (institution.isPending) return <SectionsSkeleton label="Carregando instituição..." />
 
   const data = institution.data
   const current = responsible.data ?? null
+  // The versions are the ones the person saw when opening the form, so a newer change is rejected instead of overwritten.
+  const openForm = (kind: FormKind) => setForm({ kind, key: crypto.randomUUID(), institutionVersion: data.version, responsibleVersion: current?.version })
   const specs: Record<FormKind, FormSpec> = {
-    edit: { title: "Editar instituição", fields: [NAME_FIELD], path: base, body: (values) => ({ name: values.name.trim(), expectedVersion: data.version }), success: "Instituição atualizada.", row: data },
+    edit: { title: "Editar instituição", fields: [NAME_FIELD], path: base, body: (values) => ({ name: values.name.trim(), expectedVersion: form?.institutionVersion }), success: "Instituição atualizada.", row: data },
     provision: { title: "Convidar administrador", fields: PERSON_FIELDS, path: `${base}/admin-provisioning`, body: person, success: "Convite solicitado." },
     bootstrap: { title: "Criar vínculo do administrador", fields: PERSON_FIELDS, path: `${base}/bootstrap-admin`, body: person, success: "Administrador vinculado." },
     designate: { title: "Definir responsável", fields: [UUID_FIELD], path: `${base}/responsible/designate`, body: (values) => ({ administratorId: values.administratorId.trim(), expectedVersion: 0 }), success: "Responsável definido." },
-    replace: { title: "Substituir responsável", fields: PERSON_FIELDS, path: `${base}/responsible/replace`, body: (values) => ({ ...person(values), expectedVersion: current?.version }), success: "Responsável substituído." },
+    replace: { title: "Substituir responsável", fields: PERSON_FIELDS, path: `${base}/responsible/replace`, body: (values) => ({ ...person(values), expectedVersion: form?.responsibleVersion }), success: "Responsável substituído." },
   }
 
   async function submitForm(kind: FormKind, idempotencyKey: string, values: FormValues) {
@@ -164,23 +167,24 @@ export function InstitutionDetailPage() {
     setIsSuspending(false)
   }
 
-  async function reactivate() {
+  async function runExclusive(actionId: string, action: () => Promise<void>) {
+    setPendingAction(actionId)
     try {
-      await changeStatus("reactivate", "Instituição reativada.")
+      await action()
     } catch (error) {
       toast.error(errorMessage(error))
+    } finally {
+      setPendingAction(null)
     }
   }
 
-  async function resumeProvision(provisionId: string) {
-    try {
+  const reactivate = () => runExclusive(REACTIVATE_ACTION, () => changeStatus("reactivate", "Instituição reativada."))
+  const resumeProvision = (provisionId: string) =>
+    runExclusive(provisionId, async () => {
       await api(`${base}/admin-provisioning/${encodeURIComponent(provisionId)}/resume`, { method: "POST", body: {} })
       await refresh()
       toast.success("Provisionamento atualizado.")
-    } catch (error) {
-      toast.error(errorMessage(error))
-    }
-  }
+    })
 
   const provisionColumns: Column<Provision>[] = [
     { key: "state", header: "Situação", isPrimary: true, cell: (row) => <Badge variant="secondary">{PROVISION_LABELS[row.state] ?? row.state}</Badge> },
@@ -193,7 +197,7 @@ export function InstitutionDetailPage() {
       cell: (row) => (
         <div className="flex justify-end">
           {row.state !== "ready" && (
-            <Button variant="ghost" size="sm" onClick={() => void resumeProvision(row.id)}>
+            <Button variant="ghost" size="sm" disabled={pendingAction === row.id} onClick={() => void resumeProvision(row.id)}>
               <RefreshCw />
               Retomar
             </Button>
@@ -252,7 +256,7 @@ export function InstitutionDetailPage() {
                 Suspender
               </Button>
             ) : (
-              <Button variant="outline" onClick={() => void reactivate()}>
+              <Button variant="outline" disabled={pendingAction === REACTIVATE_ACTION} onClick={() => void reactivate()}>
                 Reativar
               </Button>
             )}

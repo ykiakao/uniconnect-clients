@@ -2,8 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 
 import type { FieldOption } from "@/components/resource/resource-model"
 import { useApi, useSession } from "@/features/auth/use-auth"
-
-const LOOKUP_LIMIT = 100
+import { LOOKUP_PAGE_SIZE, fetchAllPages, type PageResult } from "@/lib/fetch-all-pages"
 
 export type Course = { id: string; name: string; description?: string }
 export type ClassRow = { id: string; name: string; courseId: string; teacherId?: string }
@@ -18,10 +17,10 @@ export const nameOf = (rows: { id: string; name: string }[], id?: string) => row
 function useLookup<T>(resource: string) {
   const api = useApi()
   const { tenantSlug } = useSession()
-  const path = `/tenants/${encodeURIComponent(tenantSlug)}/${resource}${resource.includes("?") ? "&" : "?"}page=1&limit=${LOOKUP_LIMIT}`
+  const path = `/tenants/${encodeURIComponent(tenantSlug)}/${resource}${resource.includes("?") ? "&" : "?"}`
   const query = useQuery({
     queryKey: ["lookup", tenantSlug, path],
-    queryFn: async () => (await api<{ data: T[] }>(path)).data ?? [],
+    queryFn: () => fetchAllPages<T>((page) => api<PageResult<T>>(`${path}page=${page}&limit=${LOOKUP_PAGE_SIZE}`)),
   })
   return query.data ?? []
 }
@@ -42,10 +41,12 @@ export function useAllClasses() {
     queryKey: ["lookup", tenantSlug, "all-classes", courses.map((course) => course.id)],
     enabled: courses.length > 0,
     queryFn: async () => {
-      const pages = await Promise.all(
-        courses.map((course) => api<{ data: ClassRow[] }>(`${base}/${encodeURIComponent(course.id)}/classes?page=1&limit=${LOOKUP_LIMIT}`)),
+      const classesByCourse = await Promise.all(
+        courses.map((course) =>
+          fetchAllPages<ClassRow>((page) => api<PageResult<ClassRow>>(`${base}/${encodeURIComponent(course.id)}/classes?page=${page}&limit=${LOOKUP_PAGE_SIZE}`)),
+        ),
       )
-      return pages.flatMap((page) => page.data ?? [])
+      return classesByCourse.flat()
     },
   })
   return query.data ?? []

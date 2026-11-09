@@ -63,8 +63,8 @@ function ProtectedRoutes() {
 
 export function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
         <TooltipProvider>
           <BrowserRouter>
             <Routes>
@@ -78,7 +78,7 @@ export function App() {
           </BrowserRouter>
           <Toaster theme="light" />
         </TooltipProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   )
 }

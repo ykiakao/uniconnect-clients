@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Building2, ChartColumn, LogOut } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation } from "react-router"
@@ -172,6 +172,7 @@ export function PlatformApp() {
   const [status, setStatus] = useState<"restoring" | "ready">("restoring")
   const [session, setSession] = useState<PlatformSession | null>(null)
   const [restoreError, setRestoreError] = useState("")
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     let isCurrent = true
@@ -189,7 +190,8 @@ export function PlatformApp() {
   const logout = useCallback(() => {
     clearPlatformSession()
     setSession(null)
-  }, [])
+    queryClient.removeQueries({ queryKey: ["platform"] })
+  }, [queryClient])
   const value = useMemo(() => (session ? { session, logout } : null), [session, logout])
 
   if (status === "restoring") return <AppShellSkeleton />

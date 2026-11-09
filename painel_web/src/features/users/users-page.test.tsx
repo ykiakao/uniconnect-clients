@@ -107,6 +107,15 @@ describe("UsersPage", () => {
     await waitFor(() => expect(calls.some((call) => call.url.includes("limit=20&role=aluno"))).toBe(true))
   })
 
+  it("keeps a role chosen while a search is still waiting to run", async () => {
+    const { user } = renderPage()
+    await screen.findByText("Bia Inativa")
+    const chip = await screen.findByRole("radio", { name: /Alunos\s*7/ })
+    await user.type(screen.getByPlaceholderText("Buscar por nome ou e-mail"), "ana")
+    await user.click(chip)
+    await waitFor(() => expect(calls.some((call) => call.url.includes("limit=20") && call.url.includes("role=aluno") && call.url.includes("ana"))).toBe(true))
+  })
+
   it("does not send an invalid new user", async () => {
     const { user } = renderPage()
     await screen.findByText("Bia Inativa")

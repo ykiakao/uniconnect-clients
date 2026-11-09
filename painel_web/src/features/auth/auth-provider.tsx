@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 
 import {
   DEFAULT_API_BASE_URL,
@@ -21,6 +22,7 @@ const INITIAL_STATE: AuthState = {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
   const [state, setState] = useState<AuthState>(INITIAL_STATE)
   const sessionRef = useRef<AdminSession | null>(null)
   const pendingRef = useRef<Promise<void> | null>(null)
@@ -51,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error: outcome.error,
       ...(outcome.kind === "denied" ? { apiBaseUrl: outcome.apiBaseUrl, tenantSlug: outcome.tenantSlug } : {}),
     }))
-  }, [])
+    queryClient.clear()
+  }, [queryClient])
 
   const refresh = useCallback(() => {
     if (pendingRef.current) return pendingRef.current
@@ -91,7 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionRef.current = null
     clearStoredSession()
     setState((previous) => ({ ...previous, status: "anonymous", session: null, error: "" }))
-  }, [])
+    queryClient.clear()
+  }, [queryClient])
 
   const value = useMemo(() => ({ ...state, login, logout, refresh }), [state, login, logout, refresh])
 

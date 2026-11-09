@@ -64,7 +64,8 @@ export function UsersPage() {
   const { user: actor } = useSession()
   const [params, setParams] = useSearchParams()
   const filters = Model.parseFilters(params)
-  const [term, setTerm] = useState(filters.search)
+  // Text being typed and not yet in the URL; otherwise the input shows the URL's search.
+  const [draft, setDraft] = useState<string | null>(null)
   const [dialog, setDialog] = useState<DialogState>(null)
 
   const users = useUsersQuery(filters)
@@ -77,16 +78,20 @@ export function UsersPage() {
     setParams(Model.filtersToParams({ ...filters, page: 1, ...patch }), { replace: true })
   }
 
+  // Depends on the URL too, so a filter changed during the wait is kept.
   useEffect(() => {
-    if (term === filters.search) return
-    const timer = setTimeout(() => updateFilters({ search: term }), SEARCH_DEBOUNCE_MS)
+    if (draft === null) return
+    const current = Model.parseFilters(params)
+    if (draft === current.search) {
+      setDraft(null)
+      return
+    }
+    const timer = setTimeout(() => setParams(Model.filtersToParams({ ...current, page: 1, search: draft }), { replace: true }), SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(timer)
-    // Only the typed term starts a new search.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [term])
+  }, [draft, params, setParams])
 
   const clearFilters = () => {
-    setTerm("")
+    setDraft(null)
     updateFilters({ search: "", role: "" })
   }
 
@@ -146,8 +151,8 @@ export function UsersPage() {
             aria-label="Buscar por nome ou e-mail"
             placeholder="Buscar por nome ou e-mail"
             className="pl-8"
-            value={term}
-            onChange={(event) => setTerm(event.target.value)}
+            value={draft ?? filters.search}
+            onChange={(event) => setDraft(event.target.value)}
           />
         </div>
         {canCreate && (

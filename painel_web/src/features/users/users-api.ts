@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import * as Model from "./users-model"
 import type { ManagedUser, PageMeta, UserFilters, UserFormValues } from "./users-model"
 import { useApi, useSession } from "@/features/auth/use-auth"
+import { LOOKUP_PAGE_SIZE, fetchAllPages, type PageResult } from "@/lib/fetch-all-pages"
 
 type UsersPage = { data: ManagedUser[]; meta: PageMeta }
 export type Course = { id: string; name: string }
@@ -46,7 +47,7 @@ export function useCoursesQuery() {
   const { tenantSlug, coursesPath } = useTenantPaths()
   return useQuery({
     queryKey: ["courses", tenantSlug],
-    queryFn: async () => (await api<{ data: Course[] }>(`${coursesPath}?page=1&limit=100`)).data ?? [],
+    queryFn: () => fetchAllPages<Course>((page) => api<PageResult<Course>>(`${coursesPath}?page=${page}&limit=${LOOKUP_PAGE_SIZE}`)),
   })
 }
 

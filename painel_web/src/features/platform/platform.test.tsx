@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter, Route, Routes } from "react-router"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -21,6 +21,8 @@ const INSTITUTION = {
 type Call = { method: string; url: string; headers: Record<string, string>; body?: unknown }
 let calls: Call[] = []
 let meStatus = 200
+let writeGate: Promise<void> = Promise.resolve()
+let queryClient: QueryClient
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
 const writes = () => calls.filter((call) => call.method !== "GET")
 const page = (data: unknown[]) => ({ data, meta: { page: 1, limit: 20, total: data.length } })
@@ -28,6 +30,7 @@ const page = (data: unknown[]) => ({ data, meta: { page: 1, limit: 20, total: da
 beforeEach(() => {
   calls = []
   meStatus = 200
+  writeGate = Promise.resolve()
   sessionStorage.clear()
   vi.stubGlobal(
     "fetch",
@@ -36,7 +39,10 @@ beforeEach(() => {
       calls.push({ method, url, headers: options.headers as Record<string, string>, body: options.body ? JSON.parse(String(options.body)) : undefined })
       if (url.endsWith("/auth/platform/login")) return json({ accessToken: "platform-token", authorization: {} })
       if (url.endsWith("/auth/platform/me")) return meStatus === 200 ? json({ authorization: {} }) : json({ error: { code: "INVALID_SESSION", message: "x" } }, meStatus)
-      if (method !== "GET") return json(INSTITUTION)
+      if (method !== "GET") {
+        await writeGate
+        return json(INSTITUTION)
+      }
       if (url.includes("/audit") || url.includes("/admin-provisioning") || url.includes("/responsible/history")) return json(page([]))
       if (url.endsWith("/responsible")) return json({ error: { code: "NOT_FOUND", message: "x" } }, 404)
       if (url.includes(`/institutions/${INSTITUTION.id}`)) return json(INSTITUTION)
@@ -48,8 +54,9 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 function renderApp(entry = "/plataforma") {
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <MemoryRouter initialEntries={[entry]}>
           <Routes>
@@ -124,6 +131,42 @@ describe("platform administration", () => {
     expect(writes()[0].url).toContain("/suspend")
     expect(writes()[0].body).toEqual({ expectedVersion: 3 })
     expect(writes()[0].headers["Idempotency-Key"]).toBeTruthy()
+  })
+
+  it("sends the version the edit form was opened with", async () => {
+    signedIn()
+    const user = renderApp(`/plataforma/instituicoes/${INSTITUTION.id}`)
+    await user.click(await screen.findByRole("button", { name: "Editar" }))
+    const dialog = await screen.findByRole("dialog")
+    act(() => queryClient.setQueryData(["platform", "institution", INSTITUTION.id, "detail"], { ...INSTITUTION, version: 4 }))
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    await waitFor(() => expect(writes()).toHaveLength(1))
+    expect(writes()[0].body).toEqual({ name: "EduKMais", expectedVersion: 3 })
+  })
+
+  it("sends a single request when reactivate is double-clicked", async () => {
+    signedIn()
+    let release = () => {}
+    writeGate = new Promise((resolve) => {
+      release = resolve
+    })
+    const user = renderApp(`/plataforma/instituicoes/${INSTITUTION.id}`)
+    await screen.findByRole("button", { name: "Suspender" })
+    act(() => queryClient.setQueryData(["platform", "institution", INSTITUTION.id, "detail"], { ...INSTITUTION, operationalStatus: "suspended" }))
+    await user.dblClick(await screen.findByRole("button", { name: "Reativar" }))
+    expect(writes()).toHaveLength(1)
+    release()
+    expect(await screen.findByRole("button", { name: "Suspender" })).toBeInTheDocument()
+  })
+
+  it("clears cached platform data on logout", async () => {
+    signedIn()
+    const user = renderApp()
+    await screen.findByText("EduKMais")
+    expect(queryClient.getQueryCache().findAll({ queryKey: ["platform"] }).length).toBeGreaterThan(0)
+    await user.click(screen.getByRole("button", { name: "Sair" }))
+    await screen.findByLabelText("E-mail")
+    expect(queryClient.getQueryCache().findAll({ queryKey: ["platform"] })).toHaveLength(0)
   })
 
   it("treats a missing responsible as an empty state", async () => {

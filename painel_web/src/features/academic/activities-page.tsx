@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ListChecks } from "lucide-react"
 
 import { useAllClasses, type ClassRow } from "./lookups"
+import { LOOKUP_PAGE_SIZE, fetchAllPages, type PageResult } from "@/lib/fetch-all-pages"
 import { DataTable, type Column } from "@/components/data-table"
 import { TableSkeleton } from "@/components/loading-skeletons"
 import { StateMessage } from "@/components/page-states"
@@ -66,7 +67,7 @@ function ActivitiesList({ classRow }: { classRow: ClassRow }) {
   const [selected, setSelected] = useState<Activity | null>(null)
   const activities = useQuery({
     queryKey: ["activities", classRow.id],
-    queryFn: async () => (await api<{ data: Activity[] }>(`${base}/classes/${encodeURIComponent(classRow.id)}/activities?page=1&limit=100`)).data ?? [],
+    queryFn: () => fetchAllPages<Activity>((page) => api<PageResult<Activity>>(`${base}/classes/${encodeURIComponent(classRow.id)}/activities?page=${page}&limit=${LOOKUP_PAGE_SIZE}`)),
   })
   const columns: Column<Activity>[] = [
     { key: "title", header: "Atividade", isPrimary: true, cell: (row) => <span className="font-medium">{row.title}</span> },
