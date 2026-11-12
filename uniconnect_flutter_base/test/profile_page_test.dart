@@ -6,6 +6,8 @@ import 'package:uniconnect/features/academic/demo/synthetic_academic_providers.d
 import 'package:uniconnect/features/auth/models/app_user.dart';
 import 'package:uniconnect/features/auth/providers/auth_provider.dart';
 import 'package:uniconnect/features/profile/presentation/profile_page.dart';
+import 'package:uniconnect/features/teacher/providers/teacher_activity_provider.dart';
+import 'package:uniconnect/features/teacher/services/teacher_activity_service.dart';
 import 'package:uniconnect/features/tenant/models/tenant_context.dart';
 
 const _tenant = TenantContext(
@@ -37,6 +39,8 @@ Future<void> _pumpProfile(WidgetTester tester, AppUser user, Size size) async {
     overrides: [
       currentUserProvider.overrideWithValue(user),
       syntheticDemoRequestedProvider.overrideWithValue(false),
+      teacherOfferingsProvider.overrideWith((ref) async =>
+          const [TeacherOffering(id: 'class-1', name: 'Turma de teste')]),
     ],
     child: MaterialApp(theme: AppTheme.lightTheme, home: const ProfilePage()),
   ));
@@ -64,6 +68,8 @@ void main() {
       expect(find.text('Semestre'), findsNothing);
       expect(find.text('PROFILE-TEST-001'), findsNothing);
       expect(find.text('4'), findsNothing);
+      expect(find.text('Turmas e disciplinas'), findsOneWidget);
+      expect(find.text('Turma de teste'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

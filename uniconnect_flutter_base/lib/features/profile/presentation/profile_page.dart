@@ -11,6 +11,8 @@ import '../../../shared/widgets/academic_content.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
+import '../../teacher/providers/teacher_activity_provider.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -260,6 +262,7 @@ class ProfilePage extends ConsumerWidget {
                 ],
               ),
             ),
+            if (user?.role == UserRole.teacher) const _TeacherClasses(),
             const SizedBox(height: AppSpacing.lg),
             SecondaryButton(
               onPressed: () => _showSettings(context),
@@ -310,6 +313,63 @@ class _ProfileInfo extends StatelessWidget {
           )),
         ],
       ),
+    );
+  }
+}
+
+/// Classes the teacher is assigned to, as returned by the API.
+class _TeacherClasses extends ConsumerWidget {
+  const _TeacherClasses();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = Theme.of(context).textTheme;
+    final muted = text.bodyMedium?.copyWith(color: AppColors.inkMuted);
+    return AppCard(
+      icon: LucideIcons.bookOpen,
+      title: 'Turmas e disciplinas',
+      child: ref.watch(teacherOfferingsProvider).when(
+            loading: () => const LinearProgressIndicator(
+                semanticsLabel: 'Carregando turmas'),
+            error: (_, __) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Não foi possível carregar as turmas.', style: muted),
+                TextButton(
+                  style: AppButtonStyles.link,
+                  onPressed: () => ref.invalidate(teacherOfferingsProvider),
+                  child: const Text('Tentar novamente'),
+                ),
+              ],
+            ),
+            data: (offerings) => offerings.isEmpty
+                ? Text('Nenhuma turma ativa vinculada ao seu perfil.',
+                    style: muted)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final offering in offerings)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.xxs),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(top: 2),
+                                child: Icon(LucideIcons.dot,
+                                    size: 18, color: AppColors.primary),
+                              ),
+                              const SizedBox(width: AppSpacing.xxs),
+                              Expanded(
+                                  child: Text(offering.label,
+                                      style: text.bodyMedium)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
     );
   }
 }
