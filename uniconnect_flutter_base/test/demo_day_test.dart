@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uniconnect/features/communication/providers/communication_providers.dart';
 import 'package:uniconnect/core/theme/app_theme.dart';
 import 'package:uniconnect/features/activities/models/academic_activity.dart';
 import 'package:uniconnect/features/activities/presentation/activities_page.dart';
@@ -47,6 +48,8 @@ Future<void> pumpDemoPage(
       overrides: [
         sessionStorageProvider.overrideWithValue(FakeSessionStorage()),
         currentUserProvider.overrideWithValue(user),
+        // Widget tests never open the real Realtime websocket.
+        chatSignalSourceProvider.overrideWithValue(null),
         ...overrides,
       ],
       child: MaterialApp(theme: AppTheme.lightTheme, home: page),
