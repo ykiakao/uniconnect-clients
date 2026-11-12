@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -266,5 +267,20 @@ void main() {
         findsOneWidget);
     expect(find.text('Métodos Numéricos'), findsWidgets);
     expect(find.text('Escolher outro período'), findsOneWidget);
+  });
+
+  test('published grades map each graded activity of the history', () async {
+    final container = ProviderContainer(overrides: [
+      academicHistoryProvider
+          .overrideWith((ref) async => AcademicHistoryRecord.fromJson({
+                ..._envelope(),
+                'periods': [overviewJson('p1', '2026.1')],
+              })),
+    ]);
+    addTearDown(container.dispose);
+    container.listen(publishedGradesProvider, (_, __) {});
+    await container.read(academicHistoryProvider.future);
+
+    expect(container.read(publishedGradesProvider), {'a1': 8.5});
   });
 }

@@ -6,6 +6,11 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/academic_blocks.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/status_banner.dart';
+import '../widgets/activity_card.dart' show activityKind;
+import '../widgets/priority_badge.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
@@ -134,17 +139,22 @@ class _ActivityDetailContent extends ConsumerWidget {
         child: AcademicContent(
             child: ListView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.xl,
+            AppSpacing.pageHorizontal,
+            AppSpacing.pageTop,
+            AppSpacing.pageHorizontal,
+            AppSpacing.pageBottom,
           ),
           children: [
-            refreshError == null
-                ? const SizedBox.shrink()
-                : Text('Não foi possível atualizar a atividade. $refreshError',
-                    style:
-                        TextStyle(color: Theme.of(context).colorScheme.error)),
+            if (refreshError != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: StatusBanner(
+                  title: 'Atualização indisponível',
+                  message:
+                      'Não foi possível atualizar a atividade. $refreshError',
+                  tone: AppBadgeTone.danger,
+                ),
+              ),
             Text(
               activity.subject.toUpperCase(),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -161,7 +171,20 @@ class _ActivityDetailContent extends ConsumerWidget {
                     height: 1.12,
                   ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.sm),
+            Builder(builder: (context) {
+              final (icon, label) = activityKind(activity);
+              return Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  AppBadge(
+                      label: label, tone: AppBadgeTone.primary, icon: icon),
+                  PriorityBadge(priority: activity.priorityAt(now)),
+                ],
+              );
+            }),
+            const SizedBox(height: AppSpacing.md),
             _InfoPill(
               icon: LucideIcons.calendar,
               label: 'Prazo',
@@ -169,13 +192,13 @@ class _ActivityDetailContent extends ConsumerWidget {
                   ? activity.dueLabelAt(now)
                   : '${DateFormat('dd/MM/yyyy • HH:mm').format(activity.displayDueDate!)}\n${activity.dueLabelAt(now)} • ${activity.timeZoneLabel}',
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
             AppCard(
+              icon: LucideIcons.fileText,
+              title: 'Instruções da atividade',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel('Instruções da atividade'),
-                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     [activity.description, activity.instructions]
                             .where((s) => s.isNotEmpty)
@@ -202,11 +225,11 @@ class _ActivityDetailContent extends ConsumerWidget {
               ),
             ),
             AppCard(
+              icon: LucideIcons.paperclip,
+              title: 'Material de apoio',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel('Material de apoio'),
-                  const SizedBox(height: AppSpacing.md),
                   if (activity.attachments.isEmpty)
                     const Text(
                       'Nenhum material anexo para esta atividade.',
@@ -228,31 +251,9 @@ class _ActivityDetailContent extends ConsumerWidget {
                 activity: activity,
                 activityIsCurrent: activityIsCurrent),
             AppCard(
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 26,
-                    backgroundColor: AppColors.primary,
-                    child: Icon(LucideIcons.userRound, color: Colors.white),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _SectionLabel('Professor responsável'),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          activity.teacher,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: PersonTile(
+                name: activity.teacher,
+                subtitle: 'Professor responsável',
               ),
             ),
           ],
@@ -362,23 +363,6 @@ class _ChecklistItem extends StatelessWidget {
           Expanded(child: Text(text)),
         ],
       ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: .5,
-          ),
     );
   }
 }

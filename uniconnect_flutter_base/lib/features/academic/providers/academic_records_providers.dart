@@ -44,6 +44,20 @@ final academicTermDatesProvider =
         (ref) => ref.watch(academicRecordsServiceProvider).activeTermDates(),
         retry: (_, __) => null);
 
+/// Published grade of each activity of the student, by activity id, from
+/// the academic history. Empty while loading or when unavailable.
+final publishedGradesProvider =
+    Provider.autoDispose<Map<String, double>>((ref) {
+  final history = ref.watch(academicHistoryProvider).asData?.value;
+  if (history == null) return const {};
+  return Map.unmodifiable({
+    for (final period in history.periods)
+      for (final subject in period.subjects)
+        for (final assessment in subject.assessments)
+          if (assessment.grade case final grade?) assessment.activityId: grade,
+  });
+});
+
 String academicRecordsErrorText(Object error) {
   if (error is ApiException) {
     return switch (error.statusCode) {

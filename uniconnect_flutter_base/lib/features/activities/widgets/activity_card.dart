@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_badge.dart';
+import '../../academic/providers/academic_records_providers.dart';
 import '../models/academic_activity.dart';
 import 'priority_badge.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-class ActivityCard extends StatelessWidget {
+class ActivityCard extends ConsumerWidget {
   const ActivityCard({
     super.key,
     required this.activity,
@@ -23,8 +25,9 @@ class ActivityCard extends StatelessWidget {
   final bool compact;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final priority = activity.priorityAt(now);
+    final grade = ref.watch(publishedGradesProvider)[activity.id];
     final priorityColor = switch (priority) {
       ActivityPriority.critical => AppColors.danger,
       ActivityPriority.medium => AppColors.warning,
@@ -79,6 +82,15 @@ class ActivityCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           _KindLabel(activity: activity),
+          if (grade != null) ...[
+            const SizedBox(height: 6),
+            AppBadge(
+              label:
+                  'Nota publicada: ${grade.toStringAsFixed(1).replaceAll('.', ',')}',
+              tone: AppBadgeTone.success,
+              icon: LucideIcons.award,
+            ),
+          ],
           if (!compact) ...[
             const SizedBox(height: 6),
             Text(
