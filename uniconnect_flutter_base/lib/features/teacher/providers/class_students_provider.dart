@@ -21,16 +21,18 @@ final classStudentsProvider = FutureProvider.autoDispose
   return List.unmodifiable(students);
 }, retry: (_, __) => null);
 
-/// Name of a student of [classId]; the identifier while names are loading
-/// or unavailable, so the row stays traceable.
+/// Name of a student of [classId]. While names load, the identifier; when
+/// the class list does not include the student, a short readable label.
 String classStudentName(WidgetRef ref, String? classId, String studentId) {
   if (classId == null) return studentId;
-  final name = ref
-      .watch(classStudentsProvider(classId))
-      .asData
-      ?.value
+  final students = ref.watch(classStudentsProvider(classId)).asData?.value;
+  if (students == null) return studentId;
+  final name = students
       .where((student) => student.id == studentId)
       .firstOrNull
-      ?.name;
-  return name == null || name.trim().isEmpty ? studentId : name;
+      ?.name
+      .trim();
+  if (name != null && name.isNotEmpty) return name;
+  final short = studentId.length > 8 ? studentId.substring(0, 8) : studentId;
+  return 'não identificado na turma (ID $short)';
 }
