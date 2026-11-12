@@ -9,6 +9,8 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/section_header.dart';
+import '../../academic/demo/synthetic_academic_providers.dart';
+import '../../academic/presentation/academic_records_section.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class StudentAcademicPage extends ConsumerWidget {
@@ -34,13 +36,19 @@ class StudentAcademicPage extends ConsumerWidget {
       ),
     ];
     final text = Theme.of(context).textTheme;
+    final isDemo = ref.watch(syntheticDemoEnabledProvider);
     return Scaffold(
       appBar: const AppHeader(title: 'Acadêmico', showProfile: true),
       bottomNavigationBar: const UniBottomNav(currentIndex: 4),
       body: SafeArea(
         child: AcademicContent(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pageHorizontal,
+              AppSpacing.pageTop,
+              AppSpacing.pageHorizontal,
+              AppSpacing.pageBottom,
+            ),
             children: [
               const SectionHeader(title: 'Vínculo acadêmico'),
               AppCard(
@@ -77,6 +85,10 @@ class StudentAcademicPage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
+              if (!isDemo) ...[
+                const AcademicRecordsSection(),
+                const SizedBox(height: AppSpacing.md),
+              ],
               const SectionHeader(title: 'Quadro de horários e calendário'),
               AppCard(
                 child: Row(

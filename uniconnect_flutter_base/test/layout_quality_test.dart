@@ -26,6 +26,7 @@ import 'package:uniconnect/shared/widgets/section_header.dart';
 import 'demo_day_test.dart' show demoActivity;
 import 'fakes/fake_auth_service.dart';
 import 'fakes/fake_session_storage.dart';
+import 'package:uniconnect/features/teacher/widgets/activity_type_field.dart';
 
 Finder get verticalScroll => find
     .byWidgetPredicate(
@@ -131,8 +132,7 @@ void main() {
     expect(tester.getSize(find.byType(AppCard)).width, closeTo(280, .5));
   });
 
-  testWidgets(
-      'teacher shortcuts stay inside the content at wide widths',
+  testWidgets('teacher shortcuts stay inside the content at wide widths',
       (tester) async {
     final key = await pumpLayout(tester, const TeacherDashboardPage(),
         width: 768, teacher: true);
@@ -251,7 +251,10 @@ void main() {
     await pumpLayout(tester, const CreateActivityPage(),
         width: 320, scale: 2, teacher: true);
     final widths = <double>[];
-    for (final field in find.byType(TextField).evaluate()) {
+    for (final field in [
+      ...find.byType(TextField).evaluate(),
+      ...find.byType(ActivityTypeField).evaluate(),
+    ]) {
       widths.add(tester
           .getSize(find.byElementPredicate((element) => element == field))
           .width);

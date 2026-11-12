@@ -112,7 +112,9 @@ void main() {
         overrides: [teacherActivityServiceProvider.overrideWithValue(api)]);
     await tester.pumpAndSettle();
     await selectOffering(tester);
-    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+    // Offering picker and activity type.
+    expect(find.byType(DropdownButtonFormField<String>), findsNWidgets(2));
+    expect(find.text('Trabalho'), findsOneWidget);
     expect(find.text('Prioridade'), findsNothing);
     expect(find.text('Definir prazo (opcional)'), findsOneWidget);
     await tapVisible(tester, 'Salvar rascunho');

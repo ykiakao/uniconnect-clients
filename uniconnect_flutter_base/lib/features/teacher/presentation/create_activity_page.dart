@@ -12,6 +12,7 @@ import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
 import '../services/teacher_activity_service.dart';
 import '../services/teacher_assessment.dart';
+import '../widgets/activity_type_field.dart';
 import '../widgets/assessment_fields.dart';
 import '../widgets/teacher_offering_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -395,7 +396,24 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                             const SizedBox(height: AppSpacing.md),
                             _field('Título da atividade', _title,
                                 required: true),
-                            _field('Tipo', _type, required: true),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: AppSpacing.md),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text('Tipo',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  ActivityTypeField(
+                                    controller: _type,
+                                    enabled: !_busy,
+                                  ),
+                                ],
+                              ),
+                            ),
                             _field('Descrição (opcional)', _description,
                                 lines: 3),
                             _field('Instruções (opcional)', _instructions,

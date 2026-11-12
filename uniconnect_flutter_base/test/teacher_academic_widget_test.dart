@@ -285,7 +285,7 @@ void main() {
     await select(tester, 0, 'Métodos');
     await tester.enterText(find.byType(TextFormField).first, 'Trabalho');
     await tapLabel(tester, 'Vincular ao boletim N1/N2');
-    await select(tester, 1, 'N2');
+    await select(tester, 2, 'N2');
     final points = find.byKey(const ValueKey('assessment-max-points'));
     await tester.ensureVisible(points);
     await tester.enterText(points, '3,01');

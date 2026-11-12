@@ -9,6 +9,7 @@ import '../providers/teacher_offering_selection.dart';
 import '../providers/teacher_review_provider.dart';
 import '../services/teacher_activity_service.dart';
 import '../../../shared/widgets/app_button_styles.dart';
+import 'activity_type_field.dart';
 
 class TeacherWorkDraftDialog extends ConsumerStatefulWidget {
   const TeacherWorkDraftDialog({super.key, required this.work});
@@ -192,30 +193,41 @@ class _TeacherWorkDraftDialogState
                     if (_error != null)
                       Semantics(liveRegion: true, child: Text(_error!)),
                     for (final entry in _fields.entries)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: TextFormField(
-                          controller: entry.value,
-                          decoration: InputDecoration(labelText: entry.key),
-                          enabled: canEdit,
-                          maxLines: entry.key == 'Título da atividade' ||
-                                  entry.key == 'Tipo'
-                              ? 1
-                              : 3,
-                          onChanged: (_) => _dirty = true,
-                          validator: (value) {
-                            final length = value?.trim().length ?? 0;
-                            if (length == 0 &&
-                                (entry.key == 'Título da atividade' ||
-                                    entry.key == 'Tipo')) {
-                              return 'Campo obrigatório';
-                            }
-                            return length > 102400
-                                ? 'Limite de 102400 caracteres'
-                                : null;
-                          },
+                      if (entry.key == 'Tipo')
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: ActivityTypeField(
+                            controller: entry.value,
+                            enabled: canEdit,
+                            labelText: entry.key,
+                            onChanged: () => _dirty = true,
+                          ),
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: TextFormField(
+                            controller: entry.value,
+                            decoration: InputDecoration(labelText: entry.key),
+                            enabled: canEdit,
+                            maxLines: entry.key == 'Título da atividade' ||
+                                    entry.key == 'Tipo'
+                                ? 1
+                                : 3,
+                            onChanged: (_) => _dirty = true,
+                            validator: (value) {
+                              final length = value?.trim().length ?? 0;
+                              if (length == 0 &&
+                                  (entry.key == 'Título da atividade' ||
+                                      entry.key == 'Tipo')) {
+                                return 'Campo obrigatório';
+                              }
+                              return length > 102400
+                                  ? 'Limite de 102400 caracteres'
+                                  : null;
+                            },
+                          ),
                         ),
-                      ),
                     Text(deadline == null
                         ? 'Sem prazo informado'
                         : 'Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(deadline.toLocal())}'),
