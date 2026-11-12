@@ -48,6 +48,9 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      # Chat Realtime: public URL and publishable/anon key of the Supabase
+      # project used by the API, as repository variables (never the
+      # service role key). Without them the chat syncs over HTTP only.
       - name: Build web
         run: >
           flutter build web --release
@@ -56,6 +59,8 @@ jobs:
           --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
           --dart-define=TENANT_SLUG=${{ env.TENANT_SLUG }}
           --dart-define=DEMO_SYNTHETIC_DATA=false
+          --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }}
+          --dart-define=SUPABASE_ANON_KEY=${{ vars.SUPABASE_ANON_KEY }}
 
       - name: Support client-side routes
         run: cp build/web-pages/index.html build/web-pages/404.html
