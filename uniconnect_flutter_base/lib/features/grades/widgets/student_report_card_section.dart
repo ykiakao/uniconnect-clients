@@ -106,6 +106,7 @@ class StudentReportCardSection extends ConsumerWidget {
             child: Text('Selecione uma oferta para consultar o boletim.'),
           )
         else ...[
+          const SizedBox(height: AppSpacing.sm),
           TextButton.icon(
             onPressed: () => ref.invalidate(reportProvider),
             icon: const Icon(LucideIcons.refreshCw),

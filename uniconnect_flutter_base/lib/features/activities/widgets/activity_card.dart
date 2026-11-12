@@ -77,6 +77,8 @@ class ActivityCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
           ),
+          const SizedBox(height: 6),
+          _KindLabel(activity: activity),
           if (!compact) ...[
             const SizedBox(height: 6),
             Text(
@@ -116,4 +118,38 @@ class ActivityCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Kind of assessment with icon and text, so it never relies on color:
+/// exams and in-person assessments have no digital submission.
+class _KindLabel extends StatelessWidget {
+  const _KindLabel({required this.activity});
+
+  final AcademicActivity activity;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, label) = activityKind(activity);
+    final style = Theme.of(context)
+        .textTheme
+        .bodySmall
+        ?.copyWith(color: AppColors.inkMuted, fontWeight: FontWeight.w600);
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppColors.inkMuted),
+        const SizedBox(width: 4),
+        Flexible(child: Text(label, style: style)),
+      ],
+    );
+  }
+}
+
+(IconData, String) activityKind(AcademicActivity activity) {
+  if (activity.assessmentCategory == 'exam') {
+    return (LucideIcons.fileCheck, 'Prova • sem entrega digital');
+  }
+  if (!activity.workflowEnabled) {
+    return (LucideIcons.school, 'Avaliação presencial • sem entrega digital');
+  }
+  return (LucideIcons.send, 'Atividade • entrega digital');
 }
