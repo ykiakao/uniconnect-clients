@@ -201,8 +201,7 @@ void main() {
     expect(find.text('Nenhum período letivo disponível para consulta.'),
         findsOneWidget);
     expect(find.text('Tentar novamente'), findsOneWidget);
-    expect(
-        find.text('Ainda não há períodos no seu histórico.'), findsOneWidget);
+    expect(find.text('Escolher outro período'), findsNothing);
   });
 
   testWidgets('activity type shows Portuguese labels and keeps API values',
@@ -233,5 +232,39 @@ void main() {
     await tester.pump();
     expect(find.text('seminario-livre'), findsOneWidget);
     expect(activityTypeLabel('report'), 'Relatório');
+  });
+
+  testWidgets('an empty active period falls back to the latest with subjects',
+      (tester) async {
+    Map<String, dynamic> empty(String id, String name) =>
+        {...overviewJson(id, name), 'subjects': <Object>[]};
+    await pumpDemoPage(
+      tester,
+      const Scaffold(
+          body: SingleChildScrollView(child: AcademicRecordsSection())),
+      overrides: [
+        academicPeriodsProvider.overrideWith((ref) async => const []),
+        academicOverviewProvider.overrideWith((ref, periodId) async =>
+            AcademicOverviewRecord.fromJson(periodId == 'p1'
+                ? overviewJson('p1', '2026.1')
+                : empty('p2', '2026.2'))),
+        academicHistoryProvider
+            .overrideWith((ref) async => AcademicHistoryRecord.fromJson({
+                  ..._envelope(),
+                  'periods': [
+                    empty('p2', '2026.2'),
+                    overviewJson('p1', '2026.1')
+                  ],
+                })),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+        find.text('2026.2 ainda não tem disciplinas. '
+            'Exibindo o período mais recente com disciplinas.'),
+        findsOneWidget);
+    expect(find.text('Métodos Numéricos'), findsWidgets);
+    expect(find.text('Escolher outro período'), findsOneWidget);
   });
 }

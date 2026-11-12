@@ -42,17 +42,35 @@ class _AcademicRecordsSectionState
 
   void _reload() {
     ref.invalidate(academicPeriodsProvider);
-    ref.invalidate(academicOverviewProvider(_periodId));
+    ref.invalidate(academicOverviewProvider(null));
+    if (_periodId != null) ref.invalidate(academicOverviewProvider(_periodId));
     ref.invalidate(academicHistoryProvider);
   }
 
   @override
   Widget build(BuildContext context) {
-    final overview = ref.watch(academicOverviewProvider(_periodId));
+    final apiDefault = ref.watch(academicOverviewProvider(null));
+    // The API opens the active period, which may have no subject yet. Then
+    // show the most recent period of the history that has subjects.
+    final fallback =
+        _periodId == null && apiDefault.asData?.value.subjects.isEmpty == true
+            ? ref
+                .watch(academicHistoryProvider)
+                .asData
+                ?.value
+                .periods
+                .where((period) => period.subjects.isNotEmpty)
+                .firstOrNull
+            : null;
+    final chosenId = _periodId ?? fallback?.period.id;
+    final overview = chosenId == null
+        ? apiDefault
+        : ref.watch(academicOverviewProvider(chosenId));
     final periods =
         ref.watch(academicPeriodsProvider).asData?.value ?? const [];
     final current = overview.asData?.value;
-    final selectedId = _periodId ?? current?.period.id;
+    final selectedId = chosenId ?? current?.period.id;
+    final emptyActive = fallback != null ? apiDefault.asData?.value : null;
     return Column(
       key: _periodKey,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -78,6 +96,18 @@ class _AcademicRecordsSectionState
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
+        if (emptyActive != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              '${emptyActive.period.label} ainda não tem disciplinas. '
+              'Exibindo o período mais recente com disciplinas.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.inkMuted),
+            ),
+          ),
         overview.when(
           skipLoadingOnReload: false,
           loading: () => const _LoadingCard(label: 'Carregando disciplinas'),
@@ -87,8 +117,6 @@ class _AcademicRecordsSectionState
           ),
           data: (data) => _PeriodSubjects(overview: data),
         ),
-        const SizedBox(height: AppSpacing.md),
-        const SectionHeader(title: 'Histórico acadêmico'),
         _History(selectedId: selectedId, onSelect: _select, onRetry: _reload),
       ],
     );
@@ -250,15 +278,13 @@ class _History extends ConsumerWidget {
             onRetry: onRetry,
           ),
           data: (history) {
-            if (history.periods.isEmpty) {
-              return const _MessageCard(
-                icon: LucideIcons.history,
-                message: 'Ainda não há períodos no seu histórico.',
-              );
-            }
+            // A selector needs at least two periods to choose from.
+            if (history.periods.length < 2) return const SizedBox.shrink();
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const SizedBox(height: AppSpacing.md),
+                const SectionHeader(title: 'Escolher outro período'),
                 for (final period in history.periods)
                   AppCard(
                     backgroundColor: period.period.id == selectedId
