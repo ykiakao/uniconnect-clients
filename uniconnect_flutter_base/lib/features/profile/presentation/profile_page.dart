@@ -243,18 +243,20 @@ class ProfilePage extends ConsumerWidget {
                         ? user!.course!
                         : 'Não informado',
                   ),
-                  const Divider(height: AppSpacing.lg),
-                  _ProfileInfo(
-                    label: 'Matrícula',
-                    value: user?.registration?.trim().isNotEmpty == true
-                        ? user!.registration!
-                        : 'Não informado',
-                  ),
-                  const Divider(height: AppSpacing.lg),
-                  _ProfileInfo(
-                    label: 'Semestre',
-                    value: user?.semester?.toString() ?? 'Não informado',
-                  ),
+                  if (user?.role == UserRole.student) ...[
+                    const Divider(height: AppSpacing.lg),
+                    _ProfileInfo(
+                      label: 'Matrícula',
+                      value: user?.registration?.trim().isNotEmpty == true
+                          ? user!.registration!
+                          : 'Não informado',
+                    ),
+                    const Divider(height: AppSpacing.lg),
+                    _ProfileInfo(
+                      label: 'Semestre',
+                      value: user?.semester?.toString() ?? 'Não informado',
+                    ),
+                  ],
                 ],
               ),
             ),

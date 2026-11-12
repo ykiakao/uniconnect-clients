@@ -11,6 +11,7 @@ import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../academic/presentation/academic_records_section.dart';
+import '../../academic/presentation/academic_term_section.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class StudentAcademicPage extends ConsumerWidget {
@@ -89,26 +90,7 @@ class StudentAcademicPage extends ConsumerWidget {
                 const AcademicRecordsSection(),
                 const SizedBox(height: AppSpacing.md),
               ],
-              const SectionHeader(title: 'Quadro de horários e calendário'),
-              AppCard(
-                child: Row(
-                  children: [
-                    const IconTile(
-                      icon: LucideIcons.calendarClock,
-                      color: AppColors.inkMuted,
-                      background: AppColors.surface200,
-                      size: 36,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                          'Horários e calendário acadêmico ainda indisponíveis.',
-                          style: text.bodyMedium
-                              ?.copyWith(color: AppColors.inkMuted)),
-                    ),
-                  ],
-                ),
-              ),
+              const AcademicTermSection(),
             ],
           ),
         ),

@@ -39,6 +39,11 @@ final academicHistoryProvider =
         (ref) => ref.watch(academicRecordsServiceProvider).history(),
         retry: (_, __) => null);
 
+final academicTermDatesProvider =
+    FutureProvider.autoDispose<List<AcademicTermDates>>(
+        (ref) => ref.watch(academicRecordsServiceProvider).activeTermDates(),
+        retry: (_, __) => null);
+
 String academicRecordsErrorText(Object error) {
   if (error is ApiException) {
     return switch (error.statusCode) {

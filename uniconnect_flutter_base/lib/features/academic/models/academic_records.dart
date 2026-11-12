@@ -22,6 +22,45 @@ class AcademicPeriodRef {
   }
 }
 
+class AcademicTermDates {
+  const AcademicTermDates({required this.period, this.startDate, this.endDate});
+
+  final AcademicPeriodRef period;
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  factory AcademicTermDates.fromJson(Object? json) {
+    if (json is! Map<String, dynamic>) {
+      throw const ApiException('A API retornou datas de período inválidas.');
+    }
+    final start = _date(json['startDate']);
+    final end = _date(json['endDate']);
+    if (start != null && end != null && end.isBefore(start)) {
+      throw const ApiException('A API retornou datas de período inválidas.');
+    }
+    return AcademicTermDates(
+      period: AcademicPeriodRef.fromJson(json),
+      startDate: start,
+      endDate: end,
+    );
+  }
+
+  static DateTime? _date(Object? value) {
+    if (value == null) return null;
+    if (value is String && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null &&
+          parsed.year > 0 &&
+          parsed.year == int.parse(value.substring(0, 4)) &&
+          parsed.month == int.parse(value.substring(5, 7)) &&
+          parsed.day == int.parse(value.substring(8, 10))) {
+        return parsed;
+      }
+    }
+    throw const ApiException('A API retornou datas de período inválidas.');
+  }
+}
+
 /// One graded (or not yet graded) activity of a subject.
 class AcademicAssessmentRecord {
   const AcademicAssessmentRecord({

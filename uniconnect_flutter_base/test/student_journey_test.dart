@@ -45,9 +45,13 @@ void main() {
     expect(find.text('Curso: Não informado'), findsOneWidget);
     expect(find.text('Semestre do curso: Não informado'), findsOneWidget);
     await tester.scrollUntilVisible(
-        find.text('Horários e calendário acadêmico ainda indisponíveis.'), 200,
+        find.text(
+            'Horários semanais e eventos institucionais ainda indisponíveis.'),
+        200,
         scrollable: find.byType(Scrollable).first);
-    expect(find.text('Horários e calendário acadêmico ainda indisponíveis.'),
+    expect(
+        find.text(
+            'Horários semanais e eventos institucionais ainda indisponíveis.'),
         findsOneWidget);
     expect(find.byTooltip('Meu perfil'), findsOneWidget);
   });
