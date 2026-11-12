@@ -74,13 +74,13 @@ class ConversationsPage extends ConsumerWidget {
                         AppSpacing.pageBottom,
                       ),
                       children: [
-                        if (isTeacher) const _NewConversationButton(),
+                        _NewConversationButton(isTeacher: isTeacher),
                         EmptyStateWidget(
                           icon: LucideIcons.messageSquareMore,
                           title: 'Nenhuma conversa ainda',
                           subtitle: role == UserRole.teacher
                               ? 'Inicie uma conversa com um aluno das suas turmas.'
-                              : 'Quando o professor de uma turma conversar com você, a conversa aparece aqui.',
+                              : 'Inicie uma conversa com o professor de uma das suas disciplinas.',
                         ),
                       ],
                     )
@@ -93,7 +93,7 @@ class ConversationsPage extends ConsumerWidget {
                         AppSpacing.pageBottom,
                       ),
                       children: [
-                        if (isTeacher) const _NewConversationButton(),
+                        _NewConversationButton(isTeacher: isTeacher),
                         for (final conversation in items)
                           _ConversationTile(
                             conversation: conversation,
@@ -187,13 +187,16 @@ String? _subjectOf(WidgetRef ref, String classId) {
 }
 
 class _NewConversationButton extends StatelessWidget {
-  const _NewConversationButton();
+  const _NewConversationButton({required this.isTeacher});
+
+  final bool isTeacher;
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.md),
         child: FilledButton.icon(
-          onPressed: () => showNewConversationSheet(context),
+          onPressed: () =>
+              showNewConversationSheet(context, isTeacher: isTeacher),
           icon: const Icon(LucideIcons.messageSquarePlus),
           label: const Text('Nova conversa'),
         ),

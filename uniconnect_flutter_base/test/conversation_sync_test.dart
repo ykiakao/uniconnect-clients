@@ -378,4 +378,59 @@ void main() {
 
     expect(bodies.single, {'classId': 'class-1', 'participantId': 'student-9'});
   });
+
+  testWidgets('student opens a conversation with the teacher of a subject',
+      (tester) async {
+    final requests = <String>[];
+    Map<String, dynamic>? created;
+    await pumpDemoPage(
+      tester,
+      const Scaffold(body: StudentNewConversationSheet()),
+      overrides: [
+        studentClassesProvider.overrideWith((ref) async => const [
+              (classId: 'class-1', subject: 'Banco de Dados', period: '2026.1'),
+            ]),
+        communicationServiceProvider
+            .overrideWithValue(serviceWith((request) async {
+          requests.add('${request.method} ${request.url.path.split('/').last}'
+              '?${request.url.query}');
+          if (request.url.path.endsWith('/teaching-assignments')) {
+            return json({
+              'data': [
+                {
+                  'classId': 'class-1',
+                  'teacherId': 'teacher-2',
+                  'isPrimary': false
+                },
+                {
+                  'classId': 'class-1',
+                  'teacherId': 'teacher-1',
+                  'isPrimary': true
+                },
+              ],
+              'meta': {'page': 1, 'limit': 20, 'total': 2},
+            });
+          }
+          created = jsonDecode(request.body) as Map<String, dynamic>;
+          return json({
+            'id': 'conversation-9',
+            'classId': 'class-1',
+            'studentId': 'student-1',
+            'teacherId': 'teacher-1',
+            'lastSequence': 0,
+            'createdAt': '2026-11-12T12:00:00.000Z',
+            'updatedAt': '2026-11-12T12:00:00.000Z',
+          }, 201);
+        })),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Banco de Dados'));
+    await tester.pumpAndSettle();
+
+    expect(requests.first,
+        'GET teaching-assignments?classId=class-1&status=active&limit=20');
+    expect(created, {'classId': 'class-1', 'participantId': 'teacher-1'});
+  });
 }

@@ -87,6 +87,22 @@ class CommunicationService {
       Conversation.fromJson(await _post('/conversations',
           {'classId': classId, 'participantId': participantId}));
 
+  /// Active teacher of one of the student's classes (institutional id), from
+  /// the class teaching assignments; the primary one when there are many.
+  Future<String?> classTeacherId(String classId) async {
+    final response = await client.get(
+        '/tenants/${Uri.encodeComponent(tenantSlug)}/teaching-assignments',
+        queryParams: {'classId': classId, 'status': 'active', 'limit': '20'},
+        accessToken: accessToken,
+        tenantSlug: tenantSlug);
+    final rows = _rows(response)
+        .where((row) => row['classId'] == classId && row['teacherId'] is String)
+        .toList()
+      ..sort((a, b) => (b['isPrimary'] == true ? 1 : 0)
+          .compareTo(a['isPrimary'] == true ? 1 : 0));
+    return rows.isEmpty ? null : rows.first['teacherId'] as String;
+  }
+
   /// Topic and sending window; only answered to a participant.
   Future<ChatRealtimeDescriptor> realtime(String conversationId) async =>
       ChatRealtimeDescriptor.fromJson(
