@@ -5,12 +5,16 @@ import '../../core/theme/app_tokens.dart';
 
 /// Button styles that keep actions aligned with the content around them.
 class AppButtonStyles {
-  /// Text action with no side padding, so its label lines up with the text
-  /// above it (the web `link` button). The height keeps the touch target.
+  /// Text action (the web `link` button). It keeps padding around the label
+  /// so the hover and focus highlight never touches the text, and the
+  /// height keeps the touch target.
   static final link = TextButton.styleFrom(
-    padding: EdgeInsets.zero,
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     minimumSize: const Size(0, AppSizes.buttonHeight),
     alignment: Alignment.centerLeft,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
   );
 
   /// Bordered, compact action for rows of actions inside a card: its edge
