@@ -17,6 +17,7 @@ dependencies:
   http: ^1.6.0
   flutter_secure_storage: ^10.3.0
   lucide_icons_flutter: ^4.0.3
+  realtime_client: ^2.13.2
 
 dev_dependencies:
   flutter_test:

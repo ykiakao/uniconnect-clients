@@ -77,35 +77,71 @@ class CommunicationService {
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   }
 
+  String _conversation(String id) =>
+      '/conversations/${Uri.encodeComponent(id)}';
+
+  /// Creates the conversation of this class with [participantId], or
+  /// returns the existing one (the API reuses it in either direction).
+  Future<Conversation> createConversation(
+          {required String classId, required String participantId}) async =>
+      Conversation.fromJson(await _post('/conversations',
+          {'classId': classId, 'participantId': participantId}));
+
+  /// Topic and sending window; only answered to a participant.
+  Future<ChatRealtimeDescriptor> realtime(String conversationId) async =>
+      ChatRealtimeDescriptor.fromJson(
+          await _get('${_conversation(conversationId)}/realtime'));
+
+  /// Messages after [afterSequence] (exclusive), in ascending order.
+  Future<MessagePage> messagePage(String conversationId,
+      {int afterSequence = 0, int limit = 100}) async {
+    final response = await _get('${_conversation(conversationId)}/messages',
+        {'afterSequence': '$afterSequence', 'limit': '$limit'});
+    final messages = _rows(response).map(ConversationMessage.fromJson).toList();
+    var previous = afterSequence;
+    for (final message in messages) {
+      if (message.sequence <= previous) {
+        throw const ApiException('A API retornou mensagens fora de ordem.');
+      }
+      previous = message.sequence;
+    }
+    final meta = response['meta'];
+    final hasMore = meta is Map && meta['hasMore'] == true;
+    final next = meta is Map ? meta['nextAfterSequence'] : null;
+    final nextAfter = next is int ? next : previous;
+    if (hasMore && nextAfter <= afterSequence) {
+      throw const ApiException('A API retornou uma paginação inválida.');
+    }
+    return MessagePage(
+        messages: List.unmodifiable(messages),
+        hasMore: hasMore,
+        nextAfterSequence: nextAfter);
+  }
+
+  /// Whole history, page by page (bounded).
   Future<List<ConversationMessage>> messages(String conversationId) async {
-    final path =
-        '/conversations/${Uri.encodeComponent(conversationId)}/messages';
     final all = <ConversationMessage>[];
     var after = 0;
     for (var page = 0; page < _maxMessagePages; page++) {
-      final response =
-          await _get(path, {'afterSequence': '$after', 'limit': '100'});
-      all.addAll(_rows(response).map(ConversationMessage.fromJson));
-      final meta = response['meta'];
-      if (meta is! Map || meta['hasMore'] != true) break;
-      after = _nextSequence(meta['nextAfterSequence'], after);
+      final result = await messagePage(conversationId, afterSequence: after);
+      all.addAll(result.messages);
+      if (!result.hasMore) break;
+      after = result.nextAfterSequence;
     }
     return all;
   }
 
-  int _nextSequence(Object? value, int current) {
-    if (value is int && value > current) return value;
-    throw const ApiException('A API retornou uma paginação inválida.');
-  }
-
-  Future<ConversationMessage> sendMessage(
-          String conversationId, String content) async =>
-      ConversationMessage.fromJson(await _post(
-          '/conversations/${Uri.encodeComponent(conversationId)}/messages',
-          {'content': content, 'clientMessageId': _uuidV4()}));
+  /// [clientMessageId] must stay the same for every retry of one attempt.
+  Future<ConversationMessage> sendMessage(String conversationId, String content,
+          {String? clientMessageId}) async =>
+      ConversationMessage.fromJson(
+          await _post('${_conversation(conversationId)}/messages', {
+        'content': content,
+        'clientMessageId': clientMessageId ?? newClientMessageId(),
+      }));
 
   Future<void> markConversationRead(String conversationId, int upToSequence) =>
-      _post('/conversations/${Uri.encodeComponent(conversationId)}/read',
+      _post('${_conversation(conversationId)}/read',
           {'upToSequence': upToSequence});
 
   Future<int> unreadNotifications() async {
@@ -124,7 +160,7 @@ class CommunicationService {
 }
 
 /// Random UUID v4, used as the idempotency id of a sent message.
-String _uuidV4() {
+String newClientMessageId() {
   final random = Random.secure();
   final bytes = List<int>.generate(16, (_) => random.nextInt(256));
   bytes[6] = (bytes[6] & 0x0f) | 0x40;

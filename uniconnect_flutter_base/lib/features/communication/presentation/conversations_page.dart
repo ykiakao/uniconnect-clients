@@ -12,6 +12,7 @@ import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../../../shared/widgets/error_state_widget.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
+import '../../academic/providers/academic_records_providers.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../chat/presentation/chat_page.dart';
@@ -19,6 +20,7 @@ import '../../teacher/providers/teacher_activity_provider.dart';
 import '../models/communication_models.dart';
 import '../providers/communication_providers.dart';
 import 'communication_ui.dart';
+import 'new_conversation_sheet.dart';
 
 /// The demo build keeps its illustrative chat; real sessions use the API.
 class ChatEntryPage extends ConsumerWidget {
@@ -64,12 +66,19 @@ class ConversationsPage extends ConsumerWidget {
               data: (items) => items.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.pageHorizontal,
+                        AppSpacing.pageTop,
+                        AppSpacing.pageHorizontal,
+                        AppSpacing.pageBottom,
+                      ),
                       children: [
+                        if (isTeacher) const _NewConversationButton(),
                         EmptyStateWidget(
                           icon: LucideIcons.messageSquareMore,
                           title: 'Nenhuma conversa ainda',
                           subtitle: role == UserRole.teacher
-                              ? 'As conversas com alunos das suas turmas aparecem aqui.'
+                              ? 'Inicie uma conversa com um aluno das suas turmas.'
                               : 'Quando o professor de uma turma conversar com você, a conversa aparece aqui.',
                         ),
                       ],
@@ -83,6 +92,7 @@ class ConversationsPage extends ConsumerWidget {
                         AppSpacing.pageBottom,
                       ),
                       children: [
+                        if (isTeacher) const _NewConversationButton(),
                         for (final conversation in items)
                           _ConversationTile(
                             conversation: conversation,
@@ -108,16 +118,28 @@ class _ConversationTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     final isTeacher = role == UserRole.teacher;
-    final classLabel = isTeacher
-        ? ref
-            .watch(teacherOfferingsProvider)
-            .asData
-            ?.value
-            .where((offer) => offer.id == conversation.classId)
-            .firstOrNull
-            ?.label
-        : null;
-    final title = isTeacher ? 'Aluno da turma' : 'Professor da turma';
+    final String? classLabel;
+    final String title;
+    if (isTeacher) {
+      classLabel = ref
+          .watch(teacherOfferingsProvider)
+          .asData
+          ?.value
+          .where((offer) => offer.id == conversation.classId)
+          .firstOrNull
+          ?.label;
+      title = ref
+              .watch(classStudentsProvider(conversation.classId))
+              .asData
+              ?.value
+              .where((student) => student.id == conversation.studentId)
+              .firstOrNull
+              ?.name ??
+          'Aluno da turma';
+    } else {
+      classLabel = _subjectOf(ref, conversation.classId);
+      title = 'Professor da turma';
+    }
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.md),
       onTap: () => context.push(
@@ -149,4 +171,30 @@ class _ConversationTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Subject name of a class for the student, from the academic history.
+String? _subjectOf(WidgetRef ref, String classId) {
+  final history = ref.watch(academicHistoryProvider).asData?.value;
+  if (history == null) return null;
+  for (final period in history.periods) {
+    for (final subject in period.subjects) {
+      if (subject.classId == classId) return subject.title;
+    }
+  }
+  return null;
+}
+
+class _NewConversationButton extends StatelessWidget {
+  const _NewConversationButton();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: FilledButton.icon(
+          onPressed: () => showNewConversationSheet(context),
+          icon: const Icon(LucideIcons.messageSquarePlus),
+          label: const Text('Nova conversa'),
+        ),
+      );
 }

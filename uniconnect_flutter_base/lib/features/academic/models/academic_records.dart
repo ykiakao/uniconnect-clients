@@ -89,6 +89,7 @@ class AcademicSubjectRecord {
   const AcademicSubjectRecord({
     required this.id,
     this.name,
+    this.classId,
     this.status,
     this.statusLabel,
     this.activityCount = 0,
@@ -101,6 +102,9 @@ class AcademicSubjectRecord {
 
   final String id;
   final String? name;
+
+  /// Offering (class) of this subject; conversations reference it.
+  final String? classId;
   final String? status;
   final String? statusLabel;
   final int activityCount;
@@ -131,6 +135,7 @@ class AcademicSubjectRecord {
     return AcademicSubjectRecord(
       id: id,
       name: json['name'] as String?,
+      classId: _id(json['classId']) ?? _id(json['offeringId']),
       status: json['status'] as String?,
       statusLabel: json['statusLabel'] as String?,
       activityCount: activities is List ? activities.length : 0,

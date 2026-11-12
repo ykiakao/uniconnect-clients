@@ -41,6 +41,22 @@ Map<String, dynamic> messageJson(int sequence, {String sender = 'student-1'}) =>
       'readByRecipient': false,
     };
 
+Map<String, dynamic> realtimeJson({bool canSendNow = true, int last = 2}) => {
+      'transport': 'supabase-broadcast',
+      'private': true,
+      'topic': 'uc:chat:tenant-1:conversation-1:auth-1',
+      'events': ['message.created', 'conversation.read'],
+      'lastSequence': last,
+      'serverTime': _now,
+      'serviceWindow': {
+        'timeZone': 'America/Rio_Branco',
+        'weekdays': [1, 2, 3, 4, 5],
+        'opensAt': '13:00',
+        'closesAt': '18:00',
+        'canSendNow': canSendNow,
+      },
+    };
+
 CommunicationService serviceWith(
     Future<http.Response> Function(http.Request request) handler) {
   return CommunicationService(

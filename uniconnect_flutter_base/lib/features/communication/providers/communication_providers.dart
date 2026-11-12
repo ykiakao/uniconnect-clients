@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/realtime_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/communication_models.dart';
+import '../realtime/chat_signal_source.dart';
 import '../services/communication_service.dart';
 
 final communicationServiceProvider = Provider<CommunicationService>((ref) {
@@ -19,6 +21,11 @@ final communicationServiceProvider = Provider<CommunicationService>((ref) {
   return CommunicationService(ref.watch(apiClientProvider),
       accessToken: auth.accessToken!, tenantSlug: user.tenant.slug);
 });
+
+/// Realtime signals for the chat; `null` when the build has no Supabase
+/// URL/publishable key, and the chat falls back to periodic HTTP sync.
+final chatSignalSourceProvider = Provider<ChatSignalSource?>(
+    (ref) => RealtimeConfig.isConfigured ? SupabaseChatSignalSource() : null);
 
 /// `view` is `active`, `history` or `managed` (teachers' own notices).
 final noticesProvider = FutureProvider.autoDispose

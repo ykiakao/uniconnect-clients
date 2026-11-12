@@ -16,7 +16,7 @@ import 'package:uniconnect/features/teacher/providers/teacher_activity_provider.
 import 'package:uniconnect/features/teacher/services/teacher_activity_service.dart';
 
 import 'communication_service_test.dart'
-    show json, messageJson, noticeJson, serviceWith;
+    show json, messageJson, noticeJson, realtimeJson, serviceWith;
 import 'demo_day_test.dart' show pumpDemoPage;
 import 'fakes/fake_auth_service.dart';
 
@@ -77,6 +77,9 @@ void main() {
               return json(messageJson(3, sender: fakeStudent.id), 201);
             }
             if (request.url.path.endsWith('/read')) return json({});
+            if (request.url.path.endsWith('/realtime')) {
+              return json(realtimeJson());
+            }
             return json({
               'data': [
                 messageJson(1, sender: 'teacher-1'),
