@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -27,12 +28,33 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
   late Future<AcademicStageStatus> _status =
       widget.service.stage(widget.classId, _stage);
   late Future<AcademicPage<TeacherReportCard>> _summary =
-      widget.service.summary(widget.classId);
+      _withNames(widget.service.summary(widget.classId));
+
+  /// Student names seen in the report pages, to name closure issues.
+  final _names = <String, String>{};
+
+  Future<AcademicPage<TeacherReportCard>> _withNames(
+          Future<AcademicPage<TeacherReportCard>> page) =>
+      page.then((result) {
+        final added = {
+          for (final card in result.rows)
+            if (card.studentName.trim().isNotEmpty)
+              card.studentId: card.studentName,
+        };
+        if (mounted &&
+            !mapEquals(added, {
+              for (final key in added.keys) key: _names[key] ?? '',
+            })) {
+          setState(() => _names.addAll(added));
+        }
+        return result;
+      });
   Future<TeacherReportCard>? _detail;
 
   void _loadSummary(int page) => setState(() {
         _summaryPage = page;
-        _summary = widget.service.summary(widget.classId, page: page);
+        _summary =
+            _withNames(widget.service.summary(widget.classId, page: page));
         _detail = null;
       });
 
@@ -185,7 +207,7 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
                 for (final blocker in status.blockers) Text(_blocker(blocker)),
                 for (final issue in status.issues.rows)
                   Text(
-                      '${issue.title} • ${_reason(issue.reason)} • Aluno ${issue.studentId}'),
+                      '${issue.title} • ${_reason(issue.reason)} • ${_names[issue.studentId] ?? 'Aluno ${issue.studentId}'}'),
                 AcademicPageControls(
                     page: status.issues, onPage: _busy ? null : _loadStage),
                 if (!status.closed)
