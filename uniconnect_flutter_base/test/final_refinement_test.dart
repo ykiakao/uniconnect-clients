@@ -106,7 +106,8 @@ void main() {
     ]) {
       expect(find.text(label), findsOneWidget);
     }
-    expect(find.text('Aguardando correção na consulta: 0'), findsNothing);
+    expect(find.bySemanticsLabel('Aguardando correção na consulta: 0'),
+        findsNothing);
     expect(find.text('128'), findsNothing);
   });
 

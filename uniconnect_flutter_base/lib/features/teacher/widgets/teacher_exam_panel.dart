@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/academic_blocks.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/section_header.dart';
+import '../../../shared/widgets/status_banner.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../services/teacher_academic_service.dart';
@@ -155,13 +160,24 @@ class _TeacherExamPanelState extends ConsumerState<TeacherExamPanel> {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const Text('Pauta da prova'),
-      if (_message != null) Text(_message!),
-      TextButton.icon(
-        onPressed: _busy ? null : () => _load(_page),
-        icon: const Icon(LucideIcons.refreshCw),
-        label: const Text('Atualizar pauta'),
+      const SectionHeader(
+          title: 'Pauta da prova', subtitle: 'Notas por aluno elegível'),
+      if (_message != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: StatusBanner(
+              title: 'Pauta', message: _message!, tone: AppBadgeTone.info),
+        ),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          style: AppButtonStyles.link,
+          onPressed: _busy ? null : () => _load(_page),
+          icon: const Icon(LucideIcons.refreshCw, size: 18),
+          label: const Text('Atualizar pauta'),
+        ),
       ),
+      const SizedBox(height: AppSpacing.xs),
       FutureBuilder<ExamRoster>(
         future: _roster,
         builder: (context, snapshot) {
@@ -175,65 +191,110 @@ class _TeacherExamPanelState extends ConsumerState<TeacherExamPanel> {
           return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                    '${roster.stage} • Máximo: ${roster.maxPoints.replaceAll('.', ',')} pontos'),
-                if (roster.opened) const Text('Pauta aberta'),
-                if (!roster.opened)
-                  FilledButton(
-                    onPressed: _busy
-                        ? null
-                        : () => _run(() async {
-                              await widget.service.activate(roster);
-                              return true;
-                            }, 'Pauta aberta pela API.'),
-                    child: const Text('Abrir pauta'),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          const IconTile(icon: LucideIcons.fileCheck, size: 36),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                                '${roster.stage} • Máximo: ${roster.maxPoints.replaceAll('.', ',')} pontos',
+                                style: Theme.of(context).textTheme.titleSmall),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      if (roster.opened)
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: AppBadge(
+                              label: 'Pauta aberta',
+                              tone: AppBadgeTone.success),
+                        )
+                      else
+                        FilledButton(
+                          onPressed: _busy
+                              ? null
+                              : () => _run(() async {
+                                    await widget.service.activate(roster);
+                                    return true;
+                                  }, 'Pauta aberta pela API.'),
+                          child: const Text('Abrir pauta'),
+                        ),
+                    ],
                   ),
+                ),
                 if (roster.students.rows.isEmpty)
                   const Text('Nenhum aluno elegível nesta página.'),
                 for (final student in roster.students.rows)
                   AppCard(
                       child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                        Text(student.name),
-                        Text(student.grade == null
-                            ? 'Sem nota'
-                            : '${student.grade!.points.replaceAll('.', ',')} pontos • ${student.grade!.published ? 'Publicada' : 'Rascunho'}'),
+                        PersonTile(
+                          name: student.name,
+                          subtitle: student.grade == null
+                              ? 'Sem nota'
+                              : '${student.grade!.points.replaceAll('.', ',')} pontos • ${student.grade!.published ? 'Publicada' : 'Rascunho'}',
+                          badges: [
+                            if (student.grade == null)
+                              const AppBadge(
+                                  label: 'Aguardando lançamento',
+                                  tone: AppBadgeTone.neutral)
+                            else if (student.grade!.published)
+                              const AppBadge(
+                                  label: 'Nota publicada',
+                                  tone: AppBadgeTone.success)
+                            else
+                              const AppBadge(
+                                  label: 'Rascunho não publicado',
+                                  tone: AppBadgeTone.warning),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
                         if (roster.opened)
-                          Wrap(children: [
-                            if (student.grade?.published == true)
-                              TextButton(
-                                style: AppButtonStyles.compact(),
-                                onPressed: _busy
-                                    ? null
-                                    : () => _run(
-                                        () => _edit(roster, student, true),
-                                        'Correção publicada pela API.'),
-                                child: const Text('Corrigir nota publicada'),
-                              )
-                            else ...[
-                              TextButton(
-                                onPressed: _busy
-                                    ? null
-                                    : () => _run(
-                                        () => _edit(roster, student, false),
-                                        'Rascunho salvo pela API.'),
-                                child: Text(student.grade == null
-                                    ? 'Lançar nota'
-                                    : 'Editar rascunho'),
-                              ),
-                              if (student.grade != null)
-                                TextButton(
-                                  style: AppButtonStyles.compact(),
-                                  onPressed: _busy
-                                      ? null
-                                      : () => _run(
-                                          () => _publish(roster, student),
-                                          'Nota publicada pela API.'),
-                                  child: const Text('Publicar nota'),
-                                ),
-                            ],
-                          ]),
+                          Wrap(
+                              spacing: AppSpacing.xs,
+                              runSpacing: AppSpacing.xs,
+                              children: [
+                                if (student.grade?.published == true)
+                                  TextButton(
+                                    style: AppButtonStyles.compact(),
+                                    onPressed: _busy
+                                        ? null
+                                        : () => _run(
+                                            () => _edit(roster, student, true),
+                                            'Correção publicada pela API.'),
+                                    child:
+                                        const Text('Corrigir nota publicada'),
+                                  )
+                                else ...[
+                                  TextButton(
+                                    style: AppButtonStyles.compact(),
+                                    onPressed: _busy
+                                        ? null
+                                        : () => _run(
+                                            () => _edit(roster, student, false),
+                                            'Rascunho salvo pela API.'),
+                                    child: Text(student.grade == null
+                                        ? 'Lançar nota'
+                                        : 'Editar rascunho'),
+                                  ),
+                                  if (student.grade != null)
+                                    TextButton(
+                                      style: AppButtonStyles.compact(),
+                                      onPressed: _busy
+                                          ? null
+                                          : () => _run(
+                                              () => _publish(roster, student),
+                                              'Nota publicada pela API.'),
+                                      child: const Text('Publicar nota'),
+                                    ),
+                                ],
+                              ]),
                       ])),
                 AcademicPageControls(
                     page: roster.students, onPage: _busy ? null : _load),

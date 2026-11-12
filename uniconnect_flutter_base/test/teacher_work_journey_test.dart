@@ -279,8 +279,11 @@ void main() {
     expect(find.text('Prévia da oferta: 4 de 25 registros consultados.'),
         findsOneWidget);
     expect(find.text('Trabalho 1'), findsOneWidget);
-    expect(find.text('Aguardando correção na consulta: 1'), findsOneWidget);
-    expect(find.text('Correções salvas aguardando publicação na consulta: 1'),
+    expect(find.bySemanticsLabel('Aguardando correção na consulta: 1'),
+        findsOneWidget);
+    expect(
+        find.bySemanticsLabel(
+            'Correções salvas aguardando publicação na consulta: 1'),
         findsOneWidget);
     failed = false;
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -350));
@@ -288,7 +291,8 @@ void main() {
     await _tap(tester, 'Tentar novamente');
     expect(find.text('Algumas entregas não puderam ser consultadas.'),
         findsNothing);
-    expect(find.text('Aguardando correção na consulta: 2'), findsOneWidget);
+    expect(find.bySemanticsLabel('Aguardando correção na consulta: 2'),
+        findsOneWidget);
     expect(checked.where((work) => work == 'work-3'), hasLength(2));
   });
 }

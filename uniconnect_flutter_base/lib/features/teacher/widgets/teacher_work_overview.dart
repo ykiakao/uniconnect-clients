@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/academic_blocks.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/section_header.dart';
 import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_review_provider.dart';
 import '../services/teacher_activity_service.dart';
@@ -58,34 +61,34 @@ class TeacherWorkOverview extends ConsumerWidget {
                   Text(
                       'Prévia da oferta: ${preview.rows.length} de ${preview.total} registros consultados.'),
                 AppCard(
+                  icon: LucideIcons.calendarClock,
+                  title: 'Próximos prazos',
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                          partial
+                      InfoLine(
+                          label: partial
                               ? 'Trabalhos publicados na prévia'
                               : 'Trabalhos publicados',
-                          style: Theme.of(context).textTheme.titleMedium),
-                      Text('${published.length}'),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('Próximos prazos',
-                          style: Theme.of(context).textTheme.titleMedium),
+                          value: '${published.length}',
+                          icon: LucideIcons.clipboardList),
+                      const Divider(height: AppSpacing.md),
                       if (upcoming.isEmpty)
-                        Text(partial
-                            ? 'Sem prazos futuros nos trabalhos consultados.'
-                            : 'Sem prazos futuros nos trabalhos publicados.'),
+                        Text(
+                            partial
+                                ? 'Sem prazos futuros nos trabalhos consultados.'
+                                : 'Sem prazos futuros nos trabalhos publicados.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: AppColors.inkMuted)),
                       for (final work in upcoming.take(3))
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(work.title),
-                          subtitle: Text(DateFormat('dd/MM/yyyy HH:mm')
-                              .format(work.dueDate!.toLocal())),
-                        ),
+                        _DeadlineRow(
+                            title: work.title, due: work.dueDate!.toLocal()),
                     ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                const SectionHeader(title: 'Entregas e correções'),
                 if (sample.isEmpty)
                   Text(partial
                       ? 'Nenhum trabalho com fluxo de entrega na prévia.'
@@ -131,35 +134,89 @@ class _ReviewPreview extends ConsumerWidget {
         publication += page.rows.where((row) => row.awaitingPublication).length;
       }
     }
+    final muted = Theme.of(context)
+        .textTheme
+        .bodySmall
+        ?.copyWith(color: AppColors.inkMuted);
     return AppCard(
+      icon: LucideIcons.clipboardCheck,
+      title: 'Entregas e correções',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-              'Consulta de até 20 entregas por trabalho. Trabalhos consultados: $checked de ${works.length}.'),
-          if (limited)
-            const Text(
-                'A prévia cobre parte da oferta. Consulte Atividades acadêmicas para ver a lista completa.'),
           if (loading)
-            const LinearProgressIndicator(
-                semanticsLabel: 'Consultando entregas'),
+            const Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.xs),
+              child: LinearProgressIndicator(
+                  semanticsLabel: 'Consultando entregas'),
+            ),
           if (checked > 0) ...[
-            Text('Aguardando correção na consulta: $review'),
-            Text(
-                'Correções salvas aguardando publicação na consulta: $publication'),
+            InfoLine(
+                label: 'Aguardando correção na consulta',
+                value: '$review',
+                icon: LucideIcons.hourglass,
+                strong: review > 0),
+            InfoLine(
+                label: 'Correções salvas aguardando publicação na consulta',
+                value: '$publication',
+                icon: LucideIcons.send),
+            const SizedBox(height: AppSpacing.xs),
           ],
+          Text(
+              'Consulta de até 20 entregas por trabalho. Trabalhos consultados: $checked de ${works.length}.',
+              style: muted),
+          if (limited)
+            Text(
+                'A prévia cobre parte da oferta. Consulte Atividades acadêmicas para ver a lista completa.',
+                style: muted),
           if (failures.isNotEmpty) ...[
-            const Text('Algumas entregas não puderam ser consultadas.'),
-            TextButton(
-              style: AppButtonStyles.link,
-              onPressed: () {
-                for (final scope in failures) {
-                  ref.invalidate(teacherSubmissionPreviewProvider(scope));
-                }
-              },
-              child: const Text('Tentar novamente'),
+            const SizedBox(height: AppSpacing.xs),
+            Text('Algumas entregas não puderam ser consultadas.',
+                style: muted?.copyWith(color: AppColors.danger)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                style: AppButtonStyles.link,
+                onPressed: () {
+                  for (final scope in failures) {
+                    ref.invalidate(teacherSubmissionPreviewProvider(scope));
+                  }
+                },
+                child: const Text('Tentar novamente'),
+              ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DeadlineRow extends StatelessWidget {
+  const _DeadlineRow({required this.title, required this.due});
+
+  final String title;
+  final DateTime due;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
+      child: Row(
+        children: [
+          const IconTile(icon: LucideIcons.calendar, size: 32),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: text.titleSmall),
+                Text(DateFormat('dd/MM/yyyy HH:mm').format(due),
+                    style: text.bodySmall?.copyWith(color: AppColors.inkMuted)),
+              ],
+            ),
+          ),
         ],
       ),
     );

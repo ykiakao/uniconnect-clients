@@ -97,6 +97,7 @@ Future<void> select(WidgetTester tester, int index, String option) async {
 Future<void> tapLabel(WidgetTester tester, String label) async {
   final target = find.text(label).last;
   await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
   await tester.tap(target);
   await tester.pumpAndSettle();
 }
