@@ -124,17 +124,22 @@ class InfoLine extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
             ],
             Expanded(
+              flex: 3,
               child: Text(label,
                   style: (strong ? text.titleSmall : text.bodyMedium)?.copyWith(
                       color: strong ? AppColors.ink : AppColors.inkMuted)),
             ),
             const SizedBox(width: AppSpacing.sm),
             Flexible(
-              child: Text(value,
-                  textAlign: TextAlign.end,
-                  style: strong
-                      ? text.titleMedium?.copyWith(color: AppColors.primary)
-                      : text.titleSmall),
+              flex: 2,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(value,
+                    textAlign: TextAlign.end,
+                    style: strong
+                        ? text.titleMedium?.copyWith(color: AppColors.primary)
+                        : text.titleSmall),
+              ),
             ),
           ],
         ),

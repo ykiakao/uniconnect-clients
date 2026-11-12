@@ -171,7 +171,8 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.xs),
-                      Flexible(
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 120),
                         child: Text(_points(stage.total),
                             textAlign: TextAlign.end,
                             style: text.titleMedium
