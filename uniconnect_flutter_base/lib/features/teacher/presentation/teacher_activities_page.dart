@@ -281,7 +281,22 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
       'draft' => AppBadgeTone.neutral,
       _ => AppBadgeTone.warning,
     };
+    final accent = switch (work.state) {
+      'published' => AppColors.success,
+      'draft' => AppColors.lineStrong,
+      _ => AppColors.warning,
+    };
+    final (kindIcon, kindLabel) = work.isExam
+        ? (LucideIcons.fileCheck, 'Prova • sem entrega digital')
+        : work.workflowEnabled
+            ? (LucideIcons.send, 'Atividade • entrega digital')
+            : (
+                LucideIcons.school,
+                'Avaliação presencial • sem entrega digital'
+              );
     return AppCard(
+      accentColor: accent,
+      padding: const EdgeInsets.fromLTRB(18, 16, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -291,6 +306,19 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
               Expanded(child: Text(work.title, style: text.titleMedium)),
               const SizedBox(width: AppSpacing.xs),
               AppBadge(label: work.stateLabel, tone: stateTone),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Row(
+            children: [
+              Icon(kindIcon, size: 14, color: AppColors.inkMuted),
+              const SizedBox(width: AppSpacing.xxs),
+              Flexible(
+                child: Text(kindLabel,
+                    style: text.bodySmall?.copyWith(
+                        color: AppColors.inkMuted,
+                        fontWeight: FontWeight.w600)),
+              ),
             ],
           ),
           if (work.assessment case final assessment?)

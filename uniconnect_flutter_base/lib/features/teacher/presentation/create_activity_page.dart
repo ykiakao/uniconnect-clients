@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/network/api_client.dart';
@@ -336,6 +337,20 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
     }
   }
 
+  Widget _formSection(IconData icon, String title) => Padding(
+        padding:
+            const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.sm),
+        child: Row(
+          children: [
+            IconTile(icon: icon, size: 32),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+            ),
+          ],
+        ),
+      );
+
   Widget _field(String label, TextEditingController controller,
       {bool required = false, int lines = 1}) {
     return Padding(
@@ -394,6 +409,8 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                               confirmChange: _confirmChange,
                             ),
                             const SizedBox(height: AppSpacing.md),
+                            _formSection(
+                                LucideIcons.fileText, 'Dados da atividade'),
                             _field('Título da atividade', _title,
                                 required: true),
                             Padding(
@@ -414,6 +431,8 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                 ],
                               ),
                             ),
+                            _formSection(LucideIcons.listChecks,
+                                'Orientações para os alunos'),
                             _field('Descrição (opcional)', _description,
                                 lines: 3),
                             _field('Instruções (opcional)', _instructions,
@@ -421,6 +440,8 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                             _field(
                                 'Critérios de avaliação (opcional)', _criteria,
                                 lines: 3),
+                            _formSection(
+                                LucideIcons.calendarClock, 'Avaliação e prazo'),
                             AssessmentFields(
                               key: ValueKey(_assessmentFormVersion),
                               enabled: !_busy,
@@ -431,7 +452,7 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                 icon: const Icon(LucideIcons.calendar),
                                 label: Text(_due == null
                                     ? 'Definir prazo (opcional)'
-                                    : 'Prazo local: ${_due!.toLocal()}')),
+                                    : 'Prazo local: ${DateFormat('dd/MM/yyyy HH:mm').format(_due!.toLocal())}')),
                             if (_due != null)
                               TextButton(
                                   style: AppButtonStyles.link,
