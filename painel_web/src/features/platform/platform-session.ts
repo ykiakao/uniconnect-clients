@@ -15,7 +15,7 @@ function readPlatformSession(): PlatformSession | null {
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw) as Partial<PlatformSession>
-    return typeof parsed.accessToken === "string" && parsed.accessToken ? { accessToken: parsed.accessToken, apiBaseUrl: parsed.apiBaseUrl ?? DEFAULT_API_BASE_URL } : null
+    return typeof parsed.accessToken === "string" && parsed.accessToken ? { accessToken: parsed.accessToken, apiBaseUrl: DEFAULT_API_BASE_URL } : null
   } catch {
     return null
   }

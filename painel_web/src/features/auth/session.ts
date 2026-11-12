@@ -1,7 +1,9 @@
 import { ApiRequestError, apiRequest } from "@/lib/api-client"
 
 export const STORAGE_KEY = "uniconnect.admin.session"
-export const DEFAULT_API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3333/api/v1"
+/** Fixed at build time; users never choose the API address. */
+export const DEFAULT_API_BASE_URL: string =
+  import.meta.env.VITE_API_BASE_URL ?? "https://api-uni.juancjc.com.br/api/v1"
 export const DEFAULT_TENANT: string = import.meta.env.VITE_DEFAULT_TENANT ?? "universidade-norte"
 
 const ADMIN_ROLES = new Set(["admin", "gestor", "coordinator", "owner"])
@@ -18,7 +20,6 @@ export type AdminSession = {
   tenantSlug: string
 }
 export type LoginValues = {
-  apiBaseUrl: string
   tenantSlug: string
   email: string
   password: string
@@ -97,7 +98,8 @@ function rejectsSavedSession(error: unknown) {
 }
 
 export async function performLogin(values: LoginValues): Promise<AdminSession> {
-  const { apiBaseUrl, tenantSlug, email, password, remember } = values
+  const { tenantSlug, email, password, remember } = values
+  const apiBaseUrl = DEFAULT_API_BASE_URL
   const payload = await apiRequest<LoginPayload>("/auth/admin/login", {
     baseUrl: apiBaseUrl,
     tenantSlug,
@@ -130,7 +132,8 @@ export async function validateStoredSession(current: AdminSession | null): Promi
     return { kind: "anonymous", error: "" }
   }
 
-  const apiBaseUrl = stored.apiBaseUrl ?? DEFAULT_API_BASE_URL
+  // A stored address from an older build is ignored: the API is fixed.
+  const apiBaseUrl = DEFAULT_API_BASE_URL
   const tenantSlug = stored.tenantSlug ?? stored.tenant?.slug ?? DEFAULT_TENANT
   try {
     const payload = await apiRequest<Record<string, unknown>>("/auth/admin/me", {

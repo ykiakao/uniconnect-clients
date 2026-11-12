@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronRight, Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
 import { Link } from "react-router"
 
@@ -8,17 +8,16 @@ import { useAuth } from "./use-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PLACEHOLDERS } from "@/lib/placeholders"
 
 export function LoginPage() {
-  const { login, error: sessionError, apiBaseUrl, tenantSlug } = useAuth()
+  const { login, error: sessionError, tenantSlug } = useAuth()
   const [submitError, setSubmitError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const { register, control, handleSubmit, formState } = useForm<LoginValues>({
-    defaultValues: { apiBaseUrl, tenantSlug, email: "", password: "", remember: false },
+    defaultValues: { tenantSlug, email: "", password: "", remember: false },
   })
   const { isSubmitting } = formState
   const error = submitError || sessionError
@@ -28,7 +27,6 @@ export function LoginPage() {
     try {
       await login({
         ...values,
-        apiBaseUrl: values.apiBaseUrl.trim(),
         tenantSlug: values.tenantSlug.trim(),
         email: values.email.trim(),
       })
@@ -98,16 +96,6 @@ export function LoginPage() {
                 />
                 <Label htmlFor="remember">Lembrar de mim</Label>
               </div>
-              <Collapsible className="flex flex-col gap-2">
-                <CollapsibleTrigger className="group flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                  <ChevronRight className="size-3.5 transition-transform group-data-[state=open]:rotate-90" />
-                  Configuração avançada
-                </CollapsibleTrigger>
-                <CollapsibleContent className="grid gap-2">
-                  <Label htmlFor="apiBaseUrl">API</Label>
-                  <Input id="apiBaseUrl" placeholder="https://api.exemplo.com/api/v1" disabled={isSubmitting} {...register("apiBaseUrl")} />
-                </CollapsibleContent>
-              </Collapsible>
               {error && (
                 <p role="alert" className="text-sm text-destructive">
                   {error}

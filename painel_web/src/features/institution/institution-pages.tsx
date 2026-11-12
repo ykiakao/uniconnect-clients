@@ -49,7 +49,7 @@ export function BillingPage() {
 }
 
 export function SettingsPage() {
-  const { tenant, user, apiBaseUrl } = useSession()
+  const { tenant, user } = useSession()
   return (
     <>
       <ReadOnlyCard
@@ -62,12 +62,11 @@ export function SettingsPage() {
       />
       <ReadOnlyCard
         title="Sessão"
-        description="Conta e ambiente em uso neste navegador."
+        description="Conta em uso neste navegador."
         items={[
           ["Nome", user.name],
           ["E-mail", user.email],
           ["Perfil", formatAdminRole(user.role)],
-          ["API", apiBaseUrl],
         ]}
       />
     </>
