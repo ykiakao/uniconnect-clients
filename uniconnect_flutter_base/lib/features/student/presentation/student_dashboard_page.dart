@@ -6,6 +6,7 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../shared/widgets/quick_action_grid.dart';
 import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/academic_demo_frame.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
@@ -273,71 +274,10 @@ class _QuickActions extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final scale = MediaQuery.textScalerOf(context).scale(1);
-      final columns = constraints.maxWidth >= 300 * scale ? 2 : 1;
-      final width =
-          (constraints.maxWidth - AppSpacing.sm * (columns - 1)) / columns;
-      return Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
-        children: [
-          for (final (icon, label, route) in _items)
-            SizedBox(
-              width: width,
-              child: _QuickAction(
-                icon: icon,
-                label: label,
-                onTap: () => context.go(route),
-              ),
-            ),
-        ],
-      );
-    });
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  const _QuickAction(
-      {required this.icon, required this.label, required this.onTap});
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppRadius.lg);
-    return Material(
-      color: AppColors.surfaceRaised,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: const BorderSide(color: AppColors.line),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Semantics(
-          button: true,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconTile(icon: icon, size: 36),
-                const SizedBox(height: AppSpacing.xs),
-                Text(label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => QuickActionGrid(items: [
+        for (final (icon, label, route) in _items)
+          (icon: icon, label: label, onTap: () => context.go(route)),
+      ]);
 }
 
 class _AcademicAgenda extends StatelessWidget {

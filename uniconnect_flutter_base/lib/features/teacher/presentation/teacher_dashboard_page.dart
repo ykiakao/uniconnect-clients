@@ -6,10 +6,12 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../shared/widgets/quick_action_grid.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../widgets/teacher_offering_picker.dart';
+import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
 import '../widgets/teacher_work_overview.dart';
 import '../../../shared/widgets/academic_content.dart';
@@ -54,6 +56,9 @@ class TeacherDashboardPage extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
     final classId = ref.watch(selectedTeacherClassIdProvider);
+    // Hidden only when the API confirms the teacher has no class.
+    final hasClasses =
+        ref.watch(teacherOfferingsProvider).asData?.value.isEmpty != true;
     final text = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -141,6 +146,36 @@ class TeacherDashboardPage extends ConsumerWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: AppSpacing.md),
+              QuickActionGrid(items: [
+                // Class-scoped shortcuts only when the teacher has classes.
+                if (hasClasses) ...[
+                  (
+                    icon: LucideIcons.squarePlus,
+                    label: 'Criar atividade',
+                    onTap: () => GoRouter.maybeOf(context)
+                        ?.push(AppRoutes.teacherCreateActivity),
+                  ),
+                  (
+                    icon: LucideIcons.clipboardCheck,
+                    label: 'Avaliar entregas',
+                    onTap: () => GoRouter.maybeOf(context)
+                        ?.go(AppRoutes.teacherActivities),
+                  ),
+                  (
+                    icon: LucideIcons.graduationCap,
+                    label: 'Consultar notas',
+                    onTap: () =>
+                        GoRouter.maybeOf(context)?.go(AppRoutes.teacherGrades),
+                  ),
+                ],
+                (
+                  icon: LucideIcons.bell,
+                  label: 'Avisos da turma',
+                  onTap: () =>
+                      GoRouter.maybeOf(context)?.push(AppRoutes.notices),
+                ),
+              ]),
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(
                   title: 'Resumo acadêmico',
@@ -162,47 +197,11 @@ class TeacherDashboardPage extends ConsumerWidget {
                       style:
                           text.bodyMedium?.copyWith(color: AppColors.inkMuted)),
                 ),
-              const SizedBox(height: AppSpacing.md),
-              const SectionHeader(title: 'Turmas e disciplinas'),
+              const SizedBox(height: AppSpacing.lg),
+              const SectionHeader(
+                  title: 'Turmas e disciplinas',
+                  subtitle: 'Escolha a turma para ver trabalhos e entregas'),
               const TeacherOfferingPicker(),
-              const SizedBox(height: AppSpacing.sm),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  FilledButton(
-                    onPressed: classId == null
-                        ? null
-                        : () => GoRouter.maybeOf(context)
-                            ?.push(AppRoutes.teacherCreateActivity),
-                    child: const Text('Criar atividade'),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  OutlinedButton(
-                    onPressed: classId == null
-                        ? null
-                        : () => GoRouter.maybeOf(context)?.go(
-                              Uri(
-                                  path: AppRoutes.teacherGrades,
-                                  queryParameters: {
-                                    'classId': classId,
-                                    'modo': 'provas',
-                                  }).toString(),
-                            ),
-                    child: const Text('Lançar notas de prova'),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  OutlinedButton(
-                    onPressed: () =>
-                        GoRouter.maybeOf(context)?.push(AppRoutes.notices),
-                    child: const Text('Avisos da turma'),
-                  ),
-                  TextButton(
-                    onPressed: () => GoRouter.maybeOf(context)
-                        ?.go(AppRoutes.teacherActivities),
-                    child: const Text('Ver trabalhos e entregas'),
-                  ),
-                ],
-              ),
               const SizedBox(height: AppSpacing.md),
               if (classId != null)
                 TeacherWorkOverview(key: ValueKey(classId), classId: classId),

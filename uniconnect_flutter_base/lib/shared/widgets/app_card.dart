@@ -56,7 +56,7 @@ class AppCard extends StatelessWidget {
         : child;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,

@@ -98,15 +98,14 @@ void main() {
     await tester.scrollUntilVisible(find.text('Turmas e disciplinas'), 250,
         scrollable: find.byType(Scrollable).first);
     expect(find.text('Turmas e disciplinas'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Ver trabalhos e entregas'), 150,
-        scrollable: find.byType(Scrollable).first);
-    expect(find.text('Ver trabalhos e entregas'), findsOneWidget);
-    expect(
-        tester
-            .widget<FilledButton>(
-                find.widgetWithText(FilledButton, 'Criar atividade'))
-            .onPressed,
-        isNull);
+    for (final label in [
+      'Criar atividade',
+      'Avaliar entregas',
+      'Consultar notas',
+      'Avisos da turma',
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
     expect(find.text('Aguardando correção na consulta: 0'), findsNothing);
     expect(find.text('128'), findsNothing);
   });

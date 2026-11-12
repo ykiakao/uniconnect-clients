@@ -379,6 +379,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherDashboard);
         Future<void> openShortcut(String label) async {
+          // Shortcuts sit near the top: start there, then scroll down.
+          await tester.drag(
+              find.byType(Scrollable).first, const Offset(0, 2000));
+          await tester.pumpAndSettle();
           await tester.scrollUntilVisible(find.text(label).hitTestable(), 160,
               scrollable: find.byType(Scrollable).first);
           await tester.tap(find.text(label));
@@ -390,18 +394,15 @@ void main() {
         await tester.tap(find.byTooltip('Retornar'));
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherDashboard);
-        await openShortcut('Lançar notas de prova');
+        await openShortcut('Consultar notas');
         expect(currentLocation(), AppRoutes.teacherGrades);
-        expect(find.text('Provas N1/N2'), findsOneWidget);
-        await tester.tap(find.byTooltip('Retornar'));
-        await tester.pumpAndSettle();
         await tester.tap(
             find.descendant(of: teacherBar, matching: find.text('Início')));
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherDashboard);
         for (final (label, destination) in [
           ('Avisos da turma', AppRoutes.notices),
-          ('Ver trabalhos e entregas', AppRoutes.teacherActivities),
+          ('Avaliar entregas', AppRoutes.teacherActivities),
         ]) {
           await openShortcut(label);
           expect(currentLocation(), destination);

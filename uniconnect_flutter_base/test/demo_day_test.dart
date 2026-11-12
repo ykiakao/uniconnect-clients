@@ -128,7 +128,8 @@ void main() {
       activitiesProvider.overrideWith((ref) async => []),
     ]);
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Nenhuma atividade disponível'), 180,
+    await tester.scrollUntilVisible(
+        find.text('Nenhuma atividade disponível'), 180,
         scrollable: find.byType(Scrollable).first);
     expect(find.text('Nenhuma atividade disponível'), findsOneWidget);
     expect(find.text('Segurança Digital'), findsNothing);
@@ -176,7 +177,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Sobre este ambiente'), findsNothing);
     expect(find.textContaining('A gestão docente de turmas'), findsNothing);
-    expect(find.text('Ver trabalhos e entregas'), findsOneWidget);
+    expect(find.text('Avisos da turma'), findsOneWidget);
   });
 
   testWidgets('profile does not invent missing academic data', (tester) async {

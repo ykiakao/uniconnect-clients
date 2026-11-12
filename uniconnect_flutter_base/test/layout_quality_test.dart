@@ -137,13 +137,17 @@ void main() {
     final key = await pumpLayout(tester, const TeacherDashboardPage(),
         width: 768, teacher: true);
     await tester.scrollUntilVisible(
-        find.text('Ver trabalhos e entregas').hitTestable(), 200,
+        find.text('Avisos da turma').hitTestable(), 200,
         scrollable: verticalScroll);
     await captureLayout(tester, key, 'teacher-workspace-768');
     final shortcuts = [
-      find.widgetWithText(FilledButton, 'Criar atividade'),
-      find.widgetWithText(OutlinedButton, 'Lançar notas de prova'),
-      find.widgetWithText(TextButton, 'Ver trabalhos e entregas'),
+      for (final label in [
+        'Criar atividade',
+        'Avaliar entregas',
+        'Consultar notas',
+        'Avisos da turma',
+      ])
+        find.ancestor(of: find.text(label), matching: find.byType(InkWell)),
     ];
     for (final target in shortcuts) {
       final rect = tester.getRect(target);
