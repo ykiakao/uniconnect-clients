@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../shared/widgets/academic_blocks.dart';
+import '../../../shared/widgets/app_badge.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/academic_content.dart';
@@ -275,17 +281,40 @@ class _ReviewEditorState extends ConsumerState<_ReviewEditor> {
             if (_ready && !_denied) ...[
               AppCard(
                   child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                    Text(
-                        'Aluno: ${classStudentName(ref, ref.watch(selectedTeacherClassIdProvider), _current.studentId)}'),
-                    Text('Entrega: ${_current.id}'),
-                    Text('Versão da resposta: ${_current.version}'),
-                    Text('Enviada em: ${_current.submittedAt.toLocal()}'),
-                    if (_current.isLate) const Text('Entrega em atraso'),
+                    PersonTile(
+                      name: classStudentName(
+                          ref,
+                          ref.watch(selectedTeacherClassIdProvider),
+                          _current.studentId),
+                      subtitle: 'Versão da resposta: ${_current.version}',
+                      badges: [
+                        if (_current.isLate)
+                          const AppBadge(
+                              label: 'Entrega em atraso',
+                              tone: AppBadgeTone.warning),
+                      ],
+                    ),
                     const SizedBox(height: AppSpacing.sm),
-                    const Text('Resposta textual'),
-                    Text(_current.answer),
+                    InfoLine(
+                        label: 'Enviada em',
+                        value: DateFormat('dd/MM/yyyy HH:mm')
+                            .format(_current.submittedAt.toLocal()),
+                        icon: LucideIcons.calendarClock),
+                    const Divider(height: AppSpacing.lg),
+                    Text('Resposta textual',
+                        style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: AppSpacing.xs),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(color: AppColors.line),
+                      ),
+                      child: SelectableText(_current.answer),
+                    ),
                   ])),
               AppCard(
                   child: Column(

@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/academic_blocks.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/section_header.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -34,6 +41,7 @@ class TeacherWorkSubmissions extends ConsumerWidget {
           },
           child: const Text('Atualizar entregas e matrículas'),
         ),
+        const SizedBox(height: AppSpacing.xs),
         ref.watch(submissions).when(
               skipLoadingOnRefresh: false,
               skipLoadingOnReload: false,
@@ -49,30 +57,46 @@ class TeacherWorkSubmissions extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (rows.isEmpty)
-                    const Text('Nenhuma entrega nesta atividade.'),
+                    const _Muted('Nenhuma entrega nesta atividade.'),
                   for (final submission in rows)
                     AppCard(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                              'Aluno: ${classStudentName(ref, work.classId, submission.studentId)}'),
-                          Text(submission.statusLabel),
-                          Text('Versão da resposta: ${submission.version}'),
-                          if (submission.isLate)
-                            const Text('Entrega registrada com atraso'),
-                          TextButton(
-                            style: AppButtonStyles.compact(),
-                            onPressed: () => _open(context, ref, submission),
-                            child: const Text('Abrir entrega'),
+                          PersonTile(
+                            name: classStudentName(
+                                ref, work.classId, submission.studentId),
+                            subtitle:
+                                'Versão da resposta: ${submission.version}'
+                                ' • enviada em ${_date.format(submission.submittedAt.toLocal())}',
+                            badges: [
+                              AppBadge(
+                                  label: submission.statusLabel,
+                                  tone: submissionTone(submission)),
+                              if (submission.isLate)
+                                const AppBadge(
+                                    label: 'Entrega registrada com atraso',
+                                    tone: AppBadgeTone.warning),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              style: AppButtonStyles.compact(),
+                              onPressed: () => _open(context, ref, submission),
+                              icon: const Icon(LucideIcons.fileText, size: 16),
+                              label: const Text('Abrir entrega'),
+                            ),
                           ),
                         ],
                       ),
                     ),
                   if (enrolled != null) ...[
                     const SizedBox(height: AppSpacing.md),
-                    Text('Alunos sem entrega',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    const SectionHeader(
+                        title: 'Alunos sem entrega',
+                        subtitle: 'Matrículas ativas sem resposta enviada'),
                     enrolled.when(
                       skipLoadingOnRefresh: false,
                       skipLoadingOnReload: false,
@@ -94,17 +118,23 @@ class TeacherWorkSubmissions extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (students.isEmpty)
-                              const Text(
+                              const _Muted(
                                   'Nenhuma matrícula ativa nesta oferta.')
                             else if (withoutSubmission.isEmpty)
-                              const Text(
+                              const _Muted(
                                   'Todos os alunos com matrícula ativa entregaram.'),
                             for (final student in withoutSubmission)
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                    'Aluno: ${classStudentName(ref, work.classId, student)}'),
-                                subtitle: const Text('Sem entrega'),
+                              AppCard(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                child: PersonTile(
+                                  name: classStudentName(
+                                      ref, work.classId, student),
+                                  badges: const [
+                                    AppBadge(
+                                        label: 'Sem entrega',
+                                        tone: AppBadgeTone.neutral),
+                                  ],
+                                ),
                               ),
                           ],
                         );
@@ -180,5 +210,33 @@ class _LookupError extends StatelessWidget {
               onPressed: retry,
               child: const Text('Tentar novamente')),
         ],
+      );
+}
+
+final _date = DateFormat('dd/MM/yyyy HH:mm');
+
+/// Badge tone of a submission status: review pending stands out.
+AppBadgeTone submissionTone(TeacherSubmission submission) {
+  if (submission.awaitingReview) return AppBadgeTone.warning;
+  if (submission.awaitingPublication) return AppBadgeTone.info;
+  if (submission.result?.publicationState == 'published') {
+    return AppBadgeTone.success;
+  }
+  return AppBadgeTone.neutral;
+}
+
+class _Muted extends StatelessWidget {
+  const _Muted(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Text(text,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: AppColors.inkMuted)),
       );
 }

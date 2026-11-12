@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/academic_blocks.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../../../shared/widgets/error_state_widget.dart';
@@ -172,11 +174,20 @@ class _ReportResults extends StatelessWidget {
         subtitle: 'Quando houver avaliações N1/N2, elas aparecerão aqui.',
       );
     }
-    final result = switch (card.status) {
-      ReportCardStatus.partial => 'Resultado semestral parcial',
-      ReportCardStatus.approved => 'Aprovado',
-      ReportCardStatus.finalExamEligible => 'Elegível à prova final',
-      ReportCardStatus.belowMinimum => 'Abaixo da média mínima',
+    final (result, tone) = switch (card.status) {
+      ReportCardStatus.partial => (
+          'Resultado semestral parcial',
+          AppBadgeTone.neutral
+        ),
+      ReportCardStatus.approved => ('Aprovado', AppBadgeTone.success),
+      ReportCardStatus.finalExamEligible => (
+          'Elegível à prova final',
+          AppBadgeTone.warning
+        ),
+      ReportCardStatus.belowMinimum => (
+          'Abaixo da média mínima',
+          AppBadgeTone.danger
+        ),
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -185,13 +196,29 @@ class _ReportResults extends StatelessWidget {
         _StageCard(name: 'N2', stage: card.n2),
         AppCard(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Resultado semestral',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Row(
+                children: [
+                  const IconTile(icon: LucideIcons.award, size: 36),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text('Resultado semestral',
+                        style: Theme.of(context).textTheme.titleMedium),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
               if (card.average != null)
-                Text('Média semestral: ${_points(card.average)}'),
-              Text(result),
+                InfoLine(
+                    label: 'Média semestral',
+                    value: _points(card.average),
+                    strong: true),
+              const SizedBox(height: AppSpacing.xs),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: AppBadge(label: result, tone: tone),
+              ),
             ],
           ),
         ),
@@ -200,8 +227,7 @@ class _ReportResults extends StatelessWidget {
   }
 }
 
-String _points(String? value) =>
-    value?.replaceAll('.', ',') ?? 'Não disponível';
+String _points(String? value) => formatPoints(value, missing: 'Não disponível');
 
 class _StageCard extends StatelessWidget {
   const _StageCard({required this.name, required this.stage});
@@ -210,63 +236,39 @@ class _StageCard extends StatelessWidget {
   final StudentReportStage stage;
 
   @override
-  Widget build(BuildContext context) => AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('$name • ${stage.closed ? 'Fechada' : 'Aberta'}',
-                style: Theme.of(context).textTheme.titleMedium),
-            if (!stage.applies)
-              const Text('Esta etapa não se aplica ao seu vínculo.')
-            else ...[
-              _AssessmentPoints(
-                label: 'Pontos de trabalhos',
-                points: stage.activityPoints,
-                color: AppColors.primary,
-              ),
-              _AssessmentPoints(
-                label: 'Pontos de provas',
-                points: stage.examPoints,
-                color: AppColors.success,
-              ),
-              Text(switch (stage.status) {
-                ReportStageStatus.pending => 'Total: Não disponível',
-                ReportStageStatus.partial =>
-                  'Total parcial: ${_points(stage.total)}',
-                ReportStageStatus.definitive =>
-                  'Total definitivo: ${_points(stage.total)}',
-              }),
-              Text(switch (stage.pendingCount) {
-                0 => 'Nenhuma avaliação pendente',
-                1 => '1 avaliação pendente',
-                final count => '$count avaliações pendentes',
-              }),
-            ],
-          ],
-        ),
-      );
-}
-
-class _AssessmentPoints extends StatelessWidget {
-  const _AssessmentPoints(
-      {required this.label, required this.points, required this.color});
-
-  final String label;
-  final String? points;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          ExcludeSemantics(
-            child: Container(
-              width: AppSpacing.sm,
-              height: AppSpacing.sm,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(child: Text('$label: ${_points(points)}')),
-        ],
+  Widget build(BuildContext context) => StageSummaryCard(
+        title: name,
+        closed: stage.closed,
+        footer: stage.applies ? PendingBadge(count: stage.pendingCount) : null,
+        children: !stage.applies
+            ? [
+                Text('Esta etapa não se aplica ao seu vínculo.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: AppColors.inkMuted)),
+              ]
+            : [
+                InfoLine(
+                    label: 'Pontos de trabalhos',
+                    value: _points(stage.activityPoints),
+                    icon: LucideIcons.clipboardList),
+                InfoLine(
+                    label: 'Pontos de provas',
+                    value: _points(stage.examPoints),
+                    icon: LucideIcons.fileCheck),
+                const Divider(height: AppSpacing.md),
+                InfoLine(
+                  label: switch (stage.status) {
+                    ReportStageStatus.pending => 'Total',
+                    ReportStageStatus.partial => 'Total parcial',
+                    ReportStageStatus.definitive => 'Total definitivo',
+                  },
+                  value: stage.status == ReportStageStatus.pending
+                      ? 'Não disponível'
+                      : _points(stage.total),
+                  strong: true,
+                ),
+              ],
       );
 }

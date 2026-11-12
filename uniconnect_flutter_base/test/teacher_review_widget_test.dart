@@ -409,7 +409,7 @@ void main() {
     });
     await openReview(tester);
     expect(find.text('Minha resposta'), findsOneWidget);
-    expect(find.text('Aluno: student-test'), findsOneWidget);
+    expect(find.text('student-test'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).at(0), '11');
     await tapReview(tester, 'Salvar correção');
     expect(find.textContaining('Informe uma nota de 0 a 10'), findsOneWidget);
@@ -459,8 +459,8 @@ void main() {
       ));
     }, mockEnrollments: false);
     expect(pages, ['1', '2']);
-    expect(find.text('Aluno: student-test'), findsOneWidget);
-    expect(find.text('Aluno: sem-entrega-pagina-2'), findsOneWidget);
+    expect(find.text('student-test'), findsOneWidget);
+    expect(find.text('sem-entrega-pagina-2'), findsOneWidget);
     expect(find.text('Alunos sem entrega'), findsOneWidget);
     expect(find.text('submitted'), findsNothing);
   });

@@ -127,15 +127,16 @@ void main() {
     await _select(tester, 'Métodos • Oferta class-2');
     expect(paths.last,
         '/api/v1/tenants/instituicao-teste/classes/class-2/report-card/me');
-    expect(find.text('N1 • Aberta'), findsOneWidget);
-    expect(find.text('N2 • Aberta'), findsOneWidget);
-    expect(find.text('Pontos de provas: 0,00'), findsOneWidget);
-    expect(find.text('Pontos de trabalhos: Não disponível'), findsOneWidget);
-    expect(find.text('Total parcial: 0,00999'), findsOneWidget);
+    expect(find.bySemanticsLabel('N1 • Aberta'), findsOneWidget);
+    expect(find.bySemanticsLabel('N2 • Aberta'), findsOneWidget);
+    expect(find.bySemanticsLabel('Pontos de provas: 0,00'), findsOneWidget);
+    expect(find.bySemanticsLabel('Pontos de trabalhos: Não disponível'),
+        findsOneWidget);
+    expect(find.bySemanticsLabel('Total parcial: 0,00999'), findsOneWidget);
     expect(find.text('2 avaliações pendentes'), findsOneWidget);
     expect(find.text('1 avaliação pendente'), findsOneWidget);
     expect(find.text('Resultado semestral parcial'), findsOneWidget);
-    expect(find.textContaining('Média semestral:'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('Média semestral:')), findsNothing);
     expect(find.textContaining('9,87'), findsNothing);
   });
 
@@ -158,11 +159,15 @@ void main() {
         ));
       });
       await _select(tester, 'Métodos');
-      expect(find.text('N1 • Fechada'), findsOneWidget);
-      expect(find.text('N2 • Fechada'), findsOneWidget);
-      expect(find.text('Total definitivo: ${average.replaceAll('.', ',')}'),
+      expect(find.bySemanticsLabel('N1 • Fechada'), findsOneWidget);
+      expect(find.bySemanticsLabel('N2 • Fechada'), findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              'Total definitivo: ${average.replaceAll('.', ',')}'),
           findsNWidgets(2));
-      expect(find.text('Média semestral: ${average.replaceAll('.', ',')}'),
+      expect(
+          find.bySemanticsLabel(
+              'Média semestral: ${average.replaceAll('.', ',')}'),
           findsOneWidget);
       expect(find.text(label), findsOneWidget);
     });
@@ -182,9 +187,9 @@ void main() {
     await _select(tester, 'Métodos');
     expect(
         find.text('Esta etapa não se aplica ao seu vínculo.'), findsOneWidget);
-    expect(find.text('Total: Não disponível'), findsOneWidget);
+    expect(find.bySemanticsLabel('Total: Não disponível'), findsOneWidget);
     expect(find.text('1 avaliação pendente'), findsOneWidget);
-    expect(find.textContaining('Média semestral:'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('Média semestral:')), findsNothing);
   });
 
   testWidgets('handles an empty offering list and offers without assessments',
@@ -256,8 +261,8 @@ void main() {
     late.complete(reportResponse(
         reportCardJson(n1: reportStage(examPoints: '5.75', total: '5.75'))));
     await tester.pumpAndSettle();
-    expect(find.text('Total parcial: 2,25'), findsOneWidget);
-    expect(find.text('Total parcial: 5,75'), findsNothing);
+    expect(find.bySemanticsLabel('Total parcial: 2,25'), findsOneWidget);
+    expect(find.bySemanticsLabel('Total parcial: 5,75'), findsNothing);
   });
 
   for (final (kind, message) in [
@@ -330,7 +335,7 @@ void main() {
       ));
     }, authService: service);
     await _select(tester, 'Disciplina A');
-    expect(find.text('Total parcial: 5,50'), findsOneWidget);
+    expect(find.bySemanticsLabel('Total parcial: 5,50'), findsOneWidget);
 
     await tester.tap(find.text('Atualizar boletim'));
     await tester.pump();
@@ -364,7 +369,7 @@ void main() {
     late.complete(reportResponse(
         reportCardJson(n1: reportStage(examPoints: '5.50', total: '5.50'))));
     await tester.pumpAndSettle();
-    expect(find.text('Total parcial: 6,25'), findsOneWidget);
-    expect(find.text('Total parcial: 5,50'), findsNothing);
+    expect(find.bySemanticsLabel('Total parcial: 6,25'), findsOneWidget);
+    expect(find.bySemanticsLabel('Total parcial: 5,50'), findsNothing);
   });
 }

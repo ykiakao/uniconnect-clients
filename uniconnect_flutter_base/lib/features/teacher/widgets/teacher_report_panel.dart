@@ -1,6 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../shared/widgets/academic_blocks.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/section_header.dart';
+import '../../../shared/widgets/status_banner.dart';
+
 import '../../../shared/widgets/app_card.dart';
 import '../services/teacher_academic_service.dart';
 import '../providers/teacher_review_provider.dart';
@@ -122,32 +130,103 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
 
   String _points(String? value) => value?.replaceAll('.', ',') ?? '—';
 
-  Widget _report(TeacherReportCard card, {bool detail = false}) => AppCard(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(card.studentName),
+  Widget _report(TeacherReportCard card, {bool detail = false}) {
+    final (_, tone) = semesterResult(card.status);
+    final text = Theme.of(context).textTheme;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PersonTile(
+            name: card.studentName,
+            subtitle: card.average == null
+                ? 'Média semestral ainda não disponível'
+                : 'Média semestral: ${_points(card.average)}',
+            badges: [AppBadge(label: card.statusLabel, tone: tone)],
+          ),
+          const SizedBox(height: AppSpacing.sm),
           for (final (name, stage) in [('N1', card.n1), ('N2', card.n2)]) ...[
-            Text(
-                '$name: ${_points(stage.total)} • ${stage.closed ? 'Fechada' : 'Aberta'} • ${stage.applies ? '${stage.pendingCount} pendências' : 'Não se aplica'}'),
-            if (detail)
-              Text(
-                  'Provas: ${_points(stage.examPoints)} • Atividades: ${_points(stage.activityPoints)}'),
-          ],
-          if (card.average != null)
-            Text('Média semestral: ${_points(card.average)}'),
-          Text(card.statusLabel),
-          if (!detail)
-            TextButton(
-              style: AppButtonStyles.link,
-              onPressed: _busy
-                  ? null
-                  : () => setState(() {
-                        _detail = widget.service
-                            .studentReport(widget.classId, card.studentId);
-                      }),
-              child: const Text('Consultar boletim individual'),
+            Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.line),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xxs,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(name, style: text.titleSmall),
+                            StageStateBadge(closed: stage.closed),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Flexible(
+                        child: Text(_points(stage.total),
+                            textAlign: TextAlign.end,
+                            style: text.titleMedium
+                                ?.copyWith(color: AppColors.primary)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    stage.applies
+                        ? switch (stage.pendingCount) {
+                            0 => 'Sem pendências',
+                            1 => '1 pendência',
+                            final count => '$count pendências',
+                          }
+                        : 'Não se aplica',
+                    style: text.bodySmall?.copyWith(
+                        color: stage.applies && stage.pendingCount > 0
+                            ? AppColors.warning
+                            : AppColors.inkMuted),
+                  ),
+                  if (detail) ...[
+                    const SizedBox(height: AppSpacing.xxs),
+                    InfoLine(
+                        label: 'Provas',
+                        value: _points(stage.examPoints),
+                        icon: LucideIcons.fileCheck),
+                    InfoLine(
+                        label: 'Atividades',
+                        value: _points(stage.activityPoints),
+                        icon: LucideIcons.clipboardList),
+                  ],
+                ],
+              ),
             ),
-        ]),
-      );
+          ],
+          if (!detail)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                style: AppButtonStyles.link,
+                onPressed: _busy
+                    ? null
+                    : () => setState(() {
+                          _detail = widget.service
+                              .studentReport(widget.classId, card.studentId);
+                        }),
+                icon: const Icon(LucideIcons.fileText, size: 18),
+                label: const Text('Consultar boletim individual'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   String _reason(String reason) => switch (reason) {
         'assessment_unavailable' => 'Avaliação indisponível',
@@ -164,15 +243,29 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const Text('Boletim da oferta'),
-      if (_message != null) Text(_message!),
-      TextButton.icon(
-        onPressed: _busy ? null : _refresh,
-        icon: const Icon(LucideIcons.refreshCw),
-        label: const Text('Atualizar boletim e pendências'),
+      const SectionHeader(
+        title: 'Boletim da oferta',
+        subtitle: 'Fechamento das etapas N1 e N2',
       ),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          style: AppButtonStyles.link,
+          onPressed: _busy ? null : _refresh,
+          icon: const Icon(LucideIcons.refreshCw, size: 18),
+          label: const Text('Atualizar boletim e pendências'),
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      if (_message != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: StatusBanner(
+              title: 'Fechamento', message: _message!, tone: AppBadgeTone.info),
+        ),
       DropdownButtonFormField<String>(
         initialValue: _stage,
+        isExpanded: true,
         decoration: const InputDecoration(labelText: 'Etapa para fechamento'),
         items: const [
           DropdownMenuItem(value: 'N1', child: Text('N1')),
@@ -186,6 +279,7 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
                 _loadStage(1);
               },
       ),
+      const SizedBox(height: AppSpacing.sm),
       FutureBuilder<AcademicStageStatus>(
         future: _status,
         builder: (context, snapshot) {
@@ -196,29 +290,44 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
             return Text(teacherReviewError(snapshot.error!));
           }
           final status = snapshot.requireData;
-          return AppCard(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(
-                    '${status.stage} • ${status.closed ? 'Fechada' : 'Aberta'}'),
-                Text(
-                    '${status.eligibleCount} alunos elegíveis • ${status.assessmentCount} avaliações'),
-                for (final blocker in status.blockers) Text(_blocker(blocker)),
-                for (final issue in status.issues.rows)
-                  Text(
-                      '${issue.title} • ${_reason(issue.reason)} • ${_names[issue.studentId] ?? 'Aluno ${issue.studentId}'}'),
-                AcademicPageControls(
-                    page: status.issues, onPage: _busy ? null : _loadStage),
-                if (!status.closed)
-                  FilledButton(
+          return StageSummaryCard(
+            title: status.stage,
+            closed: status.closed,
+            footer: status.closed
+                ? null
+                : FilledButton(
                     onPressed: !_busy && status.canClose ? _close : null,
                     child: Text('Fechar ${status.stage}'),
                   ),
-              ]));
+            children: [
+              InfoLine(
+                  label: 'Alunos elegíveis',
+                  value: '${status.eligibleCount}',
+                  icon: LucideIcons.users),
+              InfoLine(
+                  label: 'Avaliações',
+                  value: '${status.assessmentCount}',
+                  icon: LucideIcons.clipboardList),
+              for (final blocker in status.blockers)
+                _Notice(
+                    icon: LucideIcons.triangleAlert,
+                    color: AppColors.warning,
+                    text: _blocker(blocker)),
+              for (final issue in status.issues.rows)
+                _Notice(
+                    icon: LucideIcons.circleAlert,
+                    color: AppColors.danger,
+                    text:
+                        '${issue.title} • ${_reason(issue.reason)} • ${_names[issue.studentId] ?? 'Aluno ${issue.studentId}'}'),
+              AcademicPageControls(
+                  page: status.issues, onPage: _busy ? null : _loadStage),
+            ],
+          );
         },
       ),
-      const Text('Resumo da turma'),
+      const SizedBox(height: AppSpacing.md),
+      const SectionHeader(
+          title: 'Resumo da turma', subtitle: 'Situação de cada aluno'),
       if (_detail != null) ...[
         TextButton(
           style: AppButtonStyles.link,
@@ -261,4 +370,27 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
         ),
     ]);
   }
+}
+
+class _Notice extends StatelessWidget {
+  const _Notice({required this.icon, required this.color, required this.text});
+
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.xs),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+                child:
+                    Text(text, style: Theme.of(context).textTheme.bodySmall)),
+          ],
+        ),
+      );
 }
