@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../providers/class_students_provider.dart';
 import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
 import '../providers/teacher_review_provider.dart';
@@ -54,7 +55,8 @@ class TeacherWorkSubmissions extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Aluno: ${submission.studentId}'),
+                          Text(
+                              'Aluno: ${classStudentName(ref, work.classId, submission.studentId)}'),
                           Text(submission.statusLabel),
                           Text('Versão da resposta: ${submission.version}'),
                           if (submission.isLate)
@@ -100,7 +102,8 @@ class TeacherWorkSubmissions extends ConsumerWidget {
                             for (final student in withoutSubmission)
                               ListTile(
                                 contentPadding: EdgeInsets.zero,
-                                title: Text('Aluno: $student'),
+                                title: Text(
+                                    'Aluno: ${classStudentName(ref, work.classId, student)}'),
                                 subtitle: const Text('Sem entrega'),
                               ),
                           ],

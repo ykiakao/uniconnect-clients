@@ -16,6 +16,7 @@ import '../../academic/providers/academic_records_providers.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../chat/presentation/chat_page.dart';
+import '../../teacher/providers/class_students_provider.dart';
 import '../../teacher/providers/teacher_activity_provider.dart';
 import '../models/communication_models.dart';
 import '../providers/communication_providers.dart';

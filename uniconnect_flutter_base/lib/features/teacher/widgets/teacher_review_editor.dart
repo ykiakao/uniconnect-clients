@@ -6,6 +6,7 @@ import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../providers/class_students_provider.dart';
 import '../providers/teacher_review_provider.dart';
 import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
@@ -276,7 +277,8 @@ class _ReviewEditorState extends ConsumerState<_ReviewEditor> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    Text('Aluno: ${_current.studentId}'),
+                    Text(
+                        'Aluno: ${classStudentName(ref, ref.watch(selectedTeacherClassIdProvider), _current.studentId)}'),
                     Text('Entrega: ${_current.id}'),
                     Text('Versão da resposta: ${_current.version}'),
                     Text('Enviada em: ${_current.submittedAt.toLocal()}'),

@@ -8,29 +8,11 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_button_styles.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../auth/models/app_user.dart';
+import '../../teacher/providers/class_students_provider.dart';
 import '../../teacher/providers/teacher_activity_provider.dart';
 import '../../teacher/services/teacher_activity_service.dart';
 import '../providers/communication_providers.dart';
 import 'communication_ui.dart';
-
-const _maxStudentPages = 10;
-
-typedef ClassStudent = ({String id, String name});
-
-/// Students of one of the teacher's offerings, from the class report card.
-final classStudentsProvider = FutureProvider.autoDispose
-    .family<List<ClassStudent>, String>((ref, classId) async {
-  final service = ref.watch(teacherAcademicServiceProvider);
-  final students = <ClassStudent>[];
-  for (var page = 1; page <= _maxStudentPages; page++) {
-    final result = await service.summary(classId, page: page);
-    students.addAll(
-        result.rows.map((row) => (id: row.studentId, name: row.studentName)));
-    if (!result.hasNext) break;
-  }
-  students.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-  return List.unmodifiable(students);
-}, retry: (_, __) => null);
 
 Future<void> showNewConversationSheet(BuildContext context) =>
     showModalBottomSheet<void>(

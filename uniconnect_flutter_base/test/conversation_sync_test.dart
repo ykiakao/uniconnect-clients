@@ -9,6 +9,7 @@ import 'package:uniconnect/features/communication/presentation/new_conversation_
 import 'package:uniconnect/features/communication/providers/communication_providers.dart';
 import 'package:uniconnect/features/communication/realtime/chat_signal_source.dart';
 import 'package:uniconnect/features/communication/realtime/conversation_sync.dart';
+import 'package:uniconnect/features/teacher/providers/class_students_provider.dart';
 import 'package:uniconnect/features/teacher/providers/teacher_activity_provider.dart';
 import 'package:uniconnect/features/teacher/services/teacher_activity_service.dart';
 
