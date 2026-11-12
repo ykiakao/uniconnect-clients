@@ -57,7 +57,7 @@ void main() {
       ],
     );
 
-    expect(find.text('UniConnect'), findsOneWidget);
+    expect(find.bySemanticsLabel('UniConnect'), findsOneWidget);
     expect(find.text('Entrar'), findsOneWidget);
     expect(find.text('aluno@uni.com'), findsNothing);
 

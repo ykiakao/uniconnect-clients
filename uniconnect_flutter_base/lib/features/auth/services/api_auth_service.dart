@@ -39,6 +39,12 @@ class ApiAuthService {
     return _sessionFromResponse(response, tenantSlug);
   }
 
+  /// Always answers the same way, so it never reveals whether an account
+  /// exists for [email].
+  Future<void> requestPasswordRecovery(String email) async {
+    await _apiClient.post('/auth/password/recovery', {'email': email});
+  }
+
   Future<AuthSession> refresh(String refreshToken,
       {required String tenantSlug}) async {
     final response = await _apiClient.post(

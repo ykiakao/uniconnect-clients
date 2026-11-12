@@ -259,12 +259,14 @@ void main() {
           sessionStorageProvider.overrideWithValue(storage),
           activitiesProvider.overrideWith((ref) async => [demoActivity]),
           activityByIdProvider.overrideWith((ref, id) async => demoActivity),
-          studentReportOfferingsProvider.overrideWith((ref, session) async => []),
+          studentReportOfferingsProvider
+              .overrideWith((ref, session) async => []),
           teacherOfferingsProvider.overrideWith((ref) async => const [
-            TeacherOffering(id: 'class-1', name: 'Oferta docente'),
-          ]),
+                TeacherOffering(id: 'class-1', name: 'Oferta docente'),
+              ]),
           teacherActivitiesProvider.overrideWith((ref, classId) async => []),
-          teacherActivityPreviewProvider.overrideWith((ref, classId) async => (rows: <TeacherActivity>[], total: 0)),
+          teacherActivityPreviewProvider.overrideWith(
+              (ref, classId) async => (rows: <TeacherActivity>[], total: 0)),
           subjectGradesProvider.overrideWith((ref) async => []),
         ],
         child: const UniConnectApp(),
@@ -342,19 +344,18 @@ void main() {
               .destinations
               .cast<NavigationDestination>()
               .map((tab) => tab.label),
-          ['Início', 'Atividades acadêmicas', 'Chat', 'Notas'],
+          ['Início', 'Atividades', 'Chat', 'Notas'],
         );
         await tester
             .tap(find.descendant(of: teacherBar, matching: find.text('Chat')));
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherChat);
         expect(find.byTooltip('Meu perfil'), findsOneWidget);
-        await tester.tap(find.descendant(
-            of: teacherBar, matching: find.text('Atividades acadêmicas')));
+        await tester.tap(
+            find.descendant(of: teacherBar, matching: find.text('Atividades')));
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherActivities);
-        await tester
-            .tap(find.widgetWithText(FilledButton, 'Criar atividade'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Criar atividade'));
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherCreateActivity);
         await tester.tap(find.byTooltip('Retornar'));
@@ -370,6 +371,7 @@ void main() {
           await tester.tap(find.text(label));
           await tester.pumpAndSettle();
         }
+
         await openShortcut('Criar atividade');
         expect(currentLocation(), AppRoutes.teacherCreateActivity);
         await tester.tap(find.byTooltip('Retornar'));
@@ -380,8 +382,8 @@ void main() {
         expect(find.text('Provas N1/N2'), findsOneWidget);
         await tester.tap(find.byTooltip('Retornar'));
         await tester.pumpAndSettle();
-        await tester.tap(find.descendant(
-            of: teacherBar, matching: find.text('Início')));
+        await tester.tap(
+            find.descendant(of: teacherBar, matching: find.text('Início')));
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherDashboard);
         await tester.tap(find.byTooltip('Meu perfil'));

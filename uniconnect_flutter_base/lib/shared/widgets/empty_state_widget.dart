@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import 'app_card.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   const EmptyStateWidget({
@@ -21,43 +22,64 @@ class EmptyStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return StateLayout(
+      tile: IconTile(icon: icon, size: 48),
+      title: title,
+      message: subtitle,
+      action: action != null && actionLabel != null
+          ? ElevatedButton(onPressed: action, child: Text(actionLabel!))
+          : null,
+    );
+  }
+}
+
+/// Centered icon, title, message and optional action: shared by the empty
+/// and error states.
+class StateLayout extends StatelessWidget {
+  const StateLayout({
+    super.key,
+    required this.tile,
+    required this.title,
+    required this.message,
+    this.action,
+  });
+
+  final Widget tile;
+  final String title;
+  final String message;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Center(
       child: SingleChildScrollView(
-          child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 64,
-              color: AppColors.primary.withValues(alpha: 0.3),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                tile,
+                const SizedBox(height: AppSpacing.md),
+                Text(title,
+                    style: text.titleMedium, textAlign: TextAlign.center),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  message,
+                  style: text.bodyMedium?.copyWith(color: AppColors.inkMuted),
+                  textAlign: TextAlign.center,
+                ),
+                if (action != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  action!,
+                ],
+              ],
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            if (action != null && actionLabel != null) ...[
-              const SizedBox(height: AppSpacing.lg),
-              ElevatedButton(
-                onPressed: action,
-                child: Text(actionLabel!),
-              ),
-            ],
-          ],
+          ),
         ),
-      )),
+      ),
     );
   }
 }

@@ -158,11 +158,18 @@ void main() {
     expect(find.text('Exibindo 1 de 5 atividade(s)'), findsOneWidget);
     expect(find.text('Pesquisa de História'), findsOneWidget);
     expect(find.text('Pesquisa de Cálculo'), findsNothing);
+    // The selectors scrolled the list; bring the search field back first.
+    await tester.ensureVisible(find.byType(TextField, skipOffstage: false));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'sem correspondência');
     tester.testTextInput.hide();
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Limpar filtros'));
+    // ensureVisible scrolls without a frame; settle before tapping.
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Limpar filtros'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.textContaining('Exibindo'));
     await tester.pumpAndSettle();
     expect(find.text('Exibindo 5 de 5 atividade(s)'), findsOneWidget);
   });

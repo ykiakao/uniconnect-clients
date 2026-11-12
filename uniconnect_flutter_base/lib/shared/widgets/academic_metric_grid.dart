@@ -21,7 +21,8 @@ class AcademicMetricGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = onDark ? Colors.white : AppColors.primary;
+    final foreground = onDark ? Colors.white : AppColors.ink;
+    final iconColor = onDark ? Colors.white : AppColors.primary;
     return LayoutBuilder(builder: (context, constraints) {
       final scale = MediaQuery.textScalerOf(context).scale(1);
       final columns = constraints.maxWidth >= 260 * scale
@@ -45,7 +46,7 @@ class AcademicMetricGrid extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(metric.icon, color: foreground, size: 22),
+                    Icon(metric.icon, color: iconColor, size: 20),
                     const SizedBox(height: AppSpacing.xs),
                     Text(metric.value,
                         style: Theme.of(context)
@@ -55,8 +56,14 @@ class AcademicMetricGrid extends StatelessWidget {
                                 color: foreground,
                                 fontWeight: FontWeight.w700)),
                     Text(metric.label,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: onDark ? Colors.white : AppColors.muted)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            letterSpacing: 0,
+                            fontWeight: FontWeight.w500,
+                            color: onDark
+                                ? const Color(0xCCFFFFFF)
+                                : AppColors.inkMuted)),
                   ],
                 ),
               ),

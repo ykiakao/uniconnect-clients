@@ -11,6 +11,7 @@ import '../../../shared/widgets/academic_content.dart';
 import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -64,7 +65,7 @@ class ProfilePage extends ConsumerWidget {
                 Text(
                   'Configurações',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -73,14 +74,14 @@ class ProfilePage extends ConsumerWidget {
                     style: TextStyle(color: AppColors.muted)),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  secondary: const Icon(Icons.notifications_outlined),
+                  secondary: const Icon(LucideIcons.bell),
                   title: const Text('Notificações'),
                   value: false,
                   onChanged: null,
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  secondary: const Icon(Icons.event_available_outlined),
+                  secondary: const Icon(LucideIcons.calendarCheck),
                   title: const Text('Lembretes de atividades'),
                   value: false,
                   onChanged: null,
@@ -113,21 +114,26 @@ class ProfilePage extends ConsumerWidget {
         child: AcademicContent(
             child: ListView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
+            AppSpacing.pageHorizontal,
             AppSpacing.md,
-            AppSpacing.lg,
+            AppSpacing.pageHorizontal,
             AppSpacing.xl,
           ),
           children: [
             AppCard(
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 32,
-                    backgroundColor: AppColors.primary,
-                    child: Icon(Icons.person, color: Colors.white, size: 34),
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.primaryTint,
+                    child: Text(
+                      _initials(user?.name),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.primary,
+                          ),
+                    ),
                   ),
-                  const SizedBox(width: AppSpacing.lg),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,7 +142,7 @@ class ProfilePage extends ConsumerWidget {
                           user?.name ?? 'Usuário',
                           style:
                               Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w700,
                                   ),
                         ),
                         Text(
@@ -161,12 +167,12 @@ class ProfilePage extends ConsumerWidget {
                       radius: 24,
                       backgroundColor: AppColors.secondarySoft,
                       child: user.tenant.id.isEmpty
-                          ? const Icon(Icons.school_outlined)
+                          ? const Icon(LucideIcons.graduationCap)
                           : Text(
                               user.tenant.initials,
                               style: const TextStyle(
                                 color: AppColors.secondary,
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                     ),
@@ -183,7 +189,7 @@ class ProfilePage extends ConsumerWidget {
                                 .textTheme
                                 .titleMedium
                                 ?.copyWith(
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                 ),
                           ),
                           const SizedBox(height: AppSpacing.xxs),
@@ -204,7 +210,7 @@ class ProfilePage extends ConsumerWidget {
             ],
             if (ref.watch(syntheticDemoEnabledProvider))
               Padding(
-                padding: const EdgeInsets.fromLTRB(4, 0, 4, AppSpacing.md),
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -255,13 +261,14 @@ class ProfilePage extends ConsumerWidget {
             const SizedBox(height: AppSpacing.lg),
             SecondaryButton(
               onPressed: () => _showSettings(context),
-              icon: Icons.settings_outlined,
+              icon: LucideIcons.settings,
               label: 'Configurações',
             ),
             const SizedBox(height: AppSpacing.md),
             DestructiveButton(
+              subtle: true,
               onPressed: () => _handleLogout(context, ref),
-              icon: Icons.logout,
+              icon: LucideIcons.logOut,
               label: 'Sair',
             ),
           ],
@@ -269,6 +276,15 @@ class ProfilePage extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _initials(String? name) {
+  final parts =
+      (name ?? '').trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+  if (parts.isEmpty) return '?';
+  final first = parts.first[0];
+  final last = parts.length > 1 ? parts.last[0] : '';
+  return (first + last).toUpperCase();
 }
 
 class _ProfileInfo extends StatelessWidget {
@@ -280,7 +296,7 @@ class _ProfileInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         children: [
           Expanded(child: Text(label)),
@@ -288,7 +304,7 @@ class _ProfileInfo extends StatelessWidget {
               child: Text(
             value,
             textAlign: TextAlign.end,
-            style: const TextStyle(fontWeight: FontWeight.w800),
+            style: const TextStyle(fontWeight: FontWeight.w700),
           )),
         ],
       ),

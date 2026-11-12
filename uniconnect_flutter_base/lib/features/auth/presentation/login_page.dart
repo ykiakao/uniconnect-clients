@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -11,6 +14,10 @@ import '../../../shared/widgets/status_banner.dart';
 import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
 import '../services/session_storage.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../../shared/widgets/brand_logo.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -122,11 +129,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
             child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.pageHorizontal),
               shrinkWrap: true,
               children: [
                 const SizedBox(height: AppSpacing.xl),
-                const _BrandMark(),
+                const BrandLogo(),
                 const SizedBox(height: AppSpacing.lg),
                 AppCard(
                   padding: const EdgeInsets.all(AppSpacing.lg),
@@ -135,18 +142,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     children: [
                       Text(
                         'SEU AMBIENTE ACADÊMICO',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: .9,
-                            ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: AppColors.primary),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
                         'Bem-vindo de volta',
                         style:
                             Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                 ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
@@ -167,7 +173,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onChanged: (_) => _clearErrorsOnEdit(),
                         decoration: InputDecoration(
                           labelText: 'E-mail institucional',
-                          prefixIcon: const Icon(Icons.email_outlined),
+                          prefixIcon: const Icon(LucideIcons.mail),
                           errorText: _emailError,
                           errorMaxLines: 2,
                         ),
@@ -187,7 +193,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onChanged: (_) => _clearErrorsOnEdit(),
                         decoration: InputDecoration(
                           labelText: 'Senha',
-                          prefixIcon: const Icon(Icons.lock_outline),
+                          prefixIcon: const Icon(LucideIcons.lock),
                           suffixIcon: IconButton(
                             tooltip: _obscurePassword
                                 ? 'Mostrar senha'
@@ -201,8 +207,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   },
                             icon: Icon(
                               _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
+                                  ? LucideIcons.eye
+                                  : LucideIcons.eyeOff,
                             ),
                           ),
                           errorText: _passwordError,
@@ -219,6 +225,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ],
                       if (auth.canRetryRestore && !busy)
                         TextButton(
+                          style: AppButtonStyles.link,
                           onPressed: () {
                             setState(() => _authError = null);
                             ref
@@ -227,26 +234,44 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           },
                           child: const Text('Tentar restaurar sessão'),
                         ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: _isLoading
-                                ? null
-                                : (value) {
-                                    setState(() {
-                                      _rememberMe = value ?? false;
-                                    });
-                                  },
+                      const SizedBox(height: AppSpacing.xs),
+                      // The whole row is the 48px touch target, so the box
+                      // itself can line up with the left edge of the fields.
+                      InkWell(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        onTap: _isLoading
+                            ? null
+                            : () => setState(() => _rememberMe = !_rememberMe),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                              minHeight: AppSizes.touchTarget),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  visualDensity: const VisualDensity(
+                                      horizontal: -4, vertical: -4),
+                                  onChanged: _isLoading
+                                      ? null
+                                      : (value) => setState(
+                                          () => _rememberMe = value ?? false),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              const Expanded(child: Text('Lembrar de mim')),
+                            ],
                           ),
-                          const Expanded(child: Text('Lembrar de mim')),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       PrimaryButton(
                         onPressed: busy ? null : _login,
-                        icon: Icons.login,
+                        icon: LucideIcons.logIn,
                         label: auth.isRestoring
                             ? 'Restaurando...'
                             : _isLoading
@@ -254,14 +279,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 : 'Entrar',
                         isLoading: busy,
                       ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Center(
+                        child: TextButton(
+                          style: AppButtonStyles.link,
+                          onPressed: busy
+                              ? null
+                              : () => GoRouter.maybeOf(context)
+                                  ?.go(AppRoutes.forgotPassword),
+                          child: const Text('Esqueci minha senha'),
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                const Text(
+                Text(
                   'Use as credenciais institucionais para acessar sua rotina acadêmica.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.muted),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.inkMuted),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
@@ -276,42 +315,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _BrandMark extends StatelessWidget {
-  const _BrandMark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 18,
-                offset: Offset(0, 10),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.school, color: Colors.white, size: 38),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'UniConnect',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w900,
-              ),
-        ),
-      ],
     );
   }
 }

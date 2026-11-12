@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
@@ -19,41 +21,81 @@ class StudentAcademicPage extends ConsumerWidget {
     final semester = user?.semester;
     final details = [
       (
+        LucideIcons.landmark,
         'Instituição',
         institution?.id.isNotEmpty == true ? institution?.name : null
       ),
-      ('Matrícula', user?.registration),
-      ('Curso', user?.course),
-      ('Semestre do curso', semester == null ? null : '$semesterº semestre'),
+      (LucideIcons.userRound, 'Matrícula', user?.registration),
+      (LucideIcons.graduationCap, 'Curso', user?.course),
+      (
+        LucideIcons.calendarDays,
+        'Semestre do curso',
+        semester == null ? null : '$semesterº semestre'
+      ),
     ];
+    final text = Theme.of(context).textTheme;
     return Scaffold(
       appBar: const AppHeader(title: 'Acadêmico', showProfile: true),
       bottomNavigationBar: const UniBottomNav(currentIndex: 4),
       body: SafeArea(
         child: AcademicContent(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               const SectionHeader(title: 'Vínculo acadêmico'),
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final (label, value) in details)
+                    for (final (icon, label, value) in details)
                       Padding(
                         padding:
                             const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                        child: Text(
-                            '$label: ${value == null || value.trim().isEmpty ? 'Não informado' : value.trim()}'),
+                        child: Row(
+                          children: [
+                            IconTile(icon: icon, size: 36),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text.rich(TextSpan(children: [
+                                TextSpan(
+                                  text: '$label: ',
+                                  style: text.bodyMedium
+                                      ?.copyWith(color: AppColors.inkMuted),
+                                ),
+                                TextSpan(
+                                  text: value == null || value.trim().isEmpty
+                                      ? 'Não informado'
+                                      : value.trim(),
+                                  style: text.titleSmall,
+                                ),
+                              ])),
+                            ),
+                          ],
+                        ),
                       ),
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               const SectionHeader(title: 'Quadro de horários e calendário'),
-              const AppCard(
-                child: Text(
-                    'Horários e calendário acadêmico ainda indisponíveis.'),
+              AppCard(
+                child: Row(
+                  children: [
+                    const IconTile(
+                      icon: LucideIcons.calendarClock,
+                      color: AppColors.inkMuted,
+                      background: AppColors.surface200,
+                      size: 36,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                          'Horários e calendário acadêmico ainda indisponíveis.',
+                          style: text.bodyMedium
+                              ?.copyWith(color: AppColors.inkMuted)),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

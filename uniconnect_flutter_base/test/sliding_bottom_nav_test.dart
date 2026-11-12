@@ -6,6 +6,7 @@ import 'package:uniconnect/core/theme/app_theme.dart';
 import 'package:uniconnect/shared/widgets/bottom_nav.dart';
 
 import 'layout_quality_test.dart' show captureLayout;
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 Finder get capsule => find.byKey(const ValueKey('nav-sliding-indicator'));
 
@@ -62,11 +63,11 @@ void main() {
     expect(
         end.center.dx,
         closeTo(
-            tester.getRect(find.byIcon(Icons.account_balance_outlined)).center.dx, .5));
+            tester.getRect(find.byIcon(LucideIcons.landmark)).center.dx, .5));
     expect(
         end.center.dy,
         closeTo(
-            tester.getRect(find.byIcon(Icons.account_balance_outlined)).center.dy, .5));
+            tester.getRect(find.byIcon(LucideIcons.landmark)).center.dy, .5));
     await captureLayout(tester, frame, 'sliding-nav-final');
     expect(tester.takeException(), isNull);
   });
@@ -93,7 +94,10 @@ void main() {
     expect(
         tester.getRect(capsule).center.dx,
         closeTo(
-            tester.getRect(find.byIcon(Icons.chat_bubble_outline)).center.dx,
+            tester
+                .getRect(find.byIcon(LucideIcons.messageSquareMore))
+                .center
+                .dx,
             .5));
     expect(tester.binding.hasScheduledFrame, isFalse);
     expect(tester.takeException(), isNull);
@@ -140,8 +144,8 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/atividades');
     expect(
         tester.getRect(capsule).center.dx,
-        closeTo(tester.getRect(find.byIcon(Icons.checklist_outlined)).center.dx,
-            .5));
+        closeTo(
+            tester.getRect(find.byIcon(LucideIcons.listChecks)).center.dx, .5));
     router.push('/perfil');
     await tester.pumpAndSettle();
     router.pop();
@@ -150,8 +154,8 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/atividades');
     expect(
         tester.getRect(capsule).center.dx,
-        closeTo(tester.getRect(find.byIcon(Icons.checklist_outlined)).center.dx,
-            .5));
+        closeTo(
+            tester.getRect(find.byIcon(LucideIcons.listChecks)).center.dx, .5));
     expect(tester.takeException(), isNull);
   });
 
@@ -181,7 +185,7 @@ void main() {
     expect(
         tester.getRect(capsule).center.dx,
         closeTo(
-            tester.getRect(find.byIcon(Icons.account_balance_outlined)).center.dx, .5));
+            tester.getRect(find.byIcon(LucideIcons.landmark)).center.dx, .5));
     expect(
         tester
             .widget<NavigationBar>(find.byType(NavigationBar))
@@ -210,7 +214,7 @@ void main() {
                       bottomNavigationBar: UniBottomNav(currentIndex: 4))))));
       await tester.pumpAndSettle();
       final rect = tester.getRect(capsule);
-      final icon = tester.getRect(find.byIcon(Icons.account_balance_outlined));
+      final icon = tester.getRect(find.byIcon(LucideIcons.landmark));
       expect(rect.center.dx, closeTo(icon.center.dx, .5));
       expect(rect.center.dy, closeTo(icon.center.dy, .5));
       expect(rect.left, greaterThanOrEqualTo(16));

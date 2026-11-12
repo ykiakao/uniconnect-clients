@@ -278,7 +278,7 @@ void main() {
                 .endsWith('/tenants/other-campus/activities/$activityId'))
             .map((call) => call.$2),
         ['Bearer new-token']);
-    expect(find.text('Tentar Novamente'), findsOneWidget);
+    expect(find.text('Tentar novamente'), findsOneWidget);
     expect(find.byType(TextFormField), findsNothing);
   });
 

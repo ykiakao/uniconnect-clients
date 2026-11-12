@@ -19,6 +19,7 @@ import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
 import '../providers/student_submission_provider.dart';
 import '../widgets/activity_card.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ActivitiesPage extends ConsumerStatefulWidget {
   const ActivitiesPage({super.key});
@@ -175,9 +176,9 @@ class _ActivitiesContent extends StatelessWidget {
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
+          AppSpacing.pageHorizontal,
           AppSpacing.md,
-          AppSpacing.lg,
+          AppSpacing.pageHorizontal,
           AppSpacing.xl,
         ),
         children: [
@@ -185,7 +186,7 @@ class _ActivitiesContent extends StatelessWidget {
             title: 'Organizado por prioridade',
             message:
                 'Consulte os prazos por disciplina. Use a busca e os filtros para organizar sua rotina.',
-            icon: Icons.priority_high,
+            icon: LucideIcons.flag,
           ),
           const SizedBox(height: AppSpacing.lg),
           TextField(
@@ -193,57 +194,29 @@ class _ActivitiesContent extends StatelessWidget {
             onChanged: onSearchChanged,
             decoration: InputDecoration(
               hintText: 'Buscar por atividade, disciplina ou professor...',
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(LucideIcons.search),
               suffixIcon: searchQuery.isNotEmpty
                   ? IconButton(
                       tooltip: 'Limpar busca',
-                      icon: const Icon(Icons.clear),
+                      icon: const Icon(LucideIcons.x),
                       onPressed: onClearFilters,
                     )
                   : null,
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SegmentedButton<ActivityPriority?>(
-              selected: {priorityFilter},
-              onSelectionChanged: (selection) {
-                onPriorityChanged(selection.first);
-              },
-              segments: const [
-                ButtonSegment(
-                  value: null,
-                  label: Text('Todas'),
-                  icon: Icon(Icons.all_inbox_outlined),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final (value, label) in _priorityFilters)
+                ChoiceChip(
+                  label: Text(label),
+                  showCheckmark: false,
+                  selected: priorityFilter == value,
+                  onSelected: (_) => onPriorityChanged(value),
                 ),
-                ButtonSegment(
-                  value: ActivityPriority.critical,
-                  label: Text('Críticas'),
-                  icon: Icon(Icons.priority_high),
-                ),
-                ButtonSegment(
-                  value: ActivityPriority.medium,
-                  label: Text('Médias'),
-                  icon: Icon(Icons.schedule),
-                ),
-                ButtonSegment(
-                  value: ActivityPriority.low,
-                  label: Text('Baixas'),
-                  icon: Icon(Icons.check_circle_outline),
-                ),
-                ButtonSegment(
-                  value: ActivityPriority.expired,
-                  label: Text('Expiradas'),
-                  icon: Icon(Icons.event_busy_outlined),
-                ),
-                ButtonSegment(
-                  value: ActivityPriority.noDeadline,
-                  label: Text('Sem prazo'),
-                  icon: Icon(Icons.event_outlined),
-                ),
-              ],
-            ),
+            ],
           ),
           if (allActivities.isNotEmpty)
             ExpansionTile(
@@ -278,7 +251,7 @@ class _ActivitiesContent extends StatelessWidget {
                   message:
                       'Combine a busca com filtros de prazo, disciplina e situação da atividade.',
                   child: Icon(
-                    Icons.filter_alt_outlined,
+                    LucideIcons.funnel,
                     color: AppColors.primary,
                   ),
                 ),
@@ -298,7 +271,7 @@ class _ActivitiesContent extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           if (filteredCount == 0)
             EmptyStateWidget(
-              icon: Icons.checklist_outlined,
+              icon: LucideIcons.listChecks,
               title: 'Nenhuma atividade encontrada',
               subtitle: allActivities.isEmpty
                   ? 'Não há atividades disponíveis para consulta neste momento.'
@@ -420,3 +393,12 @@ class _ActivityGroup extends StatelessWidget {
     );
   }
 }
+
+const _priorityFilters = <(ActivityPriority?, String)>[
+  (null, 'Todas'),
+  (ActivityPriority.critical, 'Críticas'),
+  (ActivityPriority.medium, 'Médias'),
+  (ActivityPriority.low, 'Baixas'),
+  (ActivityPriority.expired, 'Expiradas'),
+  (ActivityPriority.noDeadline, 'Sem prazo'),
+];

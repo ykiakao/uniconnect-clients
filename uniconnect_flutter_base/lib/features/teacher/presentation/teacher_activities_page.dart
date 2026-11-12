@@ -6,6 +6,10 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_tokens.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
@@ -20,6 +24,7 @@ import '../services/teacher_activity_service.dart';
 import '../widgets/teacher_offering_picker.dart';
 import '../widgets/teacher_work_draft_dialog.dart';
 import '../widgets/teacher_work_submissions.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class TeacherActivitiesPage extends ConsumerWidget {
   const TeacherActivitiesPage({super.key});
@@ -70,6 +75,10 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
     ref.invalidate(teacherActivityPreviewProvider(classId));
   }
 
+  /// Feedback sits above the scrolling list, so it stays visible without
+  /// covering the actions at the end of it.
+  void _announce(String message) => setState(() => _notice = message);
+
   bool _authorized(TeacherActivity work) =>
       ref.read(selectedTeacherClassIdProvider) == work.classId &&
       ref.read(teacherActivitiesProvider(work.classId)).asData?.value.any(
@@ -118,13 +127,13 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
         await service.publish(work);
       }
       if (!mounted || ref.read(teacherNotesSessionProvider) != session) return;
-      setState(() => _notice = close
+      _announce(close
           ? 'Encerramento confirmado pela API.'
           : 'Publicação confirmada pela API.');
       _reload(work.classId);
     } catch (error) {
       if (!mounted || ref.read(teacherNotesSessionProvider) != session) return;
-      setState(() => _notice = teacherReviewError(error));
+      _announce(teacherReviewError(error));
       _reload(work.classId);
       if (error is ApiException && [403, 404].contains(error.statusCode)) {
         ref.invalidate(teacherOfferingsProvider);
@@ -142,7 +151,7 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
       builder: (_) => TeacherWorkDraftDialog(work: work),
     );
     if (!mounted || saved != true) return;
-    setState(() => _notice = 'Edição do rascunho confirmada pela API.');
+    _announce('Edição do rascunho confirmada pela API.');
     _reload(work.classId);
   }
 
@@ -152,17 +161,28 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
     final workList =
         classId == null ? null : ref.watch(teacherActivitiesProvider(classId));
     final activityId = _activityId;
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+    final notice = classId == null ? null : _notice;
+    final list = ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pageHorizontal,
+        AppSpacing.pageTop,
+        AppSpacing.pageHorizontal,
+        AppSpacing.pageBottom,
+      ),
       children: [
         if (activityId == null)
           TeacherOfferingPicker(enabled: !_busy)
         else
-          TextButton(
-            onPressed: () => setState(() => _activityId = null),
-            child: const Text('Voltar aos trabalhos'),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              style: AppButtonStyles.link,
+              onPressed: () => setState(() => _activityId = null),
+              child: const Text('Voltar aos trabalhos'),
+            ),
           ),
-        if (activityId == null)
+        if (activityId == null) ...[
+          const SizedBox(height: AppSpacing.sm),
           FilledButton(
             onPressed: classId == null || _busy
                 ? null
@@ -170,8 +190,8 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
                     ?.push(AppRoutes.teacherCreateActivity),
             child: const Text('Criar atividade'),
           ),
-        if (_notice != null && classId != null)
-          Semantics(liveRegion: true, child: Text(_notice!)),
+        ],
+        const SizedBox(height: AppSpacing.md),
         if (_busy)
           const LinearProgressIndicator(semanticsLabel: 'Atualizando trabalho'),
         if (workList != null)
@@ -185,6 +205,7 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
                 Text(
                     'Não foi possível consultar os trabalhos. ${teacherReviewError(error)}'),
                 TextButton(
+                  style: AppButtonStyles.link,
                   onPressed: () => _reload(classId!),
                   child: const Text('Tentar novamente'),
                 ),
@@ -225,41 +246,102 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
           ),
       ],
     );
+    return Column(
+      children: [
+        if (notice != null)
+          Semantics(
+            liveRegion: true,
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(
+                AppSpacing.pageHorizontal,
+                AppSpacing.sm,
+                AppSpacing.pageHorizontal,
+                0,
+              ),
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.primaryTint,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Text(notice, style: Theme.of(context).textTheme.bodySmall),
+            ),
+          ),
+        Expanded(child: list),
+      ],
+    );
   }
 
   Widget _card(TeacherActivity work) {
+    final text = Theme.of(context).textTheme;
     final deadline = work.dueDate?.toLocal();
     final expired = deadline?.isBefore(DateTime.now()) == true;
+    final stateTone = switch (work.state) {
+      'published' => AppBadgeTone.success,
+      'draft' => AppBadgeTone.neutral,
+      _ => AppBadgeTone.warning,
+    };
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(work.title, style: Theme.of(context).textTheme.titleMedium),
-          Text(work.stateLabel),
-          if (work.assessment case final assessment?) Text(assessment.label),
-          if (deadline != null)
-            Text('Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(deadline)}')
-          else
-            const Text('Sem prazo informado'),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Text(work.title, style: text.titleMedium)),
+              const SizedBox(width: AppSpacing.xs),
+              AppBadge(label: work.stateLabel, tone: stateTone),
+            ],
+          ),
+          if (work.assessment case final assessment?)
+            Text(assessment.label,
+                style: text.bodySmall?.copyWith(color: AppColors.inkMuted)),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              const Icon(LucideIcons.calendar,
+                  size: 16, color: AppColors.inkMuted),
+              const SizedBox(width: AppSpacing.xxs),
+              Expanded(
+                child: Text(
+                  deadline != null
+                      ? 'Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(deadline)}'
+                      : 'Sem prazo informado',
+                  style: text.bodySmall?.copyWith(color: AppColors.inkMuted),
+                ),
+              ),
+            ],
+          ),
           if (expired && work.state == 'published')
-            Text(work.allowLate
-                ? 'Prazo vencido • Aceita entrega em atraso'
-                : 'Prazo vencido • Envio indisponível'),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xxs),
+              child: Text(
+                work.allowLate
+                    ? 'Prazo vencido • Aceita entrega em atraso'
+                    : 'Prazo vencido • Envio indisponível',
+                style: text.bodySmall?.copyWith(color: AppColors.warning),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.sm),
           Wrap(
-            spacing: AppSpacing.sm,
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
             children: [
               if (work.isWorkDraft) ...[
                 TextButton(
-                  onPressed: _busy ? null : () => _edit(work),
-                  child: const Text('Editar rascunho'),
-                ),
-                TextButton(
+                  style: AppButtonStyles.compact(),
                   onPressed: _busy ? null : () => _transition(work),
                   child: const Text('Publicar atividade'),
+                ),
+                TextButton(
+                  style: AppButtonStyles.compact(),
+                  onPressed: _busy ? null : () => _edit(work),
+                  child: const Text('Editar rascunho'),
                 ),
               ],
               if (work.hasSubmissions)
                 TextButton(
+                  style: AppButtonStyles.compact(),
                   onPressed: _busy
                       ? null
                       : () => setState(() => _activityId = work.id),
@@ -267,6 +349,7 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
                 ),
               if (work.canCloseWork)
                 TextButton(
+                  style: AppButtonStyles.compact(foreground: AppColors.danger),
                   onPressed:
                       _busy ? null : () => _transition(work, close: true),
                   child: const Text('Encerrar trabalho'),

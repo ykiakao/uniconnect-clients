@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
+
 import 'app_card.dart';
 
 class SkeletonLoader extends StatefulWidget {
@@ -37,9 +39,9 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.grey[300]!,
-            Colors.grey[100]!,
-            Colors.grey[300]!,
+            AppColors.surface200,
+            AppColors.surfaceRaised,
+            AppColors.surface200,
           ],
           stops: [
             _controller.value - 0.3,
@@ -50,7 +52,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
         ).createShader(bounds);
       },
       child: Container(
-        color: Colors.grey[300],
+        color: AppColors.surface200,
         child: widget.child,
       ),
     );
@@ -71,7 +73,7 @@ class ActivityCardSkeleton extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: Container(
                 height: 16,
-                color: Colors.grey[300],
+                color: AppColors.surface200,
               ),
             ),
             const SizedBox(height: 8),
@@ -80,7 +82,7 @@ class ActivityCardSkeleton extends StatelessWidget {
               child: Container(
                 height: 12,
                 width: double.infinity,
-                color: Colors.grey[300],
+                color: AppColors.surface200,
               ),
             ),
             const SizedBox(height: 8),
@@ -89,7 +91,7 @@ class ActivityCardSkeleton extends StatelessWidget {
               child: Container(
                 height: 12,
                 width: 200,
-                color: Colors.grey[300],
+                color: AppColors.surface200,
               ),
             ),
           ],

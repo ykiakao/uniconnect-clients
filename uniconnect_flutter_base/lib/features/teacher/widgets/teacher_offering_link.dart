@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class TeacherOfferingLink extends ConsumerStatefulWidget {
   const TeacherOfferingLink({
@@ -57,7 +58,8 @@ class _TeacherOfferingLinkState extends ConsumerState<TeacherOfferingLink> {
     _resolving = true;
     try {
       final guard = ref.read(teacherDraftGuardProvider);
-      final confirm = guard.confirmReviewExit ?? guard.confirmWorkExit ?? guard.confirmExit;
+      final confirm =
+          guard.confirmReviewExit ?? guard.confirmWorkExit ?? guard.confirmExit;
       final accepted =
           original == classId || confirm == null || await confirm();
       if (!mounted ||
@@ -130,6 +132,7 @@ class _TeacherOfferingLinkState extends ConsumerState<TeacherOfferingLink> {
                         const Text(
                             'Não foi possível validar a oferta do link.'),
                         TextButton(
+                          style: AppButtonStyles.link,
                           onPressed: () =>
                               ref.invalidate(teacherOfferingsProvider),
                           child: const Text('Tentar novamente'),

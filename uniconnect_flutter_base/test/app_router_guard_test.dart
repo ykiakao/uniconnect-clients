@@ -172,4 +172,40 @@ void main() {
 
     expect(redirect, AppRoutes.teacherDashboard);
   });
+
+  test('recovery is public and the notice form is only for teachers', () {
+    expect(
+        computeRedirect(
+          isRestoring: false,
+          isAuthenticated: false,
+          userRole: null,
+          location: AppRoutes.forgotPassword,
+        ),
+        isNull);
+    expect(
+        computeRedirect(
+          isRestoring: false,
+          isAuthenticated: true,
+          userRole: UserRole.student,
+          location: AppRoutes.noticeNew,
+        ),
+        AppRoutes.studentDashboard);
+    for (final role in UserRole.values) {
+      for (final path in [
+        AppRoutes.notices,
+        '/avisos/notice-1',
+        AppRoutes.notifications,
+      ]) {
+        expect(
+            computeRedirect(
+              isRestoring: false,
+              isAuthenticated: true,
+              userRole: role,
+              location: path,
+            ),
+            isNull,
+            reason: '$role $path');
+      }
+    }
+  });
 }

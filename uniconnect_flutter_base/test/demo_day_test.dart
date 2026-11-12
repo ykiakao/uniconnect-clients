@@ -94,7 +94,7 @@ void main() {
     await tester.tap(find.text('Médias'));
     await tester.pumpAndSettle();
     expect(find.text('Pesquisa aplicada'), findsOneWidget);
-    expect(find.text('MÉDIA'), findsOneWidget);
+    expect(find.text('Média'), findsOneWidget);
 
     now = now.add(const Duration(seconds: 1));
     ProviderScope.containerOf(tester.element(find.byType(ActivitiesPage)))
@@ -105,7 +105,7 @@ void main() {
     await tester.tap(find.text('Críticas'));
     await tester.pumpAndSettle();
     expect(find.text('Pesquisa aplicada'), findsOneWidget);
-    expect(find.text('CRÍTICA'), findsOneWidget);
+    expect(find.text('Crítica'), findsOneWidget);
   });
   testWidgets('student dashboard uses session and API agenda without fixed GPA',
       (tester) async {
@@ -155,9 +155,9 @@ void main() {
     ]);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-        find.text('Tentar Novamente').hitTestable(), 150,
+        find.text('Tentar novamente').hitTestable(), 150,
         scrollable: find.byType(Scrollable).first);
-    await tester.tap(find.text('Tentar Novamente'));
+    await tester.tap(find.text('Tentar novamente'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
         find.text('Pesquisa aplicada').hitTestable(), 200,

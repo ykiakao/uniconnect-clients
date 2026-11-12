@@ -9,6 +9,7 @@ import '../providers/teacher_review_provider.dart';
 import '../services/teacher_activity_service.dart';
 import '../services/teacher_review_service.dart';
 import 'teacher_review_editor.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class TeacherWorkSubmissions extends ConsumerWidget {
   const TeacherWorkSubmissions({super.key, required this.work});
@@ -25,6 +26,7 @@ class TeacherWorkSubmissions extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextButton(
+          style: AppButtonStyles.link,
           onPressed: () {
             ref.invalidate(submissions);
             if (enrolled != null) ref.invalidate(enrollments);
@@ -58,6 +60,7 @@ class TeacherWorkSubmissions extends ConsumerWidget {
                           if (submission.isLate)
                             const Text('Entrega registrada com atraso'),
                           TextButton(
+                            style: AppButtonStyles.compact(),
                             onPressed: () => _open(context, ref, submission),
                             child: const Text('Abrir entrega'),
                           ),
@@ -169,7 +172,10 @@ class _LookupError extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(message),
-          TextButton(onPressed: retry, child: const Text('Tentar novamente')),
+          TextButton(
+              style: AppButtonStyles.link,
+              onPressed: retry,
+              child: const Text('Tentar novamente')),
         ],
       );
 }

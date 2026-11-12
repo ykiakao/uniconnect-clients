@@ -11,6 +11,7 @@ import 'package:uniconnect/features/academic/demo/synthetic_academic_providers.d
 import 'package:uniconnect/features/auth/models/app_user.dart';
 import 'package:uniconnect/features/auth/providers/auth_provider.dart';
 import 'package:uniconnect/features/auth/services/api_auth_service.dart';
+import 'package:uniconnect/features/communication/providers/communication_providers.dart';
 import 'package:uniconnect/features/grades/presentation/grades_page.dart';
 import 'package:uniconnect/features/tenant/models/tenant_context.dart';
 
@@ -69,6 +70,8 @@ Future<AuthController> _mount(WidgetTester tester,
       authControllerProvider.overrideWith((ref) => auth),
       apiClientProvider.overrideWithValue(client),
       syntheticDemoRequestedProvider.overrideWithValue(false),
+      // The header bell is not under test; keep its request out of the log.
+      unreadNotificationsProvider.overrideWith((ref) async => 0),
     ],
     child: MaterialApp(
       home: showGrades == null
@@ -291,7 +294,7 @@ void main() {
       await _select(tester, 'Métodos');
       expect(find.text(message), findsOneWidget);
       expect(find.textContaining('private'), findsNothing);
-      await tester.tap(find.text('Tentar Novamente'));
+      await tester.tap(find.text('Tentar novamente'));
       await tester.pumpAndSettle();
       expect(find.text('Oferta sem avaliações no boletim'), findsOneWidget);
     });

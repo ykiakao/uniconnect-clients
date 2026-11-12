@@ -14,6 +14,8 @@ import '../services/teacher_activity_service.dart';
 import '../services/teacher_assessment.dart';
 import '../widgets/assessment_fields.dart';
 import '../widgets/teacher_offering_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class CreateActivityPage extends ConsumerWidget {
   const CreateActivityPage({super.key});
@@ -362,7 +364,7 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
         child: ListView(
             controller: _scroll,
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.all(AppSpacing.pageHorizontal),
             children: [
               Text('Criar atividade',
                   style: Theme.of(context).textTheme.headlineSmall),
@@ -378,7 +380,7 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                         TextStyle(color: Theme.of(context).colorScheme.error)),
               TextButton.icon(
                   onPressed: _busy ? null : _refresh,
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(LucideIcons.refreshCw),
                   label: const Text('Atualizar ofertas e atividades')),
               AppCard(
                   child: Form(
@@ -408,12 +410,13 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                             ),
                             OutlinedButton.icon(
                                 onPressed: _busy ? null : _pickDate,
-                                icon: const Icon(Icons.event),
+                                icon: const Icon(LucideIcons.calendar),
                                 label: Text(_due == null
                                     ? 'Definir prazo (opcional)'
                                     : 'Prazo local: ${_due!.toLocal()}')),
                             if (_due != null)
                               TextButton(
+                                  style: AppButtonStyles.link,
                                   onPressed: _busy
                                       ? null
                                       : () => setState(() => _due = null),
@@ -435,7 +438,7 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                         offerings.hasError
                                     ? null
                                     : _save,
-                                icon: const Icon(Icons.save_outlined),
+                                icon: const Icon(LucideIcons.save),
                                 label: Text(
                                     _busy ? 'Aguarde...' : 'Salvar rascunho')),
                           ]))),
@@ -495,8 +498,8 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                                     .read(
                                                         teacherActivityServiceProvider)
                                                     .publish(activity)),
-                                            icon: const Icon(
-                                                Icons.publish_outlined),
+                                            icon:
+                                                const Icon(LucideIcons.upload),
                                             label: const Text(
                                                 'Publicar atividade')),
                                     ])),

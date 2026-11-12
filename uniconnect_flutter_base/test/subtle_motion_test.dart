@@ -8,7 +8,6 @@ import 'package:uniconnect/features/activities/presentation/activities_page.dart
 import 'package:uniconnect/core/router/app_route_transition_page.dart';
 import 'package:uniconnect/core/theme/app_theme.dart';
 import 'package:uniconnect/features/activities/providers/activity_provider.dart';
-import 'package:uniconnect/features/activities/models/academic_activity.dart';
 import 'package:uniconnect/features/auth/providers/auth_provider.dart';
 import 'package:uniconnect/features/auth/services/api_auth_service.dart';
 import 'package:uniconnect/features/grades/providers/grades_provider.dart';
@@ -19,6 +18,7 @@ import 'demo_day_test.dart' show demoActivity;
 import 'fakes/fake_auth_service.dart';
 import 'fakes/fake_session_storage.dart';
 import 'layout_quality_test.dart' show captureLayout;
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 NavigationBar nav(WidgetTester tester) =>
     tester.widget<NavigationBar>(find.byType(NavigationBar));
@@ -65,28 +65,28 @@ void main() {
                       UniBottomNav(currentIndex: index.value))),
         )));
     expect(nav(tester).animationDuration, const Duration(milliseconds: 350));
-    expect(activeScale(tester, Icons.dashboard_outlined), closeTo(1, .001));
+    expect(activeScale(tester, LucideIcons.house), closeTo(1, .001));
     final bounds = tester.getRect(find.byType(NavigationBar));
     index.value = 1;
     await tester.pump();
-    expect(activeScale(tester, Icons.checklist_outlined), closeTo(.96, .001));
+    expect(activeScale(tester, LucideIcons.listChecks), closeTo(.96, .001));
     await tester.pump(const Duration(milliseconds: 80));
-    expect(activeScale(tester, Icons.checklist_outlined),
-        inExclusiveRange(.96, 1));
+    expect(
+        activeScale(tester, LucideIcons.listChecks), inExclusiveRange(.96, 1));
     expect(nav(tester).indicatorColor, Colors.transparent);
     final selected =
         nav(tester).labelTextStyle!.resolve({WidgetState.selected})!;
     expect(selected.color, isNot(AppTheme.lightTheme.colorScheme.primary));
     await captureLayout(tester, frame, 'motion-navigation-mid');
     await tester.pumpAndSettle();
-    expect(activeScale(tester, Icons.checklist_outlined), closeTo(1, .001));
+    expect(activeScale(tester, LucideIcons.listChecks), closeTo(1, .001));
     expect(nav(tester).labelTextStyle!.resolve({WidgetState.selected})!.color,
         AppTheme.lightTheme.colorScheme.primary);
     expect(tester.getRect(find.byType(NavigationBar)), bounds);
     await captureLayout(tester, frame, 'motion-navigation-selected');
     redraw.value++;
     await tester.pump();
-    expect(activeScale(tester, Icons.checklist_outlined), closeTo(1, .001));
+    expect(activeScale(tester, LucideIcons.listChecks), closeTo(1, .001));
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
 
@@ -127,7 +127,7 @@ void main() {
                     )),
           )));
       expect(nav(tester).animationDuration, Duration.zero);
-      expect(activeScale(tester, Icons.checklist_outlined), closeTo(1, .001));
+      expect(activeScale(tester, LucideIcons.listChecks), closeTo(1, .001));
       expect(nav(tester).indicatorColor, Colors.transparent);
       final indicator = tester.widget<DecoratedBox>(
           find.byKey(const ValueKey('nav-sliding-indicator')));
@@ -223,9 +223,9 @@ void main() {
     await tester.tap(input);
     await tester.enterText(input, 'Pesquisa');
     await tester.pumpAndSettle();
-    final filter = tester.widget<SegmentedButton<ActivityPriority?>>(
-        find.byType(SegmentedButton<ActivityPriority?>));
-    filter.onSelectionChanged!({ActivityPriority.critical});
+    await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'Críticas'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Críticas'));
     await tester.pumpAndSettle();
     final pageState = tester.state(find.byType(ActivitiesPage));
     await tester.scrollUntilVisible(
@@ -241,10 +241,9 @@ void main() {
         'Pesquisa');
     expect(
         tester
-            .widget<SegmentedButton<ActivityPriority?>>(
-                find.byType(SegmentedButton<ActivityPriority?>))
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Críticas'))
             .selected,
-        {ActivityPriority.critical});
+        isTrue);
     expect(tester.state(find.byType(ActivitiesPage)), same(pageState));
     final router = GoRouter.of(tester.element(find.byType(UniBottomNav)));
     for (final route in [

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class UniBottomNav extends StatefulWidget {
   const UniBottomNav(
@@ -13,41 +14,42 @@ class UniBottomNav extends StatefulWidget {
 
   static const _studentDestinations = [
     NavigationDestination(
-      icon: Icon(Icons.dashboard_outlined),
-      selectedIcon: Icon(Icons.dashboard_outlined),
+      icon: Icon(LucideIcons.house),
+      selectedIcon: Icon(LucideIcons.house),
       label: 'Início',
     ),
     NavigationDestination(
-      icon: Icon(Icons.checklist_outlined),
-      selectedIcon: Icon(Icons.checklist_outlined),
+      icon: Icon(LucideIcons.listChecks),
+      selectedIcon: Icon(LucideIcons.listChecks),
       label: 'Atividades',
     ),
     NavigationDestination(
-      icon: Icon(Icons.chat_bubble_outline),
-      selectedIcon: Icon(Icons.chat_bubble_outline),
+      icon: Icon(LucideIcons.messageSquareMore),
+      selectedIcon: Icon(LucideIcons.messageSquareMore),
       label: 'Chat',
     ),
     NavigationDestination(
-      icon: Icon(Icons.school_outlined),
-      selectedIcon: Icon(Icons.school_outlined),
+      icon: Icon(LucideIcons.graduationCap),
+      selectedIcon: Icon(LucideIcons.graduationCap),
       label: 'Notas',
     ),
     NavigationDestination(
-      icon: Icon(Icons.account_balance_outlined),
-      selectedIcon: Icon(Icons.account_balance_outlined),
+      icon: Icon(LucideIcons.landmark),
+      selectedIcon: Icon(LucideIcons.landmark),
       label: 'Acadêmico',
     ),
   ];
 
   static const _teacherDestinations = [
+    NavigationDestination(icon: Icon(LucideIcons.house), label: 'Início'),
     NavigationDestination(
-        icon: Icon(Icons.dashboard_outlined), label: 'Início'),
-    NavigationDestination(
-      icon: Icon(Icons.checklist_outlined),
-      label: 'Atividades acadêmicas',
+      icon: Icon(LucideIcons.listChecks),
+      label: 'Atividades',
     ),
-    NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
-    NavigationDestination(icon: Icon(Icons.school_outlined), label: 'Notas'),
+    NavigationDestination(
+        icon: Icon(LucideIcons.messageSquareMore), label: 'Chat'),
+    NavigationDestination(
+        icon: Icon(LucideIcons.graduationCap), label: 'Notas'),
   ];
 
   static const _studentRoutes = [

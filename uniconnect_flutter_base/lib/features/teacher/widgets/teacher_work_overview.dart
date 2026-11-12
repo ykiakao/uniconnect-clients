@@ -8,6 +8,7 @@ import '../../../shared/widgets/section_header.dart';
 import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_review_provider.dart';
 import '../services/teacher_activity_service.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class TeacherWorkOverview extends ConsumerWidget {
   const TeacherWorkOverview({super.key, required this.classId});
@@ -29,6 +30,7 @@ class TeacherWorkOverview extends ConsumerWidget {
               Text(
                   'Resumo da oferta indisponível. ${teacherReviewError(error)}'),
               TextButton(
+                style: AppButtonStyles.link,
                 onPressed: () => ref.invalidate(provider),
                 child: const Text('Tentar novamente'),
               ),
@@ -149,6 +151,7 @@ class _ReviewPreview extends ConsumerWidget {
           if (failures.isNotEmpty) ...[
             const Text('Algumas entregas não puderam ser consultadas.'),
             TextButton(
+              style: AppButtonStyles.link,
               onPressed: () {
                 for (final scope in failures) {
                   ref.invalidate(teacherSubmissionPreviewProvider(scope));

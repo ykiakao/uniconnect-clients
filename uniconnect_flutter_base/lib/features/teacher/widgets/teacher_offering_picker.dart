@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class TeacherOfferingPicker extends ConsumerStatefulWidget {
   const TeacherOfferingPicker({
@@ -82,6 +83,7 @@ class _TeacherOfferingPickerState extends ConsumerState<TeacherOfferingPicker> {
         else if (offers.hasError) ...[
           const Text('Não foi possível carregar as ofertas.'),
           TextButton(
+            style: AppButtonStyles.link,
             onPressed: widget.enabled
                 ? () => ref.invalidate(teacherOfferingsProvider)
                 : null,

@@ -8,6 +8,7 @@ import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
 import '../providers/teacher_review_provider.dart';
 import '../services/teacher_activity_service.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class TeacherWorkDraftDialog extends ConsumerStatefulWidget {
   const TeacherWorkDraftDialog({super.key, required this.work});
@@ -219,6 +220,7 @@ class _TeacherWorkDraftDialogState
                         ? 'Sem prazo informado'
                         : 'Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(deadline.toLocal())}'),
                     TextButton(
+                      style: AppButtonStyles.link,
                       onPressed: canEdit ? _pickDeadline : null,
                       child: const Text('Definir ou alterar prazo'),
                     ),

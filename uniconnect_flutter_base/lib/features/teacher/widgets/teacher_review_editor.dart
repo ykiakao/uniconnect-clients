@@ -11,6 +11,7 @@ import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
 import '../services/teacher_review_service.dart';
 import '../services/grade_precision.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class TeacherReviewPage extends ConsumerWidget {
   const TeacherReviewPage({super.key, required this.submission});
@@ -25,7 +26,7 @@ class TeacherReviewPage extends ConsumerWidget {
           title: const Text('Avaliar entrega'),
           leading: IconButton(
             tooltip: 'Retornar',
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(LucideIcons.arrowLeft),
             onPressed: () async {
               final confirm =
                   ref.read(teacherDraftGuardProvider).confirmReviewExit;
@@ -257,12 +258,12 @@ class _ReviewEditorState extends ConsumerState<_ReviewEditor> {
       },
       child: ListView(
           controller: _scroll,
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.pageHorizontal),
           children: [
             if (_busy) const LinearProgressIndicator(),
             TextButton.icon(
                 onPressed: _busy ? null : _refresh,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(LucideIcons.refreshCw),
                 label: const Text('Atualizar entrega e avaliação')),
             if (_error != null)
               Text(_error!,

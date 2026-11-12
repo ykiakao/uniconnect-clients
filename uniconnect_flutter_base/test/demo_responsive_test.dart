@@ -47,8 +47,8 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('Tentar Novamente'));
-    expect(find.text('Tentar Novamente'), findsOneWidget);
+    await tester.ensureVisible(find.text('Tentar novamente'));
+    expect(find.text('Tentar novamente'), findsOneWidget);
   });
   setUpAll(() async {
     final inter = FontLoader('Inter')

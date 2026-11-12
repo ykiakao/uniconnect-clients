@@ -77,18 +77,29 @@ class DestructiveButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.subtle = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
 
+  /// Outlined in `danger` for actions that are not destructive, like
+  /// signing out; the filled style is for actions that delete data.
+  final bool subtle;
+
   @override
   Widget build(BuildContext context) {
-    final style = ElevatedButton.styleFrom(
-      backgroundColor: AppColors.danger,
-      foregroundColor: Colors.white,
-    );
+    final style = subtle
+        ? ElevatedButton.styleFrom(
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.danger,
+            side: const BorderSide(color: AppColors.line),
+          )
+        : ElevatedButton.styleFrom(
+            backgroundColor: AppColors.danger,
+            foregroundColor: AppColors.onPrimary,
+          );
     final button = icon == null
         ? ElevatedButton(
             onPressed: onPressed,

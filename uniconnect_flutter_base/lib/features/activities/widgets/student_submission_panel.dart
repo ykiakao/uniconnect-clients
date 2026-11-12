@@ -10,6 +10,7 @@ import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
 import '../providers/student_submission_provider.dart';
 import '../services/student_submission_service.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class StudentSubmissionPanel extends ConsumerWidget {
   const StudentSubmissionPanel(
@@ -192,7 +193,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
       if (_busy) const LinearProgressIndicator(),
       TextButton.icon(
           onPressed: _busy ? null : _reload,
-          icon: const Icon(Icons.refresh),
+          icon: const Icon(LucideIcons.refreshCw),
           label: const Text('Atualizar minha entrega')),
       own.when(
           skipLoadingOnRefresh: false,
@@ -295,7 +296,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                                           !widget.activityIsCurrent
                                       ? null
                                       : () => _submit(submission),
-                                  icon: const Icon(Icons.send_outlined),
+                                  icon: const Icon(LucideIcons.send),
                                   label: Text(_sending
                                       ? 'Enviando resposta...'
                                       : submission == null

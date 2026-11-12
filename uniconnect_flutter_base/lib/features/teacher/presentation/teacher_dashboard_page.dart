@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
@@ -16,6 +17,7 @@ import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../tenant/providers/tenant_provider.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class TeacherDashboardPage extends ConsumerWidget {
   const TeacherDashboardPage({super.key});
@@ -52,6 +54,7 @@ class TeacherDashboardPage extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
     final classId = ref.watch(selectedTeacherClassIdProvider);
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppHeader(
@@ -61,164 +64,151 @@ class TeacherDashboardPage extends ConsumerWidget {
           IconButton(
             tooltip: 'Sair',
             onPressed: () => _confirmLogout(context, ref),
-            icon: const Icon(Icons.logout),
+            icon: const Icon(LucideIcons.logOut),
           ),
         ],
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 0, isTeacher: true),
       body: SafeArea(
         child: AcademicContent(
-            child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.xl,
-          ),
-          children: [
-            AppCard(
-              backgroundColor: AppColors.primary,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.school_outlined,
-                      color: Colors.white, size: 30),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Text('Olá, professor',
-                      style: TextStyle(color: Colors.white)),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'UniConnect • Área do professor',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    user?.name ?? 'Professor',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                        ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    tenant != null && tenant.id.isNotEmpty
-                        ? tenant.name
-                        : 'Instituição não informada',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white70,
-                        ),
-                  ),
-                  if (tenant?.slug == 'edukmais') ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    const Text('Ambiente de demonstração',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w700)),
-                  ],
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(user?.email ?? 'E-mail não informado',
-                      style: const TextStyle(color: Colors.white)),
-                  const SizedBox(height: AppSpacing.md),
-                  AppBadge(label: user?.roleLabel ?? 'Professor'),
-                ],
-              ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pageHorizontal,
+              AppSpacing.pageTop,
+              AppSpacing.pageHorizontal,
+              AppSpacing.pageBottom,
             ),
-            const SizedBox(height: AppSpacing.lg),
-            const SectionHeader(
-                title: 'Resumo acadêmico',
-                subtitle: 'Sua identidade e seu vínculo institucional'),
-            if (user?.course case final course? when course.isNotEmpty) ...[
-              AppCard(
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.menu_book_outlined,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Vínculo acadêmico',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                          ),
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            course,
-                            style: const TextStyle(color: AppColors.muted),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+            children: [
+              Text('UniConnect • Área do professor',
+                  style: text.labelMedium?.copyWith(color: AppColors.primary)),
+              const SizedBox(height: AppSpacing.xxs),
+              Text('Olá, professor',
+                  style: text.bodyMedium?.copyWith(color: AppColors.inkMuted)),
+              Text(user?.name ?? 'Professor',
+                  style: text.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.cardPadding),
+                decoration: BoxDecoration(
+                  color: AppColors.navy,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
                 ),
-              ),
-            ] else ...[
-              const AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.menu_book_outlined, color: AppColors.primary),
-                    SizedBox(height: AppSpacing.sm),
-                    Text('Vínculo acadêmico não informado',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
-                    SizedBox(height: AppSpacing.xs),
-                    Text('Nenhum curso ou turma foi informado no seu perfil.',
-                        style: TextStyle(color: AppColors.muted)),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const IconTile(
+                          icon: LucideIcons.graduationCap,
+                          color: Colors.white,
+                          background: Color(0x26FFFFFF),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tenant != null && tenant.id.isNotEmpty
+                                    ? tenant.name
+                                    : 'Instituição não informada',
+                                style: text.titleLarge
+                                    ?.copyWith(color: Colors.white),
+                              ),
+                              Text(user?.email ?? 'E-mail não informado',
+                                  style: text.bodySmall?.copyWith(
+                                      color: const Color(0xCCFFFFFF))),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        AppBadge(label: user?.roleLabel ?? 'Professor'),
+                        if (tenant?.slug == 'edukmais')
+                          const AppBadge(
+                            label: 'Ambiente de demonstração',
+                            tone: AppBadgeTone.neutral,
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
+              const SizedBox(height: AppSpacing.lg),
+              const SectionHeader(
+                  title: 'Resumo acadêmico',
+                  subtitle: 'Sua identidade e seu vínculo institucional'),
+              if (user?.course case final course? when course.isNotEmpty)
+                AppCard(
+                  icon: LucideIcons.bookOpen,
+                  title: 'Vínculo acadêmico',
+                  child: Text(course,
+                      style:
+                          text.bodyMedium?.copyWith(color: AppColors.inkMuted)),
+                )
+              else
+                AppCard(
+                  icon: LucideIcons.bookOpen,
+                  title: 'Vínculo acadêmico não informado',
+                  child: Text(
+                      'Nenhum curso ou turma foi informado no seu perfil.',
+                      style:
+                          text.bodyMedium?.copyWith(color: AppColors.inkMuted)),
+                ),
+              const SizedBox(height: AppSpacing.md),
+              const SectionHeader(title: 'Turmas e disciplinas'),
+              const TeacherOfferingPicker(),
+              const SizedBox(height: AppSpacing.sm),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  FilledButton(
+                    onPressed: classId == null
+                        ? null
+                        : () => GoRouter.maybeOf(context)
+                            ?.push(AppRoutes.teacherCreateActivity),
+                    child: const Text('Criar atividade'),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  OutlinedButton(
+                    onPressed: classId == null
+                        ? null
+                        : () => GoRouter.maybeOf(context)?.go(
+                              Uri(
+                                  path: AppRoutes.teacherGrades,
+                                  queryParameters: {
+                                    'classId': classId,
+                                    'modo': 'provas',
+                                  }).toString(),
+                            ),
+                    child: const Text('Lançar notas de prova'),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  OutlinedButton(
+                    onPressed: () =>
+                        GoRouter.maybeOf(context)?.push(AppRoutes.notices),
+                    child: const Text('Avisos da turma'),
+                  ),
+                  TextButton(
+                    onPressed: () => GoRouter.maybeOf(context)
+                        ?.go(AppRoutes.teacherActivities),
+                    child: const Text('Ver trabalhos e entregas'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (classId != null)
+                TeacherWorkOverview(key: ValueKey(classId), classId: classId),
             ],
-            const SizedBox(height: AppSpacing.md),
-            const SectionHeader(title: 'Turmas e disciplinas'),
-            const TeacherOfferingPicker(),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.xs,
-              children: [
-                FilledButton(
-                  onPressed: classId == null
-                      ? null
-                      : () => GoRouter.maybeOf(context)
-                          ?.push(AppRoutes.teacherCreateActivity),
-                  child: const Text('Criar atividade'),
-                ),
-                OutlinedButton(
-                  onPressed: classId == null
-                      ? null
-                      : () => GoRouter.maybeOf(context)?.go(
-                            Uri(
-                                path: AppRoutes.teacherGrades,
-                                queryParameters: {
-                                  'classId': classId,
-                                  'modo': 'provas',
-                                }).toString(),
-                          ),
-                  child: const Text('Lançar notas de prova'),
-                ),
-                TextButton(
-                  onPressed: () => GoRouter.maybeOf(context)
-                      ?.go(AppRoutes.teacherActivities),
-                  child: const Text('Ver trabalhos e entregas'),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (classId != null)
-              TeacherWorkOverview(key: ValueKey(classId), classId: classId),
-          ],
-        )),
+          ),
+        ),
       ),
     );
   }

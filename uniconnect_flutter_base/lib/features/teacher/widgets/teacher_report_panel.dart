@@ -4,6 +4,8 @@ import '../../../shared/widgets/app_card.dart';
 import '../services/teacher_academic_service.dart';
 import '../providers/teacher_review_provider.dart';
 import 'academic_page_controls.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class TeacherReportPanel extends StatefulWidget {
   const TeacherReportPanel(
@@ -113,6 +115,7 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
           Text(card.statusLabel),
           if (!detail)
             TextButton(
+              style: AppButtonStyles.link,
               onPressed: _busy
                   ? null
                   : () => setState(() {
@@ -143,7 +146,7 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
       if (_message != null) Text(_message!),
       TextButton.icon(
         onPressed: _busy ? null : _refresh,
-        icon: const Icon(Icons.refresh),
+        icon: const Icon(LucideIcons.refreshCw),
         label: const Text('Atualizar boletim e pendências'),
       ),
       DropdownButtonFormField<String>(
@@ -196,6 +199,7 @@ class _TeacherReportPanelState extends State<TeacherReportPanel> {
       const Text('Resumo da turma'),
       if (_detail != null) ...[
         TextButton(
+          style: AppButtonStyles.link,
           onPressed: _busy ? null : () => setState(() => _detail = null),
           child: const Text('Voltar ao resumo da turma'),
         ),

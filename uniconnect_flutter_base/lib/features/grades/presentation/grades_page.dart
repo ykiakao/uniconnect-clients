@@ -10,6 +10,7 @@ import '../../../shared/widgets/empty_state_widget.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
 import '../providers/student_report_card_provider.dart';
 import '../widgets/student_report_card_section.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class GradesPage extends ConsumerWidget {
   const GradesPage({super.key});
@@ -43,14 +44,14 @@ class GradesPage extends ConsumerWidget {
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
                   if (session != null)
                     StudentReportCardSection(
                         key: ValueKey(session), session: session)
                   else
                     EmptyStateWidget(
-                      icon: Icons.school_outlined,
+                      icon: LucideIcons.graduationCap,
                       title: 'Boletim acadêmico indisponível',
                       subtitle: demo
                           ? 'O modo de demonstração não consulta o boletim oficial.'

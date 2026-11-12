@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class HelpTooltip extends StatelessWidget {
   const HelpTooltip({
     required this.message,
     required this.child,
-    this.icon = Icons.info_outlined,
+    this.icon = LucideIcons.info,
     super.key,
   });
 
@@ -54,7 +55,9 @@ class _InlineHelpState extends State<InlineHelp> {
             GestureDetector(
               onTap: () => setState(() => _showHelp = !_showHelp),
               child: Icon(
-                _showHelp ? Icons.help : Icons.help_outline,
+                _showHelp
+                    ? LucideIcons.circleQuestionMark
+                    : LucideIcons.circleQuestionMark,
                 size: 18,
                 color: AppColors.primary,
               ),
@@ -88,7 +91,7 @@ class ContextualTip extends StatelessWidget {
   const ContextualTip({
     required this.title,
     required this.message,
-    this.icon = Icons.lightbulb_outline,
+    this.icon = LucideIcons.lightbulb,
     super.key,
   });
 

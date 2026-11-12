@@ -7,6 +7,8 @@ import '../services/teacher_assessment.dart';
 import '../providers/teacher_review_provider.dart';
 import '../providers/teacher_activity_provider.dart';
 import 'academic_page_controls.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class TeacherExamPanel extends ConsumerStatefulWidget {
   const TeacherExamPanel(
@@ -157,7 +159,7 @@ class _TeacherExamPanelState extends ConsumerState<TeacherExamPanel> {
       if (_message != null) Text(_message!),
       TextButton.icon(
         onPressed: _busy ? null : () => _load(_page),
-        icon: const Icon(Icons.refresh),
+        icon: const Icon(LucideIcons.refreshCw),
         label: const Text('Atualizar pauta'),
       ),
       FutureBuilder<ExamRoster>(
@@ -201,6 +203,7 @@ class _TeacherExamPanelState extends ConsumerState<TeacherExamPanel> {
                           Wrap(children: [
                             if (student.grade?.published == true)
                               TextButton(
+                                style: AppButtonStyles.compact(),
                                 onPressed: _busy
                                     ? null
                                     : () => _run(
@@ -221,6 +224,7 @@ class _TeacherExamPanelState extends ConsumerState<TeacherExamPanel> {
                               ),
                               if (student.grade != null)
                                 TextButton(
+                                  style: AppButtonStyles.compact(),
                                   onPressed: _busy
                                       ? null
                                       : () => _run(

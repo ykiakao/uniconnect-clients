@@ -10,6 +10,7 @@ import '../../../shared/widgets/error_state_widget.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../models/student_report_card.dart';
 import '../providers/student_report_card_provider.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class StudentReportCardSection extends ConsumerWidget {
   const StudentReportCardSection({super.key, required this.session});
@@ -47,7 +48,7 @@ class StudentReportCardSection extends ConsumerWidget {
           data: (rows) {
             if (rows.isEmpty) {
               return const EmptyStateWidget(
-                icon: Icons.school_outlined,
+                icon: LucideIcons.graduationCap,
                 title: 'Nenhuma disciplina disponível',
                 subtitle: 'As ofertas autorizadas aparecerão nesta lista.',
               );
@@ -107,7 +108,7 @@ class StudentReportCardSection extends ConsumerWidget {
         else ...[
           TextButton.icon(
             onPressed: () => ref.invalidate(reportProvider),
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(LucideIcons.refreshCw),
             label: const Text('Atualizar boletim'),
           ),
           ref.watch(reportProvider).when(
@@ -165,7 +166,7 @@ class _ReportResults extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!card.hasAssessments) {
       return const EmptyStateWidget(
-        icon: Icons.assignment_outlined,
+        icon: LucideIcons.clipboardList,
         title: 'Oferta sem avaliações no boletim',
         subtitle: 'Quando houver avaliações N1/N2, elas aparecerão aqui.',
       );

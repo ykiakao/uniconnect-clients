@@ -47,6 +47,8 @@ Future<void> _mount(WidgetTester tester, Widget widget,
 Future<void> _tap(WidgetTester tester, String label) async {
   final target = find.text(label).last;
   await tester.ensureVisible(target);
+  // ensureVisible scrolls without a frame; settle before tapping.
+  await tester.pumpAndSettle();
   await tester.tap(target);
   await tester.pumpAndSettle();
 }

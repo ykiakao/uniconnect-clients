@@ -20,35 +20,25 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return AppCard(
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .10),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color),
+          IconTile(
+            icon: icon,
+            color: color,
+            background: color.withValues(alpha: .12),
           ),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: AppSpacing.xxs),
+                Text(title, style: text.titleSmall),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.muted,
-                      ),
+                  style: text.bodySmall?.copyWith(color: AppColors.inkMuted),
                 ),
               ],
             ),

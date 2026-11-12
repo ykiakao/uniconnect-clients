@@ -11,6 +11,7 @@ import 'package:uniconnect/features/chat/presentation/chat_page.dart';
 
 import 'demo_day_test.dart' show pumpDemoPage;
 import 'fakes/fake_auth_service.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 AcademicActivity activity(String id, String title, DateTime? dueDate) =>
     AcademicActivity(
@@ -101,7 +102,10 @@ void main() {
         scrollable: find.byType(Scrollable).first);
     expect(find.text('Ver trabalhos e entregas'), findsOneWidget);
     expect(
-        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Criar atividade')).onPressed,
+        tester
+            .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Criar atividade'))
+            .onPressed,
         isNull);
     expect(find.text('Aguardando correção na consulta: 0'), findsNothing);
     expect(find.text('128'), findsNothing);
@@ -118,7 +122,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Prazo encerrado (1)'), findsOneWidget);
     expect(find.text('Críticas (1)'), findsNothing);
-    expect(find.text('EXPIRADA'), findsOneWidget);
+    expect(find.text('Expirada'), findsOneWidget);
   });
 
   testWidgets(
@@ -129,13 +133,14 @@ void main() {
     expect(find.text('ONLINE AGORA'), findsNothing);
     expect(
         tester
-            .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.send))
+            .widget<IconButton>(
+                find.widgetWithIcon(IconButton, LucideIcons.send))
             .onPressed,
         isNull);
     expect(
         tester
             .widget<IconButton>(
-                find.widgetWithIcon(IconButton, Icons.attach_file))
+                find.widgetWithIcon(IconButton, LucideIcons.paperclip))
             .onPressed,
         isNull);
     expect(
@@ -144,5 +149,4 @@ void main() {
             .every((field) => field.enabled == false),
         isTrue);
   });
-
 }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/academic_demo_frame.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
@@ -23,6 +24,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../tenant/providers/tenant_provider.dart';
 import '../../grades/models/subject_grade.dart';
 import '../../grades/providers/grades_provider.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class StudentDashboardPage extends ConsumerWidget {
   const StudentDashboardPage({super.key});
@@ -40,182 +43,299 @@ class StudentDashboardPage extends ConsumerWidget {
       appBar: const AppHeader(title: 'Início', showProfile: true),
       bottomNavigationBar: const UniBottomNav(currentIndex: 0),
       body: SafeArea(
-          child: AcademicDemoFrame(
-        child: AcademicContent(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              invalidateSyntheticAcademicData(ref);
-              ref.invalidate(activitiesProvider);
-              ref.invalidate(subjectGradesProvider);
-              ref.invalidate(ownSubmissionProvider);
-              try {
-                await Future.wait([
-                  ref.read(activitiesProvider.future),
-                  ref.read(subjectGradesProvider.future),
-                ]);
-              } catch (_) {}
-            },
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: AcademicDemoFrame(
+          child: AcademicContent(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                invalidateSyntheticAcademicData(ref);
+                ref.invalidate(activitiesProvider);
+                ref.invalidate(subjectGradesProvider);
+                ref.invalidate(ownSubmissionProvider);
+                try {
+                  await Future.wait([
+                    ref.read(activitiesProvider.future),
+                    ref.read(subjectGradesProvider.future),
+                  ]);
+                } catch (_) {}
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.pageHorizontal,
+                  AppSpacing.pageTop,
+                  AppSpacing.pageHorizontal,
+                  AppSpacing.pageBottom,
+                ),
+                children: [
+                  _Greeting(name: user?.name),
+                  const SizedBox(height: AppSpacing.md),
+                  _StudentHero(
+                    institution: tenant != null && tenant.id.isNotEmpty
+                        ? tenant.name
+                        : 'Instituição não informada',
+                    course: user?.course,
+                    semester: user?.semester,
+                    isDemo: tenant?.slug == 'edukmais',
+                    grades: gradesAsync,
+                    metrics: activitiesAsync.when(
+                      skipLoadingOnRefresh: false,
+                      data: (items) =>
+                          AcademicMetricGrid(onDark: true, metrics: [
+                        AcademicMetric(
+                            label: 'Atividades disponíveis',
+                            value: '${items.length}',
+                            icon: LucideIcons.clipboardList),
+                        AcademicMetric(
+                            label: 'Disciplinas nas atividades',
+                            value:
+                                '${items.map((a) => a.subject).toSet().length}',
+                            icon: LucideIcons.bookOpen),
+                        AcademicMetric(
+                            label: 'Prazos futuros',
+                            value:
+                                '${items.where((a) => a.isUpcomingAt(now)).length}',
+                            icon: LucideIcons.calendar),
+                      ]),
+                      loading: () =>
+                          const _OnDarkText('Carregando indicadores...'),
+                      error: (_, __) =>
+                          const _OnDarkText('Indicadores indisponíveis'),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  const _QuickActions(),
+                  const SizedBox(height: AppSpacing.lg),
+                  activitiesAsync.when(
+                    skipLoadingOnRefresh: false,
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      child: Column(children: [
+                        LinearProgressIndicator(),
+                        SizedBox(height: AppSpacing.md),
+                        Text('Carregando atividades...'),
+                      ]),
+                    ),
+                    error: (_, __) => ErrorStateWidget(
+                      title: 'Não foi possível carregar a agenda',
+                      error: 'Confira sua conexão e tente novamente.',
+                      onRetry: () {
+                        invalidateSyntheticAcademicData(ref);
+                        ref.invalidate(activitiesProvider);
+                      },
+                    ),
+                    data: (activities) => _AcademicAgenda(
+                      activities: activities,
+                      now: now,
+                      demo: demo,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Greeting extends StatelessWidget {
+  const _Greeting({required this.name});
+
+  final String? name;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final firstName = name?.trim().split(' ').first;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('UniConnect • Área do aluno',
+            style: text.labelMedium?.copyWith(color: AppColors.primary)),
+        const SizedBox(height: AppSpacing.xxs),
+        Text('Olá, que bom ter você aqui.',
+            style: text.bodyMedium?.copyWith(color: AppColors.inkMuted)),
+        Text(
+          firstName == null || firstName.isEmpty ? 'Aluno' : firstName,
+          style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ],
+    );
+  }
+}
+
+/// Navy identity block from the kit, with the student's context and
+/// the numbers that matter at a glance.
+class _StudentHero extends StatelessWidget {
+  const _StudentHero({
+    required this.institution,
+    required this.course,
+    required this.semester,
+    required this.isDemo,
+    required this.grades,
+    required this.metrics,
+  });
+
+  final String institution;
+  final String? course;
+  final int? semester;
+  final bool isDemo;
+  final AsyncValue<List<SubjectGrade>> grades;
+  final Widget metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final details = [
+      if (course case final value? when value.trim().isNotEmpty) value,
+      if (semester case final value?) '$valueº semestre',
+    ];
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: AppColors.navy,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const IconTile(
+                icon: LucideIcons.graduationCap,
+                color: Colors.white,
+                background: Color(0x26FFFFFF),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(institution,
+                        style: text.titleLarge?.copyWith(color: Colors.white)),
+                    for (final detail in details)
+                      Text(detail,
+                          style: text.bodySmall
+                              ?.copyWith(color: const Color(0xCCFFFFFF))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text('Seu panorama acadêmico',
+              style: text.titleSmall?.copyWith(color: Colors.white)),
+          const SizedBox(height: AppSpacing.sm),
+          metrics,
+          const Divider(height: AppSpacing.lg, color: Color(0x33FFFFFF)),
+          _GradeSummary(grades: grades),
+          if (isDemo) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0x26FFFFFF),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Text('Ambiente de demonstração',
+                  style: text.labelSmall
+                      ?.copyWith(color: Colors.white, letterSpacing: 0)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _OnDarkText extends StatelessWidget {
+  const _OnDarkText(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(text,
+      style:
+          Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white));
+}
+
+/// Shortcuts to the other student areas, as a 2x2 grid of tappable tiles.
+class _QuickActions extends StatelessWidget {
+  const _QuickActions();
+
+  static const _items = [
+    (LucideIcons.listChecks, 'Ver atividades', AppRoutes.activities),
+    (LucideIcons.graduationCap, 'Ver notas', AppRoutes.grades),
+    (LucideIcons.bell, 'Ver avisos', AppRoutes.notices),
+    (LucideIcons.landmark, 'Ver acadêmico', AppRoutes.academic),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final scale = MediaQuery.textScalerOf(context).scale(1);
+      final columns = constraints.maxWidth >= 300 * scale ? 2 : 1;
+      final width =
+          (constraints.maxWidth - AppSpacing.sm * (columns - 1)) / columns;
+      return Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: [
+          for (final (icon, label, route) in _items)
+            SizedBox(
+              width: width,
+              child: _QuickAction(
+                icon: icon,
+                label: label,
+                onTap: () => context.go(route),
+              ),
+            ),
+        ],
+      );
+    });
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction(
+      {required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppRadius.lg);
+    return Material(
+      color: AppColors.surfaceRaised,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: const BorderSide(color: AppColors.line),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Semantics(
+          button: true,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('UniConnect • Área do aluno',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(color: AppColors.primary)),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text('Olá, que bom ter você aqui.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: AppColors.muted)),
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(user?.name.trim().split(' ').first ?? 'Aluno',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                AppCard(
-                  backgroundColor: AppColors.primary,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.school_outlined, color: Colors.white),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        tenant != null && tenant.id.isNotEmpty
-                            ? tenant.name
-                            : 'Instituição não informada',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white, fontWeight: FontWeight.w700),
-                      ),
-                      if (user?.course case final course?
-                          when course.trim().isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(course,
-                            style: const TextStyle(color: Colors.white)),
-                      ],
-                      if (user?.semester case final semester?) ...[
-                        const SizedBox(height: AppSpacing.xs),
-                        Text('$semesterº semestre',
-                            style: const TextStyle(color: Colors.white)),
-                      ],
-                      const SizedBox(height: AppSpacing.sm),
-                      const Text('Seu panorama acadêmico',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700)),
-                      const Divider(
-                          height: AppSpacing.xl, color: Colors.white24),
-                      _GradeSummary(grades: gradesAsync),
-                      const SizedBox(height: AppSpacing.lg),
-                      activitiesAsync.when(
-                        skipLoadingOnRefresh: false,
-                        data: (items) =>
-                            AcademicMetricGrid(onDark: true, metrics: [
-                          AcademicMetric(
-                              label: 'Atividades disponíveis',
-                              value: '${items.length}',
-                              icon: Icons.assignment_outlined),
-                          AcademicMetric(
-                              label: 'Disciplinas nas atividades',
-                              value:
-                                  '${items.map((a) => a.subject).toSet().length}',
-                              icon: Icons.menu_book_outlined),
-                          AcademicMetric(
-                              label: 'Prazos futuros',
-                              value:
-                                  '${items.where((a) => a.isUpcomingAt(now)).length}',
-                              icon: Icons.event_outlined),
-                        ]),
-                        loading: () => const Text('Carregando indicadores...',
-                            style: TextStyle(color: Colors.white)),
-                        error: (_, __) => const Text(
-                            'Indicadores indisponíveis',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                      if (tenant?.slug == 'edukmais') ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        const Text('Ambiente de demonstração',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700)),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    FilledButton.tonalIcon(
-                      onPressed: () => context.go(AppRoutes.activities),
-                      icon: const Icon(Icons.checklist_outlined),
-                      label: const Text('Ver atividades'),
-                    ),
-                    FilledButton.tonalIcon(
-                      onPressed: () => context.go(AppRoutes.grades),
-                      icon: const Icon(Icons.school_outlined),
-                      label: const Text('Ver notas'),
-                    ),
-                    TextButton(
-                      onPressed: () => context.go(AppRoutes.chat),
-                      child: const Text('Abrir chat'),
-                    ),
-                    TextButton(
-                      onPressed: () => context.go(AppRoutes.academic),
-                      child: const Text('Ver acadêmico'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                const SectionHeader(
-                  title: 'Sua rotina acadêmica',
-                  subtitle: 'Atividades disponíveis na sua instituição',
-                ),
-                activitiesAsync.when(
-                  skipLoadingOnRefresh: false,
-                  loading: () => const Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                    child: Column(children: [
-                      LinearProgressIndicator(),
-                      SizedBox(height: AppSpacing.md),
-                      Text('Carregando atividades...'),
-                    ]),
-                  ),
-                  error: (_, __) => ErrorStateWidget(
-                    title: 'Não foi possível carregar a agenda',
-                    error: 'Confira sua conexão e tente novamente.',
-                    onRetry: () {
-                      invalidateSyntheticAcademicData(ref);
-                      ref.invalidate(activitiesProvider);
-                    },
-                  ),
-                  data: (activities) => _AcademicAgenda(
-                    activities: activities,
-                    now: now,
-                    demo: demo,
-                  ),
-                ),
+                IconTile(icon: icon, size: 36),
+                const SizedBox(height: AppSpacing.xs),
+                Text(label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall),
               ],
             ),
           ),
         ),
-      )),
+      ),
     );
   }
 }
@@ -232,7 +352,7 @@ class _AcademicAgenda extends StatelessWidget {
   Widget build(BuildContext context) {
     if (activities.isEmpty) {
       return const EmptyStateWidget(
-        icon: Icons.event_note_outlined,
+        icon: LucideIcons.calendarDays,
         title: 'Nenhuma atividade disponível',
         subtitle:
             'As atividades aparecerão aqui quando estiverem disponíveis para consulta.',
@@ -274,25 +394,28 @@ class _AcademicAgenda extends StatelessWidget {
         AppCard(
             child: Column(children: [
           _DeadlineRow(
-              icon: Icons.alarm_outlined,
+              icon: LucideIcons.alarmClock,
               title: 'Prazo próximo (24h)',
               count: soon,
               color: AppColors.danger),
-          const Divider(height: AppSpacing.lg),
+          const Divider(height: AppSpacing.md),
           _DeadlineRow(
-              icon: Icons.event_busy_outlined,
+              icon: LucideIcons.calendarX,
               title: 'Prazo encerrado',
               count: expired,
               color: AppColors.muted),
-          const Divider(height: AppSpacing.lg),
+          const Divider(height: AppSpacing.md),
           _DeadlineRow(
-              icon: Icons.event_note_outlined,
+              icon: LucideIcons.calendarDays,
               title: 'Sem prazo informado',
               count: undated,
               color: AppColors.primary),
           const SizedBox(height: AppSpacing.md),
-          const Text('Prazo encerrado não informa se a atividade foi entregue.',
-              style: TextStyle(color: AppColors.muted)),
+          Text('Prazo encerrado não informa se a atividade foi entregue.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.inkMuted)),
         ])),
         const SizedBox(height: AppSpacing.md),
         SectionHeader(
@@ -312,13 +435,18 @@ class _AcademicAgenda extends StatelessWidget {
           title: 'Disciplinas nas atividades',
           subtitle: 'Informações derivadas da agenda disponível',
         ),
-        for (final subject in subjects)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading:
-                const Icon(Icons.menu_book_outlined, color: AppColors.primary),
-            title: Text(subject),
-          ),
+        Wrap(
+          spacing: AppSpacing.xs,
+          runSpacing: AppSpacing.xs,
+          children: [
+            for (final subject in subjects)
+              Chip(
+                avatar: const Icon(LucideIcons.bookOpen,
+                    size: 16, color: AppColors.primary),
+                label: Text(subject),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -356,7 +484,7 @@ class _PendingActivities extends ConsumerWidget {
           onAction: () => context.go(AppRoutes.activities),
         ),
         if (candidates.isEmpty)
-          const Text('Nenhuma atividade aberta para entrega textual.'),
+          const _MutedText('Nenhuma atividade aberta para entrega textual.'),
         if (loading)
           const LinearProgressIndicator(semanticsLabel: 'Consultando entregas'),
         if (failures.isNotEmpty)
@@ -366,6 +494,7 @@ class _PendingActivities extends ConsumerWidget {
               children: [
                 const Text('Algumas entregas não puderam ser consultadas'),
                 TextButton(
+                  style: AppButtonStyles.link,
                   onPressed: () {
                     for (final id in failures) {
                       ref.invalidate(ownSubmissionProvider(id));
@@ -380,7 +509,7 @@ class _PendingActivities extends ConsumerWidget {
             !loading &&
             failures.isEmpty &&
             pending.isEmpty)
-          const Text('Nenhuma pendência nas atividades consultadas.'),
+          const _MutedText('Nenhuma pendência nas atividades consultadas.'),
         for (final activity in pending)
           ActivityCard(
             activity: activity,
@@ -403,14 +532,14 @@ class _GradeSummary extends StatelessWidget {
     return grades.when(
       skipLoadingOnRefresh: false,
       loading: () => const Text('Carregando notas...',
-          style: TextStyle(color: Colors.white)),
+          style: TextStyle(color: Color(0xE6FFFFFF))),
       error: (_, __) => const Text('Notas indisponíveis',
-          style: TextStyle(color: Colors.white)),
+          style: TextStyle(color: Color(0xE6FFFFFF))),
       data: (allItems) {
         final items = allItems.where((g) => !g.isHistorical).toList();
         if (items.isEmpty) {
           return const Text('Sem notas disponíveis',
-              style: TextStyle(color: Colors.white));
+              style: TextStyle(color: Color(0xE6FFFFFF)));
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,7 +549,7 @@ class _GradeSummary extends StatelessWidget {
                 style: const TextStyle(color: Colors.white)),
             const SizedBox(height: AppSpacing.xs),
             const Text('Consulte o boletim por disciplina em Ver notas.',
-                style: TextStyle(color: Colors.white)),
+                style: TextStyle(color: Color(0xE6FFFFFF))),
           ],
         );
       },
@@ -442,18 +571,36 @@ class _DeadlineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Row(children: [
-      Icon(icon, color: color),
+      IconTile(
+        icon: icon,
+        color: color,
+        background: color.withValues(alpha: .12),
+        size: 36,
+      ),
       const SizedBox(width: AppSpacing.sm),
-      Expanded(
-          child:
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
+      Expanded(child: Text(title, style: text.titleSmall)),
       const SizedBox(width: AppSpacing.sm),
       Text('$count',
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
+          style: text.titleLarge
               ?.copyWith(color: color, fontWeight: FontWeight.w700)),
     ]);
   }
+}
+
+class _MutedText extends StatelessWidget {
+  const _MutedText(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+        child: Text(text,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: AppColors.inkMuted)),
+      );
 }

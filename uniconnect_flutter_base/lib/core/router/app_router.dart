@@ -9,9 +9,14 @@ import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/services/session_storage.dart';
 import '../../shared/widgets/app_header.dart';
-import '../../shared/widgets/bottom_nav.dart';
 import '../../features/auth/models/app_user.dart';
-import '../../features/chat/presentation/chat_page.dart';
+import '../../features/auth/presentation/forgot_password_page.dart';
+import '../../features/communication/presentation/conversation_page.dart';
+import '../../features/communication/presentation/conversations_page.dart';
+import '../../features/communication/presentation/notice_detail_page.dart';
+import '../../features/communication/presentation/notice_form_page.dart';
+import '../../features/communication/presentation/notices_page.dart';
+import '../../features/communication/presentation/notifications_page.dart';
 import '../../features/grades/presentation/grades_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/student/presentation/student_academic_page.dart';
@@ -80,7 +85,56 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.chat,
         pageBuilder: (context, state) => AppRouteTransitionPage.slideFromRight(
           key: state.pageKey,
-          child: const ChatPage(),
+          child: const ChatEntryPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.conversation,
+        pageBuilder: (_, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: ConversationPage(conversationId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.teacherConversation,
+        pageBuilder: (_, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: ConversationPage(conversationId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.notices,
+        pageBuilder: (_, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: const NoticesPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.noticeNew,
+        pageBuilder: (_, state) => AppRouteTransitionPage.slideFromBottom(
+          key: state.pageKey,
+          child: const NoticeFormPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.noticeDetails,
+        pageBuilder: (_, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: NoticeDetailPage(noticeId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        pageBuilder: (_, state) => AppRouteTransitionPage.slideFromRight(
+          key: state.pageKey,
+          child: const NotificationsPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        pageBuilder: (_, state) => AppRouteTransitionPage.fade(
+          key: state.pageKey,
+          child: const ForgotPasswordPage(),
         ),
       ),
       GoRoute(
@@ -102,7 +156,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         onExit: (_, __) {
           if (!ref.read(authControllerProvider).isAuthenticated) return true;
           final guard = ref.read(teacherDraftGuardProvider);
-          return (guard.confirmReviewExit ?? guard.confirmWorkExit)?.call() ?? true;
+          return (guard.confirmReviewExit ?? guard.confirmWorkExit)?.call() ??
+              true;
         },
         pageBuilder: (_, state) => AppRouteTransitionPage.slideFromRight(
           key: state.pageKey,
@@ -116,12 +171,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.teacherChat,
         pageBuilder: (_, state) => AppRouteTransitionPage.slideFromRight(
           key: state.pageKey,
-          child: const _DestinationPage(
-            title: 'Chat',
-            index: 2,
-            isTeacher: true,
-            child: Text('O chat do professor ainda está indisponível.'),
-          ),
+          child: const ChatEntryPage(isTeacher: true),
         ),
       ),
       GoRoute(
@@ -181,37 +231,6 @@ String? _linkedClassId(Uri uri) {
   final ids = uri.queryParametersAll['classId'];
   if (ids == null) return null;
   return ids.length == 1 ? ids.single : '';
-}
-
-class _DestinationPage extends StatelessWidget {
-  const _DestinationPage({
-    required this.title,
-    required this.index,
-    required this.child,
-    this.isTeacher = false,
-  });
-
-  final String title;
-  final int index;
-  final Widget child;
-  final bool isTeacher;
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppHeader(title: title, showProfile: true),
-        bottomNavigationBar: UniBottomNav(
-          currentIndex: index,
-          isTeacher: isTeacher,
-        ),
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: child,
-            ),
-          ),
-        ),
-      );
 }
 
 class _RouterRefreshNotifier extends ChangeNotifier {
@@ -310,10 +329,13 @@ String? computeRedirect({
     return location == AppRoutes.authLoading ? null : AppRoutes.authLoading;
   }
   if (!isAuthenticated || userRole == null) {
-    return location == AppRoutes.login ? null : AppRoutes.login;
+    return location == AppRoutes.login || location == AppRoutes.forgotPassword
+        ? null
+        : AppRoutes.login;
   }
   if (location == AppRoutes.login ||
       location == AppRoutes.authLoading ||
+      location == AppRoutes.forgotPassword ||
       (_isProtectedPath(location) && !_allowedForRole(location, userRole))) {
     return _home(userRole);
   }
@@ -331,15 +353,30 @@ bool _isProtectedPath(String path) =>
     _allowedForRole(path, UserRole.teacher);
 
 bool _allowedForRole(String path, UserRole role) {
-  if (path == AppRoutes.profile) return true;
+  if (_sharedRoutes.contains(path) || _noticeDetail.hasMatch(path)) {
+    return true;
+  }
   return switch (role) {
-    UserRole.student =>
-      _studentRoutes.contains(path) || _studentActivityDetail.hasMatch(path),
-    UserRole.teacher => _teacherRoutes.contains(path),
+    UserRole.student => _studentRoutes.contains(path) ||
+        _studentActivityDetail.hasMatch(path) ||
+        _studentConversation.hasMatch(path),
+    UserRole.teacher =>
+      _teacherRoutes.contains(path) || _teacherConversation.hasMatch(path),
   };
 }
 
 final _studentActivityDetail = RegExp(r'^/atividades/[^/]+/?$');
+final _studentConversation = RegExp(r'^/chat/[^/]+/?$');
+final _teacherConversation = RegExp(r'^/professor/chat/[^/]+/?$');
+
+/// Any notice except the `novo` form, which only teachers open.
+final _noticeDetail = RegExp(r'^/avisos/(?!novo/?$)[^/]+/?$');
+
+const _sharedRoutes = {
+  AppRoutes.profile,
+  AppRoutes.notices,
+  AppRoutes.notifications,
+};
 
 const _studentRoutes = {
   AppRoutes.studentDashboard,
@@ -355,4 +392,5 @@ const _teacherRoutes = {
   AppRoutes.teacherCreateActivity,
   AppRoutes.teacherGrades,
   AppRoutes.teacherChat,
+  AppRoutes.noticeNew,
 };

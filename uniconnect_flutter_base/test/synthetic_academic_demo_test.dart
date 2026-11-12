@@ -167,10 +167,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
         find.byType(TextField).first, 'Revisão de histórias');
-    tester
-        .widget<SegmentedButton<ActivityPriority?>>(
-            find.byType(SegmentedButton<ActivityPriority?>))
-        .onSelectionChanged!({ActivityPriority.critical});
+    await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'Críticas'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Críticas'));
     await tester.pumpAndSettle();
     expect(find.text('Exibindo 1 de 10 atividade(s)'), findsOneWidget);
     await tester.scrollUntilVisible(
@@ -199,10 +198,9 @@ void main() {
         'Revisão de histórias');
     expect(
         tester
-            .widget<SegmentedButton<ActivityPriority?>>(
-                find.byType(SegmentedButton<ActivityPriority?>))
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Críticas'))
             .selected,
-        {ActivityPriority.critical});
+        isTrue);
     expect(api.activityCalls + api.gradeCalls, 0);
   });
 
@@ -251,7 +249,7 @@ void main() {
     pending.completeError(const FormatException('Test invalid asset'));
     await tester.pumpAndSettle();
     expect(demoContext, findsOneWidget);
-    expect(find.text('Tentar Novamente'), findsOneWidget);
+    expect(find.text('Tentar novamente'), findsOneWidget);
     expect(api.activityCalls + api.gradeCalls, 0);
   });
 
@@ -299,7 +297,7 @@ void main() {
     });
     await showPage(tester, container, const ActivitiesPage());
     expect(demoContext, findsOneWidget);
-    await tester.tap(find.text('Tentar Novamente'));
+    await tester.tap(find.text('Tentar novamente'));
     await tester.pumpAndSettle();
     expect(attempts, 2);
     expect(find.text('Exibindo 10 de 10 atividade(s)'), findsOneWidget);

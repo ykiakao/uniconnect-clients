@@ -19,6 +19,7 @@ import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
 import '../providers/student_submission_provider.dart';
 import '../widgets/student_submission_panel.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ActivityDetailPage extends ConsumerStatefulWidget {
   const ActivityDetailPage({super.key, required this.activityId});
@@ -89,7 +90,7 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
             body: SafeArea(
                 child: AcademicDemoFrame(
                     child: EmptyStateWidget(
-              icon: Icons.search_off_outlined,
+              icon: LucideIcons.searchX,
               title: 'Atividade não encontrada',
               subtitle:
                   'Volte à lista para consultar as atividades disponíveis.',
@@ -148,7 +149,7 @@ class _ActivityDetailContent extends ConsumerWidget {
               activity.subject.toUpperCase(),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: AppColors.primary,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: .8,
                   ),
             ),
@@ -156,13 +157,13 @@ class _ActivityDetailContent extends ConsumerWidget {
             Text(
               activity.title,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                     height: 1.12,
                   ),
             ),
             const SizedBox(height: AppSpacing.lg),
             _InfoPill(
-              icon: Icons.event_outlined,
+              icon: LucideIcons.calendar,
               label: 'Prazo',
               value: activity.dueDate == null
                   ? activity.dueLabelAt(now)
@@ -214,7 +215,7 @@ class _ActivityDetailContent extends ConsumerWidget {
                   else
                     ...activity.attachments.map(
                       (attachment) => _MaterialItem(
-                        icon: Icons.insert_drive_file_outlined,
+                        icon: LucideIcons.file,
                         title: attachment,
                         subtitle: 'Material da atividade',
                       ),
@@ -232,7 +233,7 @@ class _ActivityDetailContent extends ConsumerWidget {
                   const CircleAvatar(
                     radius: 26,
                     backgroundColor: AppColors.primary,
-                    child: Icon(Icons.person_outline, color: Colors.white),
+                    child: Icon(LucideIcons.userRound, color: Colors.white),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -245,7 +246,7 @@ class _ActivityDetailContent extends ConsumerWidget {
                           activity.teacher,
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w700,
                                   ),
                         ),
                       ],
@@ -293,7 +294,7 @@ class _InfoPill extends StatelessWidget {
                 ),
                 Text(
                   value,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -329,7 +330,7 @@ class _MaterialItem extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 Text(
                   subtitle,
@@ -356,7 +357,7 @@ class _ChecklistItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle_outline, size: 18),
+          const Icon(LucideIcons.circleCheck, size: 18),
           const SizedBox(width: AppSpacing.sm),
           Expanded(child: Text(text)),
         ],
@@ -375,7 +376,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       label,
       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
             letterSpacing: .5,
           ),
     );

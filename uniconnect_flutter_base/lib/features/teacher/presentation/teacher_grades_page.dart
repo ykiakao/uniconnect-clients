@@ -16,6 +16,7 @@ import '../services/teacher_activity_service.dart';
 import '../widgets/teacher_exam_panel.dart';
 import '../widgets/teacher_offering_picker.dart';
 import '../widgets/teacher_report_panel.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 enum _NotesMode {
   entry('Lançar notas'),
@@ -104,7 +105,7 @@ class _NotesWorkspaceState extends ConsumerState<_NotesWorkspace> {
                 title: Text(mode.title),
                 leading: IconButton(
                   tooltip: 'Retornar',
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(LucideIcons.arrowLeft),
                   onPressed: _back,
                 ),
               ),
@@ -115,7 +116,7 @@ class _NotesWorkspaceState extends ConsumerState<_NotesWorkspace> {
           child: AcademicContent(
             child: ListView(
               key: ValueKey(mode),
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.pageHorizontal),
               children: [
                 if (mode == null)
                   const TeacherOfferingPicker()
@@ -140,7 +141,7 @@ class _NotesWorkspaceState extends ConsumerState<_NotesWorkspace> {
                   ),
                   TextButton.icon(
                     onPressed: () => ref.invalidate(teacherOfferingsProvider),
-                    icon: const Icon(Icons.refresh),
+                    icon: const Icon(LucideIcons.refreshCw),
                     label: const Text('Atualizar disciplinas'),
                   ),
                 ] else if (selected != null) ...[
@@ -195,7 +196,7 @@ class _GradeEntryState extends ConsumerState<_GradeEntry> {
       const Text('Provas N1/N2'),
       TextButton.icon(
         onPressed: _refresh,
-        icon: const Icon(Icons.refresh),
+        icon: const Icon(LucideIcons.refreshCw),
         label: const Text('Atualizar avaliações'),
       ),
       activities.when(

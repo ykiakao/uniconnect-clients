@@ -6,6 +6,7 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../models/academic_activity.dart';
 import 'priority_badge.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ActivityCard extends StatelessWidget {
   const ActivityCard({
@@ -47,7 +48,7 @@ class ActivityCard extends StatelessWidget {
                   activity.subject,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
               ),
@@ -73,7 +74,7 @@ class ActivityCard extends StatelessWidget {
           Text(
             activity.title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
           ),
           if (!compact) ...[
@@ -90,7 +91,7 @@ class ActivityCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.event_outlined, size: 18, color: priorityColor),
+              Icon(LucideIcons.calendar, size: 18, color: priorityColor),
               const SizedBox(width: 6),
               Expanded(
                 child: Column(
@@ -108,7 +109,7 @@ class ActivityCard extends StatelessWidget {
                                 ?.copyWith(color: AppColors.muted)),
                     ]),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.muted),
+              const Icon(LucideIcons.chevronRight, color: AppColors.muted),
             ],
           ),
         ],
