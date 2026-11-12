@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/quick_action_grid.dart';
+import '../widgets/teacher_panorama.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
@@ -143,6 +144,11 @@ class TeacherDashboardPage extends ConsumerWidget {
                           ),
                       ],
                     ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text('Seu panorama docente',
+                        style: text.titleSmall?.copyWith(color: Colors.white)),
+                    const SizedBox(height: AppSpacing.sm),
+                    TeacherPanorama(classId: classId),
                   ],
                 ),
               ),
@@ -158,13 +164,13 @@ class TeacherDashboardPage extends ConsumerWidget {
                   ),
                   (
                     icon: LucideIcons.clipboardCheck,
-                    label: 'Avaliar entregas',
+                    label: 'Ver entregas',
                     onTap: () => GoRouter.maybeOf(context)
                         ?.go(AppRoutes.teacherActivities),
                   ),
                   (
                     icon: LucideIcons.graduationCap,
-                    label: 'Consultar notas',
+                    label: 'Lançar notas',
                     onTap: () =>
                         GoRouter.maybeOf(context)?.go(AppRoutes.teacherGrades),
                   ),

@@ -57,7 +57,9 @@ void main() {
     expect(find.text('Vínculo acadêmico'), findsOneWidget);
     expect(find.text('Engenharia de Software'), findsOneWidget);
     expect(find.text('Criar atividade'), findsNothing);
-    expect(find.text('Turmas'), findsNothing);
+    // Classes is a real indicator: the API returned no offering.
+    expect(find.text('Turmas'), findsOneWidget);
+    expect(find.text('Correções pendentes'), findsOneWidget);
     expect(find.text('Alunos'), findsNothing);
     expect(find.text('Pendências'), findsNothing);
     expect(find.text('Lançar notas'), findsNothing);

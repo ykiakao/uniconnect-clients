@@ -143,8 +143,8 @@ void main() {
     final shortcuts = [
       for (final label in [
         'Criar atividade',
-        'Avaliar entregas',
-        'Consultar notas',
+        'Ver entregas',
+        'Lançar notas',
         'Avisos da turma',
       ])
         find.ancestor(of: find.text(label), matching: find.byType(InkWell)),

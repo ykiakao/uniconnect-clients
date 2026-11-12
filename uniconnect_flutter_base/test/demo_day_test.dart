@@ -172,6 +172,9 @@ void main() {
     await pumpDemoPage(tester, const TeacherDashboardPage(), user: fakeTeacher);
     expect(find.text('Professor Teste'), findsOneWidget);
     expect(find.byTooltip('Meu perfil'), findsOneWidget);
+    await tester.scrollUntilVisible(
+        find.text('Vínculo acadêmico não informado'), 200,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('Vínculo acadêmico não informado'), findsOneWidget);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -1800));
     await tester.pumpAndSettle();

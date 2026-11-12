@@ -394,7 +394,7 @@ void main() {
         await tester.tap(find.byTooltip('Retornar'));
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherDashboard);
-        await openShortcut('Consultar notas');
+        await openShortcut('Lançar notas');
         expect(currentLocation(), AppRoutes.teacherGrades);
         await tester.tap(
             find.descendant(of: teacherBar, matching: find.text('Início')));
@@ -402,7 +402,7 @@ void main() {
         expect(currentLocation(), AppRoutes.teacherDashboard);
         for (final (label, destination) in [
           ('Avisos da turma', AppRoutes.notices),
-          ('Avaliar entregas', AppRoutes.teacherActivities),
+          ('Ver entregas', AppRoutes.teacherActivities),
         ]) {
           await openShortcut(label);
           expect(currentLocation(), destination);

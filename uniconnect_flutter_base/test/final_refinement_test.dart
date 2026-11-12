@@ -100,8 +100,8 @@ void main() {
     expect(find.text('Turmas e disciplinas'), findsOneWidget);
     for (final label in [
       'Criar atividade',
-      'Avaliar entregas',
-      'Consultar notas',
+      'Ver entregas',
+      'Lançar notas',
       'Avisos da turma',
     ]) {
       expect(find.text(label), findsOneWidget);

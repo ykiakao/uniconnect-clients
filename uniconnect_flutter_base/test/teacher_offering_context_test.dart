@@ -80,6 +80,12 @@ void main() {
 
   Future<void> choose(WidgetTester tester, String name,
       {bool settle = true}) async {
+    // On the home screen the picker may sit below the teacher panorama,
+    // outside the lazily built part of the list.
+    if (find.byType(DropdownButtonFormField<String>).evaluate().isEmpty) {
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+      await tester.pumpAndSettle();
+    }
     final picker = find.byType(DropdownButtonFormField<String>).first;
     await tester.ensureVisible(picker);
     await tester.tap(picker);
@@ -228,26 +234,27 @@ void main() {
     expect(tester.widget<TextFormField>(title).controller!.text, isEmpty);
   });
 
-  testWidgets('an offer deep link respects the dirty review before leaving work',
+  testWidgets(
+      'an offer deep link respects the dirty review before leaving work',
       (tester) async {
     final container = await openApp(tester,
         location: '${AppRoutes.teacherActivities}?classId=a',
         reply: (request) async {
-          final path = request.url.path;
-          if (path.endsWith('/offerings')) {
-            return jsonResponse(page([offeringA, offeringB]));
-          }
-          if (path.endsWith('/classes/a/activities')) {
-            return jsonResponse(page([
-              {...activityRow(state: 'published'), 'classId': 'a'},
-            ]));
-          }
-          if (path.endsWith('/enrollments')) return jsonResponse(page([]));
-          if (path.endsWith('/submissions')) {
-            return jsonResponse(page([reviewedSubmission()]));
-          }
-          return jsonResponse(reviewedSubmission());
-        });
+      final path = request.url.path;
+      if (path.endsWith('/offerings')) {
+        return jsonResponse(page([offeringA, offeringB]));
+      }
+      if (path.endsWith('/classes/a/activities')) {
+        return jsonResponse(page([
+          {...activityRow(state: 'published'), 'classId': 'a'},
+        ]));
+      }
+      if (path.endsWith('/enrollments')) return jsonResponse(page([]));
+      if (path.endsWith('/submissions')) {
+        return jsonResponse(page([reviewedSubmission()]));
+      }
+      return jsonResponse(reviewedSubmission());
+    });
     await tester.tap(find.text('Ver entregas'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Abrir entrega'));
