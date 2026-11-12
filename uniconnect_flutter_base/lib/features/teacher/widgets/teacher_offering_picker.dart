@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/theme/app_spacing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/teacher_activity_provider.dart';
@@ -78,6 +80,7 @@ class _TeacherOfferingPickerState extends ConsumerState<TeacherOfferingPicker> {
           onChanged:
               widget.enabled && !_changing && rows.isNotEmpty ? _select : null,
         ),
+        const SizedBox(height: AppSpacing.xs),
         if (offers.isLoading)
           const Text('Carregando ofertas autorizadas...')
         else if (offers.hasError) ...[
