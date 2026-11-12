@@ -299,6 +299,19 @@ void main() {
         expect(find.byTooltip('Meu perfil'), findsOneWidget);
         await tester.tap(find.text('Início').last);
         await tester.pumpAndSettle();
+        for (final (label, destination) in [
+          ('Ver notas', AppRoutes.grades),
+          ('Ver avisos', AppRoutes.notices),
+          ('Ver acadêmico', AppRoutes.academic),
+        ]) {
+          await tester.scrollUntilVisible(find.text(label).hitTestable(), 160,
+              scrollable: find.byType(Scrollable).first);
+          await tester.tap(find.text(label));
+          await tester.pumpAndSettle();
+          expect(currentLocation(), destination);
+          router.go(AppRoutes.studentDashboard);
+          await tester.pumpAndSettle();
+        }
         await tester.tap(find.text('Ver atividades'));
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(find.text('Pesquisa aplicada'), 200,
@@ -386,6 +399,15 @@ void main() {
             find.descendant(of: teacherBar, matching: find.text('Início')));
         await tester.pumpAndSettle();
         expect(currentLocation(), AppRoutes.teacherDashboard);
+        for (final (label, destination) in [
+          ('Avisos da turma', AppRoutes.notices),
+          ('Ver trabalhos e entregas', AppRoutes.teacherActivities),
+        ]) {
+          await openShortcut(label);
+          expect(currentLocation(), destination);
+          router.go(AppRoutes.teacherDashboard);
+          await tester.pumpAndSettle();
+        }
         await tester.tap(find.byTooltip('Meu perfil'));
         await tester.pumpAndSettle();
         expect(find.byType(NavigationBar), findsNothing);

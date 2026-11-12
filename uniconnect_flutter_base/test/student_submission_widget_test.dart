@@ -463,6 +463,10 @@ void main() {
     ('published in-person exam', activityJson(assessmentCategory: 'exam')),
     ('legacy activity', activityJson(workflowEnabled: false)),
     (
+      'non-digital assessed activity',
+      activityJson(workflowEnabled: false, assessmentCategory: 'activity')
+    ),
+    (
       'activity with unspecified workflow',
       activityJson()..remove('workflowEnabled')
     ),
