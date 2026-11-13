@@ -94,16 +94,19 @@ class ApiClient {
   }
 
   /// Returns the decoded body (empty for 204).
+  /// Returns the decoded body (empty for 204).
   Future<Map<String, dynamic>> delete(
     String path, {
     String? accessToken,
     String? tenantSlug,
     Map<String, String>? queryParams,
+    Map<String, dynamic>? body,
   }) {
     return _send(
       'DELETE',
       path,
       queryParams: queryParams,
+      body: body,
       accessToken: accessToken,
       tenantSlug: tenantSlug,
     );
@@ -145,7 +148,11 @@ class ApiClient {
             headers: headers,
             body: jsonEncode(body ?? const {}),
           ),
-        'DELETE' => _httpClient.delete(uri, headers: headers),
+        'DELETE' => _httpClient.delete(
+            uri,
+            headers: headers,
+            body: body == null ? null : jsonEncode(body),
+          ),
         _ => throw const ApiException('Método HTTP não suportado.'),
       })
           .timeout(timeout);

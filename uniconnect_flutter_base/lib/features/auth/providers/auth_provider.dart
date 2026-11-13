@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/notifications/push_auth_listener.dart';
 import '../../../core/tenant/tenant_config.dart';
 import '../models/app_user.dart';
 import '../services/api_auth_service.dart';
@@ -29,9 +30,11 @@ final sessionStorageProvider = Provider<SessionStorage>((ref) {
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AuthState>((ref) {
+  final pushCoordinator = ref.watch(pushRegistrationCoordinatorProvider);
   return AuthController(
     ref.watch(apiAuthServiceProvider),
     ref.watch(sessionStorageProvider),
+    beforeRemoteLogout: pushCoordinator.beforeRemoteLogout,
   )..restoreSession();
 });
 
@@ -46,11 +49,14 @@ class AuthController extends StateNotifier<AuthState> {
     this._authService,
     this._sessionStorage, {
     this.storageTimeout = const Duration(seconds: 4),
+    this.beforeRemoteLogout,
   }) : super(const AuthState.restoring());
 
   final ApiAuthService _authService;
   final SessionStorage _sessionStorage;
   final Duration storageTimeout;
+  final Future<void> Function(String accessToken, String tenantSlug)?
+      beforeRemoteLogout;
   final _renewal = ValueNotifier(SessionRenewal.idle);
   ValueListenable<SessionRenewal> get renewal => _renewal;
 
@@ -297,6 +303,15 @@ class AuthController extends StateNotifier<AuthState> {
       }
       final target = renewed ?? session;
       if (target != null) {
+        try {
+          final cleanup = beforeRemoteLogout;
+          if (cleanup != null) {
+            await cleanup(target.accessToken, target.user.tenant.slug)
+                .timeout(const Duration(seconds: 3));
+          }
+        } catch (_) {
+          // Falha no FCM nao deve impedir o logout.
+        }
         await _authService.logout(target.accessToken,
             tenantSlug: target.user.tenant.slug);
       }
