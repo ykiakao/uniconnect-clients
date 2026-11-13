@@ -250,6 +250,9 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
           key: form,
           child: AssessmentFields(
             initial: assessment,
+            plan: _plan(
+                ref.read(teacherActivitiesProvider(activity.classId)).value,
+                except: activity.id),
             enabled: true,
             onChanged: (value) => assessment = value,
           ),
@@ -336,6 +339,18 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
         if (_scroll.hasClients) _scroll.jumpTo(0);
       }
     }
+  }
+
+  /// Grading items already planned in the offering, so the form can show the
+  /// points left in each stage. Null while the activities are unknown.
+  List<TeacherAssessment>? _plan(List<TeacherActivity>? activities,
+      {String? except}) {
+    if (activities == null) return null;
+    return [
+      for (final activity in activities)
+        if (activity.id != except && activity.assessment != null)
+          activity.assessment!,
+    ];
   }
 
   Widget _formSection(IconData icon, String title) => Padding(
@@ -445,6 +460,12 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                 LucideIcons.calendarClock, 'Avaliação e prazo'),
                             AssessmentFields(
                               key: ValueKey(_assessmentFormVersion),
+                              plan: selected == null
+                                  ? null
+                                  : _plan(ref
+                                      .watch(
+                                          teacherActivitiesProvider(selected))
+                                      .value),
                               enabled: !_busy,
                               onChanged: (value) => _assessment = value,
                             ),

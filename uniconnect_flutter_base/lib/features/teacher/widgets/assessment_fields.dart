@@ -6,10 +6,15 @@ class AssessmentFields extends StatefulWidget {
   const AssessmentFields(
       {super.key,
       this.initial,
+      this.plan,
       required this.enabled,
       required this.onChanged});
 
   final TeacherAssessment? initial;
+
+  /// Other items already planned in the offering, without the one being
+  /// edited. Null while unknown: the form then shows only the stage cap.
+  final List<TeacherAssessment>? plan;
   final bool enabled;
   final ValueChanged<TeacherAssessment?> onChanged;
 
@@ -23,7 +28,42 @@ class _AssessmentFieldsState extends State<AssessmentFields> {
   late String _category = widget.initial?.category ?? 'activity';
   late String _points = widget.initial?.maxPoints.replaceAll('.', ',') ?? '';
 
-  String get _maximum => _category == 'exam' ? '7,00' : '3,00';
+  String get _maximum => academicCategoryMaximum(_category);
+
+  String get _categoryName => _category == 'exam' ? 'provas' : 'atividades';
+
+  /// Points left in the stage, or null when the plan is unknown.
+  int? get _remaining {
+    final plan = widget.plan;
+    return plan == null
+        ? null
+        : remainingPointsInCents(plan, _stage, _category);
+  }
+
+  String get _availability {
+    final remaining = _remaining;
+    if (remaining == null) return 'Até $_maximum pontos por item';
+    if (remaining == 0) {
+      return 'Não há pontos disponíveis para $_categoryName na $_stage '
+          '(limite de $_maximum).';
+    }
+    return 'Disponível para $_categoryName na $_stage: '
+        '${formatPointsCents(remaining)} de $_maximum pontos';
+  }
+
+  String? _validatePoints(String? value) {
+    final error = academicPointsError(value ?? '', _maximum);
+    if (error != null) return error;
+    final remaining = _remaining;
+    final cents = academicPointsInCents(value ?? '');
+    if (remaining != null && cents != null && cents > remaining) {
+      return remaining == 0
+          ? 'A $_stage já usa os $_maximum pontos de $_categoryName.'
+          : 'Restam ${formatPointsCents(remaining)} pontos para '
+              '$_categoryName na $_stage.';
+    }
+    return null;
+  }
 
   void _emit() {
     widget.onChanged(_linked
@@ -101,15 +141,19 @@ class _AssessmentFieldsState extends State<AssessmentFields> {
             initialValue: _points,
             enabled: widget.enabled,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: InputDecoration(
-              hintText: 'Ex.: $_maximum',
-              helperText: 'Até $_maximum pontos por item',
+              hintText:
+                  'Ex.: ${_remaining == null ? _maximum : formatPointsCents(_remaining!)}',
+              helperText: _availability,
+              helperMaxLines: 2,
+              errorMaxLines: 2,
             ),
             onChanged: (value) {
               _points = value;
               _emit();
             },
-            validator: (value) => academicPointsError(value ?? '', _maximum),
+            validator: _validatePoints,
           ),
         ),
       ],

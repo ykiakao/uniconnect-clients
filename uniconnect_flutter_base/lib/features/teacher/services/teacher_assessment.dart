@@ -16,6 +16,31 @@ String? academicPointsError(String raw, String maximum) {
   return null;
 }
 
+/// Stage cap per category: 3 points of activities and 7 of exams.
+String academicCategoryMaximum(String category) =>
+    category == 'exam' ? '7,00' : '3,00';
+
+/// Points already planned in the offering for [stage] and [category]. The
+/// API counts every linked activity, drafts and closed ones included.
+int allocatedPointsInCents(
+    Iterable<TeacherAssessment> plan, String stage, String category) {
+  return plan
+      .where((item) => item.stage == stage && item.category == category)
+      .fold(
+          0, (sum, item) => sum + (academicPointsInCents(item.maxPoints) ?? 0));
+}
+
+/// Points still available for a new item, never below zero.
+int remainingPointsInCents(
+    Iterable<TeacherAssessment> plan, String stage, String category) {
+  final cap = academicPointsInCents(academicCategoryMaximum(category)) ?? 0;
+  final left = cap - allocatedPointsInCents(plan, stage, category);
+  return left < 0 ? 0 : left;
+}
+
+String formatPointsCents(int cents) =>
+    '${cents ~/ 100},${(cents % 100).toString().padLeft(2, '0')}';
+
 String academicPointsPayload(String raw, String maximum) {
   final error = academicPointsError(raw, maximum);
   if (error != null) throw ApiException(error);
