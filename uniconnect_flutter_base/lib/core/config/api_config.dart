@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
-
-class ApiConfig {
+﻿class ApiConfig {
   const ApiConfig._();
 
   static const _configuredBaseUrl = String.fromEnvironment(
@@ -8,14 +6,14 @@ class ApiConfig {
     defaultValue: '',
   );
 
+  static const _productionBaseUrl =
+      'https://api-uni.juancjc.com.br/api/v1';
+
   static String get baseUrl {
-    if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+    if (_configuredBaseUrl.isNotEmpty) {
+      return _configuredBaseUrl;
+    }
 
-    if (kIsWeb) return 'http://localhost:3333/api/v1';
-
-    return switch (defaultTargetPlatform) {
-      TargetPlatform.android => 'http://10.0.2.2:3333/api/v1',
-      _ => 'http://localhost:3333/api/v1',
-    };
+    return _productionBaseUrl;
   }
 }
