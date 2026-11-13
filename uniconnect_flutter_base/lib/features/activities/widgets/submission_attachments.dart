@@ -12,7 +12,13 @@ import '../models/academic_attachment.dart';
 import '../providers/attachment_providers.dart';
 import '../services/attachment_service.dart';
 
-enum DraftFileState { uploading, validating, ready, failed }
+enum DraftFileState {
+  uploading,
+  validating,
+  awaitingConfirmation,
+  ready,
+  failed
+}
 
 /// A file chosen for the next version of a submission.
 class DraftFile {
@@ -44,6 +50,8 @@ class AttachmentDraftController extends ChangeNotifier {
       file.state == DraftFileState.uploading ||
       file.state == DraftFileState.validating);
   bool get isFull => _files.length >= attachmentMaxFiles;
+  bool get needsConfirmation =>
+      _files.any((file) => file.state == DraftFileState.awaitingConfirmation);
   List<String> get readyIds => [
         for (final file in _files)
           if (file.state == DraftFileState.ready && file.attachment != null)
@@ -110,11 +118,13 @@ class AttachmentDraftController extends ChangeNotifier {
         throw const _RetryReservation();
       }
       await service.uploadBytes(ticket, await file.read());
-      draft.state = DraftFileState.validating;
-      _notify();
-      draft.attachment = await service.complete(reservation.id);
-      draft.state = DraftFileState.ready;
     } on Object catch (error) {
+      if (draft.fileId != null && isAttachmentOutcomeUncertain(error)) {
+        draft.state = DraftFileState.awaitingConfirmation;
+        draft.error = AttachmentConfirmationPending(draft.fileId!).message;
+        _notify();
+        return;
+      }
       draft
         ..state = DraftFileState.failed
         ..error = error is _RetryReservation
@@ -122,6 +132,44 @@ class AttachmentDraftController extends ChangeNotifier {
             : attachmentErrorText(error);
       final fileId = draft.fileId;
       if (fileId != null) unawaited(_cancelQuietly(service, fileId));
+      _notify();
+      return;
+    }
+    await _confirm(draft, service);
+  }
+
+  Future<void> recover(DraftFile draft, AttachmentService? service) async {
+    if (_disposed ||
+        service == null ||
+        !_files.contains(draft) ||
+        draft.state != DraftFileState.awaitingConfirmation) {
+      return;
+    }
+    await _confirm(draft, service, resume: true);
+  }
+
+  Future<void> _confirm(DraftFile draft, AttachmentService service,
+      {bool resume = false}) async {
+    if (_disposed || !_files.contains(draft)) return;
+    final id = draft.fileId;
+    if (id == null) return;
+    draft.state = DraftFileState.validating;
+    draft.error = null;
+    _notify();
+    try {
+      final attachment =
+          await (resume ? service.recover(id) : service.complete(id));
+      if (_disposed || !_files.contains(draft)) return;
+      draft.attachment = attachment;
+      draft.state = DraftFileState.ready;
+    } on AttachmentConfirmationPending catch (error) {
+      if (_disposed || !_files.contains(draft)) return;
+      draft.state = DraftFileState.awaitingConfirmation;
+      draft.error = error.message;
+    } on Object catch (error) {
+      if (_disposed || !_files.contains(draft)) return;
+      draft.state = DraftFileState.failed;
+      draft.error = attachmentErrorText(error);
     }
     _notify();
   }
@@ -168,12 +216,14 @@ class AttachmentDraftSection extends StatelessWidget {
     required this.enabled,
     required this.onPick,
     required this.onRemove,
+    this.onRecover,
   });
 
   final AttachmentDraftController controller;
   final bool enabled;
   final VoidCallback onPick;
   final void Function(DraftFile file) onRemove;
+  final void Function(DraftFile file)? onRecover;
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +245,8 @@ class AttachmentDraftSection extends StatelessWidget {
               status: switch (file.state) {
                 DraftFileState.uploading => 'Enviando…',
                 DraftFileState.validating => 'Verificando arquivo…',
+                DraftFileState.awaitingConfirmation =>
+                  file.error ?? 'Confirmação pendente. Verifique novamente.',
                 DraftFileState.ready =>
                   file.kept ? 'Da versão atual' : 'Pronto para enviar',
                 DraftFileState.failed => file.error ?? 'Não enviado',
@@ -202,15 +254,26 @@ class AttachmentDraftSection extends StatelessWidget {
               failed: file.state == DraftFileState.failed,
               working: file.state == DraftFileState.uploading ||
                   file.state == DraftFileState.validating,
-              trailing: IconButton(
-                tooltip: 'Remover ${file.name}',
-                onPressed: enabled &&
-                        file.state != DraftFileState.uploading &&
-                        file.state != DraftFileState.validating
-                    ? () => onRemove(file)
-                    : null,
-                icon: const Icon(LucideIcons.x, size: 18),
-              ),
+              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (file.state == DraftFileState.awaitingConfirmation &&
+                    onRecover != null)
+                  IconButton(
+                    tooltip: 'Verificar ${file.name}',
+                    onPressed: enabled && !controller.busy
+                        ? () => onRecover!(file)
+                        : null,
+                    icon: const Icon(LucideIcons.refreshCw, size: 18),
+                  ),
+                IconButton(
+                  tooltip: 'Remover ${file.name}',
+                  onPressed: enabled &&
+                          file.state != DraftFileState.uploading &&
+                          file.state != DraftFileState.validating
+                      ? () => onRemove(file)
+                      : null,
+                  icon: const Icon(LucideIcons.x, size: 18),
+                ),
+              ]),
             ),
           if (controller.notice case final notice?)
             Padding(

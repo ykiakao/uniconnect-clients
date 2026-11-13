@@ -42,7 +42,7 @@ class _Fake {
         storageHost: _storageHost,
         storageClient: MockClient((request) async {
           storage.add(request);
-          return storageFails ? http.Response('', 500) : http.Response('', 200);
+          return storageFails ? http.Response('', 400) : http.Response('', 200);
         }),
         retryDelay: Duration.zero,
       );
@@ -161,7 +161,9 @@ void main() {
     expect(fake.storage, hasLength(1));
   });
 
-  test('a failed transfer is marked and its reservation cancelled', () async {
+  test(
+      'a definitively rejected transfer is marked and its reservation cancelled',
+      () async {
     final fake = _Fake()..storageFails = true;
     final drafts = AttachmentDraftController();
     addTearDown(drafts.dispose);

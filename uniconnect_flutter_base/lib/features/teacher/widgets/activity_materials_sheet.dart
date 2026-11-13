@@ -53,6 +53,9 @@ class _Upload {
   final int sizeBytes;
   String status = 'Enviando…';
   String? error;
+  String? fileId;
+  int? linkRevision;
+  bool confirmationPending = false;
 }
 
 class _ActivityMaterialsSheetState
@@ -96,7 +99,10 @@ class _ActivityMaterialsSheetState
       final picked = await ref.read(attachmentPickerProvider)();
       for (final file in picked) {
         final used = (_materials?.length ?? 0) +
-            _uploads.where((upload) => upload.error == null).length;
+            _uploads
+                .where((upload) =>
+                    upload.error == null || upload.confirmationPending)
+                .length;
         if (used >= attachmentMaxFiles) {
           _error = 'Limite de $attachmentMaxFiles materiais por atividade.';
           break;
@@ -118,35 +124,82 @@ class _ActivityMaterialsSheetState
   Future<void> _upload(PickedFile file) async {
     final upload = _Upload(file.name, file.size);
     setState(() => _uploads.add(upload));
-    String? fileId;
     try {
       final reservation = await _service.reserveMaterial(_id,
           fileName: file.name,
           sizeBytes: file.size,
           idempotencyKey: newIdempotencyKey());
-      fileId = reservation.id;
+      upload.fileId = reservation.id;
       final ticket = reservation.ticket;
       if (ticket == null) {
         throw const _Reselect();
       }
       await _service.uploadBytes(ticket, await file.read());
+    } on Object catch (error) {
+      final id = upload.fileId;
+      final uncertain = id != null && isAttachmentOutcomeUncertain(error);
+      if (id != null && !uncertain) unawaited(_cancelQuietly(id));
+      if (mounted) {
+        setState(() {
+          upload.confirmationPending = uncertain;
+          upload.error = uncertain
+              ? AttachmentConfirmationPending(id).message
+              : error is _Reselect
+                  ? 'Selecione o arquivo novamente.'
+                  : attachmentErrorText(error);
+        });
+      }
+      return;
+    }
+    await _confirmAndLink(upload);
+  }
+
+  Future<void> _recover(_Upload upload) async {
+    if (_working || !upload.confirmationPending) return;
+    setState(() => _working = true);
+    try {
+      await _confirmAndLink(upload, resume: true);
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _confirmAndLink(_Upload upload, {bool resume = false}) async {
+    if (!mounted) return;
+    final id = upload.fileId!;
+    if (mounted) {
+      setState(() {
+        upload.error = null;
+        upload.confirmationPending = false;
+      });
+    }
+    try {
       if (mounted) setState(() => upload.status = 'Verificando arquivo…');
-      await _service.complete(reservation.id);
+      await (resume ? _service.recover(id) : _service.complete(id));
+      if (!mounted) return;
       if (mounted) setState(() => upload.status = 'Vinculando à atividade…');
-      final linked =
-          await _service.linkMaterial(_id, reservation.id, _revision);
+      upload.linkRevision ??= _revision;
+      final linked = await _service.linkMaterial(_id, id, upload.linkRevision!);
       if (!mounted) return;
       setState(() {
-        _revision = linked.revision;
-        _materials = [...?_materials, linked.attachment];
+        if (linked.revision > _revision) _revision = linked.revision;
+        if (!(_materials ?? const <AcademicAttachment>[])
+            .any((file) => file.id == id)) {
+          _materials = [...?_materials, linked.attachment];
+        }
         _uploads.remove(upload);
       });
     } on Object catch (error) {
-      if (fileId != null) unawaited(_cancelQuietly(fileId));
       if (mounted) {
-        setState(() => upload.error = error is _Reselect
-            ? 'Selecione o arquivo novamente.'
-            : attachmentErrorText(error));
+        setState(() {
+          upload.confirmationPending = error is AttachmentConfirmationPending ||
+              isAttachmentOutcomeUncertain(error);
+          upload.error = upload.confirmationPending
+              ? (error is AttachmentConfirmationPending
+                  ? error.message
+                  : AttachmentConfirmationPending(id).message)
+              : attachmentErrorText(error);
+        });
       }
     }
   }
@@ -229,13 +282,15 @@ class _ActivityMaterialsSheetState
           for (final upload in _uploads)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: upload.error == null
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(LucideIcons.circleAlert,
-                      color: AppColors.danger),
+              leading: upload.confirmationPending
+                  ? const Icon(Icons.hourglass_empty, color: AppColors.inkMuted)
+                  : upload.error == null
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(LucideIcons.circleAlert,
+                          color: AppColors.danger),
               title: Text(upload.name,
                   maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(
@@ -243,13 +298,19 @@ class _ActivityMaterialsSheetState
                   style: upload.error == null
                       ? muted
                       : muted?.copyWith(color: AppColors.danger)),
-              trailing: upload.error == null
-                  ? null
-                  : IconButton(
-                      tooltip: 'Dispensar ${upload.name}',
-                      onPressed: () => setState(() => _uploads.remove(upload)),
-                      icon: const Icon(LucideIcons.x, size: 18),
-                    ),
+              trailing: upload.confirmationPending
+                  ? TextButton(
+                      onPressed: _working ? null : () => _recover(upload),
+                      child: const Text('Verificar arquivo'),
+                    )
+                  : upload.error == null
+                      ? null
+                      : IconButton(
+                          tooltip: 'Dispensar ${upload.name}',
+                          onPressed: () =>
+                              setState(() => _uploads.remove(upload)),
+                          icon: const Icon(LucideIcons.x, size: 18),
+                        ),
             ),
           if (_error != null)
             Padding(

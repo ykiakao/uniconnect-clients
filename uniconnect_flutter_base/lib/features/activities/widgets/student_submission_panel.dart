@@ -149,6 +149,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
   }
 
   Future<void> _submit(StudentSubmission? previous) async {
+    if (_drafts.busy || _drafts.needsConfirmation) return;
     final activity = widget.activity;
     if (_busy ||
         !widget.activityIsCurrent ||
@@ -348,6 +349,8 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                                     !_mustRefresh &&
                                     widget.activityIsCurrent,
                                 onPick: () => _pickFiles(submission),
+                                onRecover: (file) =>
+                                    _drafts.recover(file, _attachments),
                                 onRemove: (file) {
                                   _dirty = true;
                                   _drafts.remove(file, _attachments);
@@ -357,6 +360,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                               ElevatedButton.icon(
                                   onPressed: _busy ||
                                           _drafts.busy ||
+                                          _drafts.needsConfirmation ||
                                           _mustRefresh ||
                                           !widget.activityIsCurrent
                                       ? null
