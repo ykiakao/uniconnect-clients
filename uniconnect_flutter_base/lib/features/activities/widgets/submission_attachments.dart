@@ -238,9 +238,12 @@ class AttachmentDraftSection extends StatelessWidget {
 /// Read-only files with a download action that asks the API for a fresh
 /// signed link at click time.
 class AttachmentList extends ConsumerStatefulWidget {
-  const AttachmentList({super.key, required this.files});
+  const AttachmentList({super.key, required this.files, this.onRemove});
 
   final List<AcademicAttachment> files;
+
+  /// When set, each row also offers removal (teacher materials).
+  final void Function(AcademicAttachment file)? onRemove;
 
   @override
   ConsumerState<AttachmentList> createState() => _AttachmentListState();
@@ -277,19 +280,32 @@ class _AttachmentListState extends ConsumerState<AttachmentList> {
             name: file.name,
             sizeBytes: file.sizeBytes,
             image: file.isImage,
-            trailing: _opening == file.id
-                ? const Padding(
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_opening == file.id)
+                  const Padding(
                     padding: EdgeInsets.all(12),
                     child: SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2)),
                   )
-                : IconButton(
+                else
+                  IconButton(
                     tooltip: 'Baixar ${file.name}',
                     onPressed: () => _open(file),
                     icon: const Icon(LucideIcons.download, size: 18),
                   ),
+                if (widget.onRemove case final remove?)
+                  IconButton(
+                    tooltip: 'Remover ${file.name}',
+                    onPressed: () => remove(file),
+                    icon: const Icon(LucideIcons.trash2,
+                        size: 18, color: AppColors.danger),
+                  ),
+              ],
+            ),
           ),
         if (_error != null)
           Text(_error!,

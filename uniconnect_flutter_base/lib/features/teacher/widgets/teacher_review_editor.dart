@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/academic_blocks.dart';
+import '../../activities/widgets/submission_attachments.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -315,6 +316,13 @@ class _ReviewEditorState extends ConsumerState<_ReviewEditor> {
                       ),
                       child: SelectableText(_current.answer),
                     ),
+                    if (_current.attachments.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text('Arquivos desta versão',
+                          style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: AppSpacing.xxs),
+                      AttachmentList(files: _current.attachments),
+                    ],
                   ])),
               AppCard(
                   child: Column(

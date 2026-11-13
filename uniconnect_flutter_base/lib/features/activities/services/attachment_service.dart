@@ -45,6 +45,32 @@ class AttachmentService {
     required int sizeBytes,
     required int expectedVersion,
     required String idempotencyKey,
+  }) =>
+      _reserve('${_activity(activityId)}/submissions/attachment-uploads',
+          fileName: fileName,
+          sizeBytes: sizeBytes,
+          idempotencyKey: idempotencyKey,
+          extra: {'expectedVersion': expectedVersion});
+
+  /// Reserves a support material for an activity (teacher). The activity
+  /// must already exist as a draft or published without submissions.
+  Future<UploadReservation> reserveMaterial(
+    String activityId, {
+    required String fileName,
+    required int sizeBytes,
+    required String idempotencyKey,
+  }) =>
+      _reserve('${_activity(activityId)}/attachment-uploads',
+          fileName: fileName,
+          sizeBytes: sizeBytes,
+          idempotencyKey: idempotencyKey);
+
+  Future<UploadReservation> _reserve(
+    String path, {
+    required String fileName,
+    required int sizeBytes,
+    required String idempotencyKey,
+    Map<String, dynamic> extra = const {},
   }) async {
     final contentType = attachmentContentType(fileName);
     final problem = attachmentValidationError(fileName, sizeBytes);
@@ -52,17 +78,56 @@ class AttachmentService {
       throw ApiException(problem ?? 'Formato não aceito.');
     }
     return UploadReservation.fromJson(await client.post(
-      '${_activity(activityId)}/submissions/attachment-uploads',
+      path,
       {
         'fileName': fileName,
         'sizeBytes': sizeBytes,
         'contentType': contentType,
-        'expectedVersion': expectedVersion,
+        ...extra,
       },
       accessToken: accessToken,
       tenantSlug: tenantSlug,
       headers: {'Idempotency-Key': idempotencyKey},
     ));
+  }
+
+  /// Materials linked to an activity (ready and active only).
+  Future<List<AcademicAttachment>> materials(String activityId) async {
+    final row = await client.get('${_activity(activityId)}/attachments',
+        accessToken: accessToken, tenantSlug: tenantSlug);
+    return AcademicAttachment.listFrom(row['data']);
+  }
+
+  /// Links a ready file; [expectedRevision] is the activity revision, not a
+  /// submission version. Returns the new revision.
+  Future<({AcademicAttachment attachment, int revision})> linkMaterial(
+      String activityId, String fileId, int expectedRevision) async {
+    final row = await client.post('${_activity(activityId)}/attachments',
+        {'fileId': fileId, 'expectedVersion': expectedRevision},
+        accessToken: accessToken, tenantSlug: tenantSlug);
+    final revision = row['revision'];
+    if (revision is! int) {
+      throw const ApiException('A API não confirmou o material.');
+    }
+    return (
+      attachment: AcademicAttachment.fromJson(row['attachment']),
+      revision: revision
+    );
+  }
+
+  /// Removes a material (logically); returns the new activity revision.
+  Future<int> removeMaterial(
+      String activityId, String fileId, int expectedRevision) async {
+    final row = await client.delete(
+        '${_activity(activityId)}/attachments/${Uri.encodeComponent(fileId)}',
+        queryParams: {'expectedVersion': '$expectedRevision'},
+        accessToken: accessToken,
+        tenantSlug: tenantSlug);
+    final revision = row['revision'];
+    if (revision is! int) {
+      throw const ApiException('A API não confirmou a remoção.');
+    }
+    return revision;
   }
 
   /// Sends the bytes to the signed Storage URL, with exactly the method and
@@ -177,7 +242,8 @@ String attachmentErrorText(Object error) {
           503 =>
             'O envio de arquivos está indisponível no momento. A resposta em texto continua funcionando.',
           403 || 404 => 'Envio de arquivos não autorizado para esta atividade.',
-          409 => 'A entrega mudou. Atualize antes de anexar arquivos.',
+          409 =>
+            'A atividade ou a entrega mudou, ou já não aceita alterações de arquivo. Atualize e tente de novo.',
           _ => error.message,
         },
     };

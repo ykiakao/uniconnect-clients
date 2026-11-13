@@ -13,6 +13,7 @@ import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
 import '../services/teacher_activity_service.dart';
 import '../services/teacher_assessment.dart';
+import '../widgets/activity_materials_sheet.dart';
 import '../widgets/activity_type_field.dart';
 import '../widgets/assessment_fields.dart';
 import '../widgets/teacher_offering_picker.dart';
@@ -523,6 +524,18 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                                               : () => _editAssessment(activity),
                                           child: const Text(
                                               'Editar dados da avaliação'),
+                                        ),
+                                      if (canManageMaterials(activity))
+                                        TextButton.icon(
+                                          style: AppButtonStyles.compact(),
+                                          onPressed: _busy || _mustRefresh
+                                              ? null
+                                              : () => showActivityMaterials(
+                                                  context, ref, activity),
+                                          icon: const Icon(
+                                              LucideIcons.paperclip,
+                                              size: 16),
+                                          label: const Text('Materiais'),
                                         ),
                                       if (!activity.isExam &&
                                           activity.state == 'draft' &&

@@ -21,6 +21,7 @@ import '../providers/teacher_activity_provider.dart';
 import '../providers/teacher_offering_selection.dart';
 import '../providers/teacher_review_provider.dart';
 import '../services/teacher_activity_service.dart';
+import '../widgets/activity_materials_sheet.dart';
 import '../widgets/teacher_offering_picker.dart';
 import '../widgets/teacher_work_draft_dialog.dart';
 import '../widgets/teacher_work_submissions.dart';
@@ -367,6 +368,15 @@ class _WorkAreaState extends ConsumerState<_WorkArea> {
                   child: const Text('Editar rascunho'),
                 ),
               ],
+              if (canManageMaterials(work))
+                TextButton.icon(
+                  style: AppButtonStyles.compact(),
+                  onPressed: _busy
+                      ? null
+                      : () => showActivityMaterials(context, ref, work),
+                  icon: const Icon(LucideIcons.paperclip, size: 16),
+                  label: const Text('Materiais'),
+                ),
               if (work.hasSubmissions)
                 TextButton(
                   style: AppButtonStyles.compact(),

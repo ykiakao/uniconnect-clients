@@ -59,3 +59,10 @@ final submissionVersionFilesProvider = FutureProvider.autoDispose
             .watch(attachmentServiceProvider)
             .versionFiles(key.submissionId, key.version),
         retry: (_, __) => null);
+
+/// Materials of an activity, as the signed-in user may read them.
+final activityMaterialsProvider = FutureProvider.autoDispose
+    .family<List<AcademicAttachment>, String>(
+        (ref, activityId) =>
+            ref.watch(attachmentServiceProvider).materials(activityId),
+        retry: (_, __) => null);

@@ -93,14 +93,17 @@ class ApiClient {
     );
   }
 
-  Future<void> delete(
+  /// Returns the decoded body (empty for 204).
+  Future<Map<String, dynamic>> delete(
     String path, {
     String? accessToken,
     String? tenantSlug,
-  }) async {
-    await _send(
+    Map<String, String>? queryParams,
+  }) {
+    return _send(
       'DELETE',
       path,
+      queryParams: queryParams,
       accessToken: accessToken,
       tenantSlug: tenantSlug,
     );

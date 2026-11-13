@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../widgets/submission_attachments.dart';
+import '../providers/attachment_providers.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
@@ -230,19 +232,7 @@ class _ActivityDetailContent extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (activity.attachments.isEmpty)
-                    const Text(
-                      'Nenhum material anexo para esta atividade.',
-                      style: TextStyle(color: AppColors.muted),
-                    )
-                  else
-                    ...activity.attachments.map(
-                      (attachment) => _MaterialItem(
-                        icon: LucideIcons.file,
-                        title: attachment,
-                        subtitle: 'Material da atividade',
-                      ),
-                    ),
+                  _ActivityMaterials(activity: activity),
                 ],
               ),
             ),
@@ -364,5 +354,41 @@ class _ChecklistItem extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Materials from the attachments API; when the feature is unavailable it
+/// falls back to the names the activity carries (demo data).
+class _ActivityMaterials extends ConsumerWidget {
+  const _ActivityMaterials({required this.activity});
+
+  final AcademicActivity activity;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    const empty = Text(
+      'Nenhum material anexo para esta atividade.',
+      style: TextStyle(color: AppColors.muted),
+    );
+    final legacy = activity.attachments.isEmpty
+        ? empty
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final attachment in activity.attachments)
+                _MaterialItem(
+                  icon: LucideIcons.file,
+                  title: attachment,
+                  subtitle: 'Material da atividade',
+                ),
+            ],
+          );
+    return ref.watch(activityMaterialsProvider(activity.id)).when(
+          loading: () => const LinearProgressIndicator(
+              semanticsLabel: 'Carregando materiais'),
+          error: (_, __) => legacy,
+          data: (files) =>
+              files.isEmpty ? legacy : AttachmentList(files: files),
+        );
   }
 }

@@ -1,3 +1,4 @@
+import '../../activities/models/academic_attachment.dart';
 import '../../../core/network/api_client.dart';
 import 'grade_precision.dart';
 
@@ -46,8 +47,12 @@ class TeacherSubmission {
       required this.status,
       required this.submittedAt,
       required this.isLate,
-      required this.result});
+      required this.result,
+      this.attachments = const []});
   final String id, activityId, studentId, answer, status;
+
+  /// Files of the version being reviewed; empty when the API sends none.
+  final List<AcademicAttachment> attachments;
   final int version;
   final DateTime submittedAt;
   final bool isLate;
@@ -98,7 +103,8 @@ class TeacherSubmission {
         isLate: row['isLate'] as bool,
         result: row['result'] == null
             ? null
-            : SubmissionReview.fromJson(row['result'] as Map<String, dynamic>));
+            : SubmissionReview.fromJson(row['result'] as Map<String, dynamic>),
+        attachments: AcademicAttachment.listFrom(row['attachments']));
   }
 }
 
