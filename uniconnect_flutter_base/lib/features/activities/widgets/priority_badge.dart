@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_badge.dart';
 import '../models/academic_activity.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class PriorityBadge extends StatelessWidget {
   const PriorityBadge({super.key, required this.priority});
@@ -12,19 +13,29 @@ class PriorityBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, tone, icon) = switch (priority) {
       ActivityPriority.critical => (
-          'URGENTE',
+          'Crítica',
           AppBadgeTone.danger,
-          Icons.priority_high,
+          LucideIcons.flag,
         ),
       ActivityPriority.medium => (
-          'MEDIA',
+          'Média',
           AppBadgeTone.warning,
-          Icons.schedule,
+          LucideIcons.clock,
         ),
       ActivityPriority.low => (
-          'BAIXA',
+          'Baixa',
           AppBadgeTone.success,
-          Icons.check_circle_outline,
+          LucideIcons.circleCheck,
+        ),
+      ActivityPriority.expired => (
+          'Expirada',
+          AppBadgeTone.neutral,
+          LucideIcons.calendarX,
+        ),
+      ActivityPriority.noDeadline => (
+          'Sem prazo',
+          AppBadgeTone.neutral,
+          LucideIcons.calendar,
         ),
     };
 

@@ -1,48 +1,31 @@
 # UniConnect Painel Web
 
-Painel administrativo web do SaaS acadêmico UniConnect.
+Painel administrativo web do SaaS acadêmico UniConnect, voltado para coordenadores, gestores acadêmicos e administradores da instituição. O app Flutter atende alunos e professores.
 
-## Sobre o Projeto
+## Stack
 
-Este diretório contém a primeira versão do painel administrativo do UniConnect.
+* React, TypeScript e Vite
+* Tailwind CSS e [shadcn/ui](https://ui.shadcn.com) (Radix, estilo Vega)
+* TanStack Query, React Hook Form e React Router
+* Vitest e Testing Library
 
-Enquanto o app mobile atende o uso diário de alunos e professores, o painel web é voltado para coordenadores, gestores acadêmicos e administradores da instituição.
+A identidade UniConnect fica em `src/index.css`: as cores do design kit são aplicadas às variáveis do shadcn/ui, com a fonte Inter. Espaçamentos e raios seguem o padrão do shadcn/ui. Os logos ficam em `public/brand`.
 
-O MVP atual usa HTML, CSS e JavaScript sem dependências de build. Ele já consome a API `uniconnect-api` para login administrativo real, restauração de sessão protegida e contexto do tenant.
+## Estrutura
 
-## Responsabilidades do Painel
-
-* Autenticar usuários administrativos via API UniConnect
-* Exibir contexto da instituição atual
-* Mostrar indicadores administrativos iniciais
-* Preparar navegação para usuários, cursos, turmas, relatórios e assinatura
-* Consumir a API `uniconnect-api` via HTTP
-
-## Tecnologias Utilizadas no MVP
-
-* HTML
-* CSS responsivo
-* JavaScript
-* Fetch API
-* Local/session storage
-
-Stack recomendada para evolução:
-
-* React ou Next.js
-* TypeScript
-* Tailwind CSS ou design system próprio
-* TanStack Query
-* React Hook Form
-* Zod
-
-## Estrutura do Repositório
-
-| Arquivo | Finalidade |
+| Caminho | Finalidade |
 | ----- | ---------- |
-| `index.html` | Entrada do painel |
-| `styles.css` | Layout, tema e responsividade |
-| `app.js` | Login, sessão, navegação e integração REST |
-| `server.mjs` | Servidor estático local sem dependências |
+| `src/components/ui` | Componentes do shadcn/ui |
+| `src/components/layout` | Menu lateral, topo e rotas de navegação |
+| `src/components/data-table.tsx` | Tabela responsiva: vira cartões abaixo de 1024 px |
+| `src/components/resource` | Base das telas de cadastro (lista, filtros, formulário, exclusão) |
+| `src/features/auth` | Login, sessão, recuperação de senha, ativação e convites |
+| `src/features/users` | Gestão de usuários |
+| `src/features/academic` | Cursos, turmas, períodos, disciplinas, ofertas, matrículas, vínculos e atividades |
+| `src/features/invites`, `notices`, `reports`, `institution` | Convites, avisos, relatórios, assinatura e configurações |
+| `src/features/platform` | Administração global em `/plataforma`, com login e sessão próprios |
+| `src/features/dashboard` | Visão geral da instituição |
+| `src/lib` | Cliente da API e formatadores |
 
 ## Executando
 
@@ -53,73 +36,39 @@ cd ../uniconnect-api
 npm run dev
 ```
 
-Sirva o painel na origem liberada pelo CORS da API:
+Inicie o painel:
 
 ```bash
 cd painel_web
-node server.mjs
+npm install
+npm run dev
 ```
 
-Acesse:
+| Variável | Padrão | Finalidade |
+| ----- | ---------- | ---------- |
+| `VITE_API_BASE_URL` | `http://localhost:3333/api/v1` | Endereço da API |
+| `VITE_DEFAULT_TENANT` | `universidade-norte` | Instituição sugerida no login |
 
-```text
-http://127.0.0.1:8080
-```
+## Comandos
+
+| Comando | Finalidade |
+| ----- | ---------- |
+| `npm run dev` | Desenvolvimento |
+| `npm test` | Testes |
+| `npm run typecheck` | Verificação de tipos |
+| `npm run build` | Build de produção em `dist/` |
+| `npm run preview` | Serve o build localmente |
 
 ## Integração com a API
 
-O painel consome a API em:
+O painel consome a API via HTTP e envia o header `x-tenant-slug` em todas as chamadas. Ele não importa código do backend por caminho local.
 
-```text
-http://localhost:3333/api/v1
-```
+1. O administrador entra com `POST /auth/admin/login`.
+2. A sessão é restaurada com `GET /auth/admin/me`.
+3. As telas usam as rotas de `/tenants/:slug`.
 
-Header de tenant esperado:
+## Acesso administrativo
 
-```http
-x-tenant-slug: universidade-norte
-Accept: application/json
-```
+O painel não aceita alunos ou professores. A API libera o acesso somente para usuários vinculados ao tenant com os perfis `admin`, `coordinator` ou `owner`.
 
-O painel consome a API via HTTP. Ele não importa código do backend por caminho local.
-
-## Fluxo Principal
-
-1. O administrador acessa o painel web.
-2. O painel autentica o usuário via `POST /auth/admin/login`.
-3. O tenant da instituição é carregado pela resposta da API.
-4. A sessão é restaurada com `GET /auth/admin/me`.
-5. Os módulos administrativos ficam preparados para endpoints futuros.
-
-## Acesso Administrativo
-
-O painel web não deve aceitar alunos ou professores. A API libera o acesso somente para usuários vinculados ao tenant com um destes perfis:
-
-* `admin`
-* `coordinator`
-* `owner`
-
-Usuários esperados no seed, depois de criados no Supabase Auth:
-
-| Perfil | E-mail | Senha |
-| ------ | ------ | ----- |
-| Coordenador | `coordenador@uni.com` | `123456` |
-| Mantenedor | `dono@uni.com` | `123456` |
-
-## Roadmap do Painel
-
-* Criar endpoints administrativos de usuários
-* Adicionar telas de cursos e turmas
-* Adicionar relatórios acadêmicos
-* Adicionar gestão de assinatura
-* Evoluir para React/Next.js se o painel crescer
-
-## Arquivos da Entrega
-
-Atualmente esta pasta contém:
-
-* `README.md`
-* `index.html`
-* `styles.css`
-* `app.js`
-* `server.mjs`
+Contas de apresentação são fornecidas pelo responsável em canal privado. Não registrar credenciais de acesso neste repositório.

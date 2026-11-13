@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../../core/constants/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/status_banner.dart';
 import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
+import '../services/session_storage.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../../shared/widgets/brand_logo.dart';
+import '../../../shared/widgets/app_button_styles.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -42,7 +48,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _login() async {
-    if (_isLoading) return;
+    if (_isLoading || ref.read(authControllerProvider).isRestoring) return;
 
     final email = _emailController.text.trim().toLowerCase();
     final emailError = _validateEmail(email);
@@ -59,13 +65,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final user = await ref.read(authControllerProvider.notifier).login(
+      await ref.read(authControllerProvider.notifier).login(
             email: email,
             password: _passwordController.text,
             rememberSession: _rememberMe,
           );
-      if (!mounted) return;
-      _goByRole(user);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -86,7 +90,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   String _loginErrorMessage(Object error) {
+    if (error is UnsupportedUserRole) return error.message;
     if (error is ApiException) {
+      if (error.code == 'SESSION_STORAGE_UNAVAILABLE') {
+        return sessionStorageUnavailableMessage;
+      }
       return switch (error.statusCode) {
         401 =>
           'E-mail ou senha incorretos. Confira os dados e tente novamente.',
@@ -102,13 +110,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return 'Não foi possível conectar à API. Verifique sua conexão ou tente novamente.';
   }
 
-  void _goByRole(AppUser user) {
-    final route = user.role == UserRole.teacher
-        ? AppRoutes.teacherDashboard
-        : AppRoutes.studentDashboard;
-    context.go(route);
-  }
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -118,17 +119,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authControllerProvider);
+    final authError = _authError ??
+        (auth.status == AuthStatus.unauthenticated ? auth.errorMessage : null);
+    final busy = _isLoading || auth.isRestoring;
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
             child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.pageHorizontal),
               shrinkWrap: true,
               children: [
                 const SizedBox(height: AppSpacing.xl),
-                const _BrandMark(),
+                const BrandLogo(),
                 const SizedBox(height: AppSpacing.lg),
                 AppCard(
                   padding: const EdgeInsets.all(AppSpacing.lg),
@@ -136,19 +141,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SAAS ACADÊMICO MOBILE-FIRST',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: .9,
-                            ),
+                        'SEU AMBIENTE ACADÊMICO',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: AppColors.primary),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
                         'Bem-vindo de volta',
                         style:
                             Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                 ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
@@ -162,12 +166,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.username],
+                        autocorrect: false,
                         textInputAction: TextInputAction.next,
                         enabled: !_isLoading,
                         onChanged: (_) => _clearErrorsOnEdit(),
                         decoration: InputDecoration(
                           labelText: 'E-mail institucional',
-                          prefixIcon: const Icon(Icons.email_outlined),
+                          prefixIcon: const Icon(LucideIcons.mail),
                           errorText: _emailError,
                           errorMaxLines: 2,
                         ),
@@ -176,6 +182,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       TextField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        autofillHints: const [AutofillHints.password],
+                        autocorrect: false,
+                        enableSuggestions: false,
                         textInputAction: TextInputAction.done,
                         enabled: !_isLoading,
                         onSubmitted: (_) {
@@ -184,7 +193,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onChanged: (_) => _clearErrorsOnEdit(),
                         decoration: InputDecoration(
                           labelText: 'Senha',
-                          prefixIcon: const Icon(Icons.lock_outline),
+                          prefixIcon: const Icon(LucideIcons.lock),
                           suffixIcon: IconButton(
                             tooltip: _obscurePassword
                                 ? 'Mostrar senha'
@@ -198,57 +207,104 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   },
                             icon: Icon(
                               _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
+                                  ? LucideIcons.eye
+                                  : LucideIcons.eyeOff,
                             ),
                           ),
                           errorText: _passwordError,
                           errorMaxLines: 2,
                         ),
                       ),
-                      if (_authError != null) ...[
+                      if (authError != null) ...[
                         const SizedBox(height: AppSpacing.md),
                         StatusBanner(
                           title: 'Falha ao entrar',
-                          message: _authError!,
+                          message: authError,
                           tone: AppBadgeTone.danger,
                         ),
                       ],
-                      const SizedBox(height: AppSpacing.sm),
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: _isLoading
-                                ? null
-                                : (value) {
-                                    setState(() {
-                                      _rememberMe = value ?? false;
-                                    });
-                                  },
+                      if (auth.canRetryRestore && !busy)
+                        TextButton(
+                          style: AppButtonStyles.link,
+                          onPressed: () {
+                            setState(() => _authError = null);
+                            ref
+                                .read(authControllerProvider.notifier)
+                                .restoreSession();
+                          },
+                          child: const Text('Tentar restaurar sessão'),
+                        ),
+                      const SizedBox(height: AppSpacing.xs),
+                      // The whole row is the 48px touch target, so the box
+                      // itself can line up with the left edge of the fields.
+                      InkWell(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        onTap: _isLoading
+                            ? null
+                            : () => setState(() => _rememberMe = !_rememberMe),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                              minHeight: AppSizes.touchTarget),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  visualDensity: const VisualDensity(
+                                      horizontal: -4, vertical: -4),
+                                  onChanged: _isLoading
+                                      ? null
+                                      : (value) => setState(
+                                          () => _rememberMe = value ?? false),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              const Expanded(child: Text('Lembrar de mim')),
+                            ],
                           ),
-                          const Expanded(child: Text('Lembrar de mim')),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       PrimaryButton(
-                        onPressed: _isLoading ? null : _login,
-                        icon: Icons.login,
-                        label: _isLoading ? 'Entrando...' : 'Entrar',
-                        isLoading: _isLoading,
+                        onPressed: busy ? null : _login,
+                        icon: LucideIcons.logIn,
+                        label: auth.isRestoring
+                            ? 'Restaurando...'
+                            : _isLoading
+                                ? 'Entrando...'
+                                : 'Entrar',
+                        isLoading: busy,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Center(
+                        child: TextButton(
+                          style: AppButtonStyles.link,
+                          onPressed: busy
+                              ? null
+                              : () => GoRouter.maybeOf(context)
+                                  ?.go(AppRoutes.forgotPassword),
+                          child: const Text('Esqueci minha senha'),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                const Text(
+                Text(
                   'Use as credenciais institucionais para acessar sua rotina acadêmica.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.muted),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.inkMuted),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Português (Brasil)  •  Suporte  •  Privacidade',
+                  'UniConnect • Conectando sua rotina acadêmica',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
@@ -259,42 +315,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _BrandMark extends StatelessWidget {
-  const _BrandMark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 18,
-                offset: Offset(0, 10),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.school, color: Colors.white, size: 38),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'UniConnect',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w900,
-              ),
-        ),
-      ],
     );
   }
 }

@@ -38,7 +38,7 @@ class _AverageSimulatorState extends State<AverageSimulator> {
         Text(
           'Simulador de média',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
         ),
         const SizedBox(height: 2),
@@ -82,7 +82,7 @@ class _AverageSimulatorState extends State<AverageSimulator> {
             'Média prevista: ${_average.toStringAsFixed(1)}',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.primary,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
           ),
         ),

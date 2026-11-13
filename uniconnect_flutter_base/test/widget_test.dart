@@ -38,6 +38,7 @@ void main() {
         child: const MaterialApp(home: LoginPage()),
       ),
     );
+    await tester.pumpAndSettle();
   }
 
   void pressLoginButton(WidgetTester tester) {
@@ -56,7 +57,7 @@ void main() {
       ],
     );
 
-    expect(find.text('UniConnect'), findsOneWidget);
+    expect(find.bySemanticsLabel('UniConnect'), findsOneWidget);
     expect(find.text('Entrar'), findsOneWidget);
     expect(find.text('aluno@uni.com'), findsNothing);
 
@@ -108,7 +109,7 @@ void main() {
     );
 
     await tester.enterText(find.byType(TextField).first, 'aluno@uni.com');
-    await tester.enterText(find.byType(TextField).last, '123456');
+    await tester.enterText(find.byType(TextField).last, 'test-only-password');
     pressLoginButton(tester);
     await tester.pump();
 
@@ -168,7 +169,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.enterText(find.byType(TextField).last, '123456');
+    await tester.enterText(find.byType(TextField).last, 'test-only-password');
     await tester.pump();
     expect(
       find.text(

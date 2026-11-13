@@ -1,3 +1,4 @@
+import 'package:uniconnect/features/academic/demo/synthetic_academic_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,6 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:uniconnect/features/activities/models/academic_activity.dart';
 import 'package:uniconnect/features/activities/presentation/activity_detail_page.dart';
 import 'package:uniconnect/features/activities/providers/activity_provider.dart';
+import 'package:uniconnect/features/auth/providers/auth_provider.dart';
+
+import 'fakes/fake_session_storage.dart';
 
 void main() {
   final activity = AcademicActivity(
@@ -12,10 +16,8 @@ void main() {
     subject: 'Metodos Quantitativos',
     title: 'Pesquisa aplicada',
     description: 'Analise os dados disponibilizados para a turma.',
-    dueLabel: 'Vence em 3 dias',
     dueDate: DateTime(2026, 10, 3),
     teacher: 'Profa. Ana Lima',
-    priority: ActivityPriority.medium,
     status: ActivityStatus.pending,
     criteria: [],
     attachments: [],
@@ -30,7 +32,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          activitiesProvider.overrideWith((ref) async => [activity]),
+          sessionStorageProvider.overrideWithValue(FakeSessionStorage()),
+          syntheticDemoRequestedProvider.overrideWithValue(false),
+          activityByIdProvider.overrideWith((ref, id) async => activity),
         ],
         child: const MaterialApp(
           home: ActivityDetailPage(activityId: 'activity-1'),

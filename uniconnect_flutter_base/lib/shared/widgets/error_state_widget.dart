@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
+import 'app_card.dart';
+import 'empty_state_widget.dart';
 
 class ErrorStateWidget extends StatelessWidget {
   const ErrorStateWidget({
@@ -17,39 +19,19 @@ class ErrorStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.danger,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              error,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Tentar Novamente'),
-            ),
-          ],
-        ),
+    return StateLayout(
+      tile: const IconTile(
+        icon: LucideIcons.circleAlert,
+        color: AppColors.danger,
+        background: AppColors.dangerTint,
+        size: 48,
+      ),
+      title: title,
+      message: error,
+      action: OutlinedButton.icon(
+        onPressed: onRetry,
+        icon: const Icon(LucideIcons.refreshCw),
+        label: const Text('Tentar novamente'),
       ),
     );
   }

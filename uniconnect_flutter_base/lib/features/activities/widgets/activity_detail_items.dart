@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class CriteriaItem extends StatelessWidget {
   const CriteriaItem({super.key, required this.label});
@@ -15,7 +16,7 @@ class CriteriaItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle_outline, size: 18),
+          const Icon(LucideIcons.circleCheck, size: 18),
           const SizedBox(width: AppSpacing.sm),
           Expanded(child: Text(label)),
         ],
@@ -35,7 +36,7 @@ class AttachmentItem extends StatelessWidget {
       padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Row(
         children: [
-          const Icon(Icons.attach_file, color: AppColors.muted),
+          const Icon(LucideIcons.paperclip, color: AppColors.muted),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(

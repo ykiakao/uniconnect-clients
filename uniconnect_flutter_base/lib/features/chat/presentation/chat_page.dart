@@ -6,9 +6,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/status_banner.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../models/chat_message.dart';
 import '../providers/chat_provider.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ChatPage extends ConsumerWidget {
   const ChatPage({super.key});
@@ -20,6 +22,7 @@ class ChatPage extends ConsumerWidget {
     return Scaffold(
       appBar: const AppHeader(
         title: 'Conversas',
+        showProfile: true,
         fallbackRoute: AppRoutes.studentDashboard,
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 2),
@@ -27,18 +30,27 @@ class ChatPage extends ConsumerWidget {
         child: Column(
           children: [
             const Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: StatusBanner(
+                title: 'Demonstração',
+                message:
+                    'Dados de demonstração. Mensagens ilustrativas; envio e anexos ainda não estão disponíveis.',
+              ),
+            ),
+            const Padding(
               padding: EdgeInsets.fromLTRB(
-                AppSpacing.lg,
+                AppSpacing.pageHorizontal,
                 AppSpacing.md,
-                AppSpacing.lg,
+                AppSpacing.pageHorizontal,
                 AppSpacing.sm,
               ),
               child: Column(
                 children: [
                   TextField(
+                    enabled: false,
                     decoration: InputDecoration(
                       hintText: 'Buscar mensagens...',
-                      prefixIcon: Icon(Icons.search),
+                      prefixIcon: Icon(LucideIcons.search),
                     ),
                   ),
                   SizedBox(height: AppSpacing.md),
@@ -50,9 +62,9 @@ class ChatPage extends ConsumerWidget {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
+                  AppSpacing.pageHorizontal,
                   AppSpacing.md,
-                  AppSpacing.lg,
+                  AppSpacing.pageHorizontal,
                   AppSpacing.lg,
                 ),
                 itemCount: messages.length,
@@ -74,7 +86,7 @@ class _ConversationStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 86,
+      height: 72 + 32 * MediaQuery.textScalerOf(context).scale(1),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: const [
@@ -142,14 +154,14 @@ class _ConversationTile extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w900),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                       Text(
                         time,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: AppColors.primary,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                             ),
                       ),
                     ],
@@ -176,10 +188,10 @@ class _ChatHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.pageHorizontal),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: AppColors.navy,
         borderRadius: BorderRadius.circular(16),
       ),
       child: const Row(
@@ -190,7 +202,7 @@ class _ChatHeader extends StatelessWidget {
               'RS',
               style: TextStyle(
                 color: AppColors.primary,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -203,11 +215,11 @@ class _ChatHeader extends StatelessWidget {
                   'Prof. Ricardo Silva',
                   style: TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
-                  'ONLINE AGORA',
+                  'CONVERSA ILUSTRATIVA',
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
@@ -233,9 +245,9 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         constraints: const BoxConstraints(maxWidth: 310),
         decoration: BoxDecoration(
-          color: message.isMine ? AppColors.primary : Colors.white,
+          color: message.isMine ? AppColors.primary : AppColors.surfaceRaised,
           border: Border.all(
-            color: message.isMine ? AppColors.primary : AppColors.border,
+            color: message.isMine ? AppColors.primary : AppColors.line,
           ),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
@@ -243,13 +255,6 @@ class _MessageBubble extends StatelessWidget {
             bottomLeft: Radius.circular(message.isMine ? 16 : 4),
             bottomRight: Radius.circular(message.isMine ? 4 : 16),
           ),
-          boxShadow: const [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,11 +300,12 @@ class _Composer extends StatelessWidget {
           children: [
             IconButton(
               tooltip: 'Anexar arquivo',
-              onPressed: () {},
-              icon: const Icon(Icons.attach_file),
+              onPressed: null,
+              icon: const Icon(LucideIcons.paperclip),
             ),
             const Expanded(
               child: TextField(
+                enabled: false,
                 decoration:
                     InputDecoration(hintText: 'Escreva sua mensagem...'),
               ),
@@ -307,8 +313,8 @@ class _Composer extends StatelessWidget {
             const SizedBox(width: AppSpacing.xs),
             IconButton.filled(
               tooltip: 'Enviar mensagem',
-              onPressed: () {},
-              icon: const Icon(Icons.send),
+              onPressed: null,
+              icon: const Icon(LucideIcons.send),
             ),
           ],
         ),

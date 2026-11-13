@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class AppBackButton extends StatelessWidget {
   const AppBackButton({
@@ -16,7 +17,7 @@ class AppBackButton extends StatelessWidget {
     return IconButton(
       tooltip: tooltip,
       onPressed: () => _goBack(context),
-      icon: const Icon(Icons.arrow_back),
+      icon: const Icon(LucideIcons.arrowLeft),
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,14 +7,19 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
-import '../../../shared/widgets/bottom_nav.dart';
+import '../../../shared/widgets/academic_content.dart';
+import '../../auth/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../academic/demo/synthetic_academic_providers.dart';
+import '../../teacher/providers/teacher_activity_provider.dart';
+import '../../../shared/widgets/app_button_styles.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
-  void _handleLogout(BuildContext context, WidgetRef ref) {
-    showDialog(
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sair da conta?'),
@@ -24,16 +28,11 @@ class ProfilePage extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () async {
-              await ref.read(authControllerProvider.notifier).logout();
-              if (!context.mounted) return;
-              Navigator.pop(dialogContext);
-              context.go(AppRoutes.login);
-            },
+            onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
             ),
@@ -42,16 +41,17 @@ class ProfilePage extends ConsumerWidget {
         ],
       ),
     );
+    if (confirmed != true || !context.mounted) return;
+    await ref.read(authControllerProvider.notifier).logout();
   }
 
   void _showSettings(BuildContext context) {
-    var notificationsEnabled = true;
-    var remindersEnabled = true;
-
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
+      isScrollControlled: true,
+      builder: (sheetContext) => SingleChildScrollView(
+          child: StatefulBuilder(
         builder: (context, setState) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -67,27 +67,26 @@ class ProfilePage extends ConsumerWidget {
                 Text(
                   'Configurações',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                const Text(
+                    'Notificações e lembretes ainda não estão integrados neste aplicativo.',
+                    style: TextStyle(color: AppColors.muted)),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  secondary: const Icon(Icons.notifications_outlined),
+                  secondary: const Icon(LucideIcons.bell),
                   title: const Text('Notificações'),
-                  value: notificationsEnabled,
-                  onChanged: (value) {
-                    setState(() => notificationsEnabled = value);
-                  },
+                  value: false,
+                  onChanged: null,
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  secondary: const Icon(Icons.event_available_outlined),
+                  secondary: const Icon(LucideIcons.calendarCheck),
                   title: const Text('Lembretes de atividades'),
-                  value: remindersEnabled,
-                  onChanged: (value) {
-                    setState(() => remindersEnabled = value);
-                  },
+                  value: false,
+                  onChanged: null,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 PrimaryButton(
@@ -98,38 +97,45 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
+    final isTeacher = user?.role == UserRole.teacher;
 
     return Scaffold(
-      appBar: const AppHeader(
+      appBar: AppHeader(
         title: 'Perfil',
-        fallbackRoute: AppRoutes.studentDashboard,
+        fallbackRoute:
+            isTeacher ? AppRoutes.teacherDashboard : AppRoutes.studentDashboard,
       ),
-      bottomNavigationBar: const UniBottomNav(currentIndex: 4),
       body: SafeArea(
-        child: ListView(
+        child: AcademicContent(
+            child: ListView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
+            AppSpacing.pageHorizontal,
             AppSpacing.md,
-            AppSpacing.lg,
+            AppSpacing.pageHorizontal,
             AppSpacing.xl,
           ),
           children: [
             AppCard(
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 32,
-                    backgroundColor: AppColors.primary,
-                    child: Icon(Icons.person, color: Colors.white, size: 34),
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.primaryTint,
+                    child: Text(
+                      _initials(user?.name),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.primary,
+                          ),
+                    ),
                   ),
-                  const SizedBox(width: AppSpacing.lg),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,11 +144,11 @@ class ProfilePage extends ConsumerWidget {
                           user?.name ?? 'Usuário',
                           style:
                               Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w700,
                                   ),
                         ),
                         Text(
-                          user?.email ?? 'email@uni.com',
+                          user?.email ?? 'E-mail não informado',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.muted,
@@ -162,13 +168,15 @@ class ProfilePage extends ConsumerWidget {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppColors.secondarySoft,
-                      child: Text(
-                        user.tenant.initials,
-                        style: const TextStyle(
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                      child: user.tenant.id.isEmpty
+                          ? const Icon(LucideIcons.graduationCap)
+                          : Text(
+                              user.tenant.initials,
+                              style: const TextStyle(
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
@@ -176,17 +184,19 @@ class ProfilePage extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user.tenant.name,
+                            user.tenant.id.isNotEmpty
+                                ? user.tenant.name
+                                : 'Instituição não informada',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
                                 ?.copyWith(
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                 ),
                           ),
                           const SizedBox(height: AppSpacing.xxs),
                           Text(
-                            '${user.tenant.planLabel} • ${user.tenant.statusLabel}',
+                            'Instituição vinculada à sua conta',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: AppColors.muted,
@@ -200,6 +210,25 @@ class ProfilePage extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
             ],
+            if (ref.watch(syntheticDemoEnabledProvider))
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Ambiente de demonstração',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppColors.muted,
+                            )),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                        'Dados acadêmicos fictícios da EduKMais, usados para apresentação. Não representam registros reais da sua conta.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            )),
+                  ],
+                ),
+              ),
             AppCard(
               child: Column(
                 children: [
@@ -212,38 +241,55 @@ class ProfilePage extends ConsumerWidget {
                   ],
                   _ProfileInfo(
                     label: 'Curso',
-                    value: user?.course ?? 'Engenharia de Software',
+                    value: user?.course?.trim().isNotEmpty == true
+                        ? user!.course!
+                        : 'Não informado',
                   ),
-                  const Divider(height: AppSpacing.lg),
-                  _ProfileInfo(
-                    label: 'Matrícula',
-                    value: user?.registration ?? '2024021845',
-                  ),
-                  const Divider(height: AppSpacing.lg),
-                  _ProfileInfo(
-                    label: 'Semestre',
-                    value: '${user?.semester ?? 4}',
-                  ),
+                  if (user?.role == UserRole.student) ...[
+                    const Divider(height: AppSpacing.lg),
+                    _ProfileInfo(
+                      label: 'Matrícula',
+                      value: user?.registration?.trim().isNotEmpty == true
+                          ? user!.registration!
+                          : 'Não informado',
+                    ),
+                    const Divider(height: AppSpacing.lg),
+                    _ProfileInfo(
+                      label: 'Semestre',
+                      value: user?.semester?.toString() ?? 'Não informado',
+                    ),
+                  ],
                 ],
               ),
             ),
+            if (user?.role == UserRole.teacher) const _TeacherClasses(),
             const SizedBox(height: AppSpacing.lg),
             SecondaryButton(
               onPressed: () => _showSettings(context),
-              icon: Icons.settings_outlined,
+              icon: LucideIcons.settings,
               label: 'Configurações',
             ),
             const SizedBox(height: AppSpacing.md),
             DestructiveButton(
+              subtle: true,
               onPressed: () => _handleLogout(context, ref),
-              icon: Icons.logout,
+              icon: LucideIcons.logOut,
               label: 'Sair',
             ),
           ],
-        ),
+        )),
       ),
     );
   }
+}
+
+String _initials(String? name) {
+  final parts =
+      (name ?? '').trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+  if (parts.isEmpty) return '?';
+  final first = parts.first[0];
+  final last = parts.length > 1 ? parts.last[0] : '';
+  return (first + last).toUpperCase();
 }
 
 class _ProfileInfo extends StatelessWidget {
@@ -255,16 +301,75 @@ class _ProfileInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         children: [
           Expanded(child: Text(label)),
-          Text(
+          Expanded(
+              child: Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          )),
         ],
       ),
+    );
+  }
+}
+
+/// Classes the teacher is assigned to, as returned by the API.
+class _TeacherClasses extends ConsumerWidget {
+  const _TeacherClasses();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = Theme.of(context).textTheme;
+    final muted = text.bodyMedium?.copyWith(color: AppColors.inkMuted);
+    return AppCard(
+      icon: LucideIcons.bookOpen,
+      title: 'Turmas e disciplinas',
+      child: ref.watch(teacherOfferingsProvider).when(
+            loading: () => const LinearProgressIndicator(
+                semanticsLabel: 'Carregando turmas'),
+            error: (_, __) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Não foi possível carregar as turmas.', style: muted),
+                TextButton(
+                  style: AppButtonStyles.link,
+                  onPressed: () => ref.invalidate(teacherOfferingsProvider),
+                  child: const Text('Tentar novamente'),
+                ),
+              ],
+            ),
+            data: (offerings) => offerings.isEmpty
+                ? Text('Nenhuma turma ativa vinculada ao seu perfil.',
+                    style: muted)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final offering in offerings)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.xxs),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(top: 2),
+                                child: Icon(LucideIcons.dot,
+                                    size: 18, color: AppColors.primary),
+                              ),
+                              const SizedBox(width: AppSpacing.xxs),
+                              Expanded(
+                                  child: Text(offering.label,
+                                      style: text.bodyMedium)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
     );
   }
 }

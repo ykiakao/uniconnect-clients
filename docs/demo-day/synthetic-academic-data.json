@@ -1,0 +1,470 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "synthetic": true,
+    "label": "Dados sintéticos de demonstração — EduKMais",
+    "purpose": "Demo Day UniConnect — preparação documental, sem integração",
+    "referenceDateTime": "2026-10-28T19:00:00-05:00",
+    "timeZone": "America/Rio_Branco",
+    "idNamespace": "demo-edukmais-",
+    "sourcePolicy": "Criação autoral; somente estrutura acadêmica observada, sem transcrição de dados pessoais.",
+    "integrationStatus": "not_integrated"
+  },
+  "institution": {
+    "id": "demo-edukmais-institution-001",
+    "slug": "edukmais",
+    "name": "EduKMais",
+    "displayName": "EduKMais — Ambiente de demonstração do UniConnect"
+  },
+  "courses": [
+    {
+      "id": "demo-edukmais-course-001",
+      "institutionId": "demo-edukmais-institution-001",
+      "name": "Engenharia de Software",
+      "currentPeriodId": "demo-edukmais-period-2026-2"
+    }
+  ],
+  "periods": [
+    {
+      "id": "demo-edukmais-period-2025-1",
+      "courseId": "demo-edukmais-course-001",
+      "label": "2025.1",
+      "calendarSemester": 1,
+      "curricularOrdinal": 1,
+      "startsOn": "2025-02-03",
+      "endsOn": "2025-07-11",
+      "isCurrent": false
+    },
+    {
+      "id": "demo-edukmais-period-2025-2",
+      "courseId": "demo-edukmais-course-001",
+      "label": "2025.2",
+      "calendarSemester": 2,
+      "curricularOrdinal": 2,
+      "startsOn": "2025-08-04",
+      "endsOn": "2025-12-12",
+      "isCurrent": false
+    },
+    {
+      "id": "demo-edukmais-period-2026-1",
+      "courseId": "demo-edukmais-course-001",
+      "label": "2026.1",
+      "calendarSemester": 1,
+      "curricularOrdinal": 3,
+      "startsOn": "2026-02-02",
+      "endsOn": "2026-07-17",
+      "isCurrent": false
+    },
+    {
+      "id": "demo-edukmais-period-2026-2",
+      "courseId": "demo-edukmais-course-001",
+      "label": "2026.2",
+      "calendarSemester": 2,
+      "curricularOrdinal": 4,
+      "startsOn": "2026-08-03",
+      "endsOn": "2026-12-11",
+      "isCurrent": true
+    }
+  ],
+  "teachers": [
+    {
+      "id": "demo-edukmais-teacher-001",
+      "institutionId": "demo-edukmais-institution-001",
+      "displayName": "Docente Demo 01"
+    },
+    {
+      "id": "demo-edukmais-teacher-002",
+      "institutionId": "demo-edukmais-institution-001",
+      "displayName": "Docente Demo 02"
+    },
+    {
+      "id": "demo-edukmais-teacher-003",
+      "institutionId": "demo-edukmais-institution-001",
+      "displayName": "Docente Demo 03"
+    },
+    {
+      "id": "demo-edukmais-teacher-004",
+      "institutionId": "demo-edukmais-institution-001",
+      "displayName": "Docente Demo 04"
+    },
+    {
+      "id": "demo-edukmais-teacher-005",
+      "institutionId": "demo-edukmais-institution-001",
+      "displayName": "Docente Demo 05"
+    }
+  ],
+  "subjects": [
+    {
+      "id": "demo-edukmais-subject-001",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2025-1",
+      "offeringId": "demo-edukmais-offering-001",
+      "code": "ES101",
+      "name": "Lógica e Algoritmos",
+      "teacherId": "demo-edukmais-teacher-001"
+    },
+    {
+      "id": "demo-edukmais-subject-002",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2025-1",
+      "offeringId": "demo-edukmais-offering-002",
+      "code": "ES102",
+      "name": "Fundamentos de Computação",
+      "teacherId": "demo-edukmais-teacher-002"
+    },
+    {
+      "id": "demo-edukmais-subject-003",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2025-1",
+      "offeringId": "demo-edukmais-offering-003",
+      "code": "ES103",
+      "name": "Matemática para Software",
+      "teacherId": "demo-edukmais-teacher-003"
+    },
+    {
+      "id": "demo-edukmais-subject-004",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2025-2",
+      "offeringId": "demo-edukmais-offering-004",
+      "code": "ES201",
+      "name": "Programação Orientada a Objetos",
+      "teacherId": "demo-edukmais-teacher-001"
+    },
+    {
+      "id": "demo-edukmais-subject-005",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2025-2",
+      "offeringId": "demo-edukmais-offering-005",
+      "code": "ES202",
+      "name": "Estruturas de Dados",
+      "teacherId": "demo-edukmais-teacher-002"
+    },
+    {
+      "id": "demo-edukmais-subject-006",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2025-2",
+      "offeringId": "demo-edukmais-offering-006",
+      "code": "ES203",
+      "name": "Modelagem de Sistemas",
+      "teacherId": "demo-edukmais-teacher-003"
+    },
+    {
+      "id": "demo-edukmais-subject-007",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2026-1",
+      "offeringId": "demo-edukmais-offering-007",
+      "code": "ES301",
+      "name": "Desenvolvimento Web",
+      "teacherId": "demo-edukmais-teacher-001"
+    },
+    {
+      "id": "demo-edukmais-subject-008",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2026-1",
+      "offeringId": "demo-edukmais-offering-008",
+      "code": "ES302",
+      "name": "Sistemas Operacionais",
+      "teacherId": "demo-edukmais-teacher-002"
+    },
+    {
+      "id": "demo-edukmais-subject-009",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2026-1",
+      "offeringId": "demo-edukmais-offering-009",
+      "code": "ES303",
+      "name": "Redes e Serviços",
+      "teacherId": "demo-edukmais-teacher-003"
+    },
+    {
+      "id": "demo-edukmais-subject-010",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2026-2",
+      "offeringId": "demo-edukmais-offering-010",
+      "code": "ES401",
+      "name": "Engenharia de Requisitos",
+      "teacherId": "demo-edukmais-teacher-001"
+    },
+    {
+      "id": "demo-edukmais-subject-011",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2026-2",
+      "offeringId": "demo-edukmais-offering-011",
+      "code": "ES402",
+      "name": "Banco de Dados",
+      "teacherId": "demo-edukmais-teacher-002"
+    },
+    {
+      "id": "demo-edukmais-subject-012",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2026-2",
+      "offeringId": "demo-edukmais-offering-012",
+      "code": "ES403",
+      "name": "Arquitetura de Software",
+      "teacherId": "demo-edukmais-teacher-003"
+    },
+    {
+      "id": "demo-edukmais-subject-013",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2026-2",
+      "offeringId": "demo-edukmais-offering-013",
+      "code": "ES404",
+      "name": "Engenharia de Software",
+      "teacherId": "demo-edukmais-teacher-004"
+    },
+    {
+      "id": "demo-edukmais-subject-014",
+      "courseId": "demo-edukmais-course-001",
+      "periodId": "demo-edukmais-period-2026-2",
+      "offeringId": "demo-edukmais-offering-014",
+      "code": "ES405",
+      "name": "Testes de Software",
+      "teacherId": "demo-edukmais-teacher-005"
+    }
+  ],
+  "activities": [
+    {
+      "id": "demo-edukmais-activity-001",
+      "subjectId": "demo-edukmais-subject-010",
+      "offeringId": "demo-edukmais-offering-010",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-001",
+      "title": "Mapa de stakeholders do projeto biblioteca",
+      "description": "Identifique perfis de usuários de uma biblioteca fictícia, organize necessidades e descreva três critérios de aceitação. Não utilize dados de pessoas reais.",
+      "dueDate": "2026-10-20T18:00:00-05:00",
+      "priority": "medium",
+      "status": "done",
+      "criteria": [
+        "Clareza das necessidades",
+        "Critérios verificáveis"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-002",
+      "subjectId": "demo-edukmais-subject-011",
+      "offeringId": "demo-edukmais-offering-011",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-002",
+      "title": "Modelo relacional de acervo digital",
+      "description": "Desenhe um modelo com livros, categorias e empréstimos usando somente exemplos inventados. Justifique chaves e cardinalidades; não execute comandos em banco remoto.",
+      "dueDate": "2026-10-22T18:00:00-05:00",
+      "priority": "low",
+      "status": "done",
+      "criteria": [
+        "Coerência das relações",
+        "Justificativa das chaves"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-003",
+      "subjectId": "demo-edukmais-subject-012",
+      "offeringId": "demo-edukmais-offering-012",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-003",
+      "title": "Decisão arquitetural para catálogo",
+      "description": "Redija um registro de decisão comparando uma aplicação em camadas e uma estrutura modular para um catálogo fictício. Explique custos e consequências.",
+      "dueDate": "2026-10-24T18:00:00-05:00",
+      "priority": "medium",
+      "status": "done",
+      "criteria": [
+        "Contexto da decisão",
+        "Análise dos compromissos"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-004",
+      "subjectId": "demo-edukmais-subject-013",
+      "offeringId": "demo-edukmais-offering-013",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-004",
+      "title": "Plano de evolução de produto acadêmico",
+      "description": "Organize três incrementos para um produto universitário imaginário. Identifique dependências e critérios de conclusão, sem estimar progresso real de curso.",
+      "dueDate": "2026-10-26T18:00:00-05:00",
+      "priority": "low",
+      "status": "done",
+      "criteria": [
+        "Sequência dos incrementos",
+        "Critérios de conclusão"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-005",
+      "subjectId": "demo-edukmais-subject-010",
+      "offeringId": "demo-edukmais-offering-010",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-001",
+      "title": "Revisão de histórias e critérios de aceitação",
+      "description": "Revise quatro histórias de usuário de uma biblioteca fictícia. Acrescente exemplos positivos e negativos e registre dúvidas sobre escopo.",
+      "dueDate": "2026-10-28T22:00:00-05:00",
+      "priority": "critical",
+      "status": "pending",
+      "criteria": [
+        "Consistência das histórias",
+        "Exemplos de aceitação"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-006",
+      "subjectId": "demo-edukmais-subject-011",
+      "offeringId": "demo-edukmais-offering-011",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-002",
+      "title": "Análise de consultas e índices",
+      "description": "A partir de uma tabela inventada de empréstimos, descreva consultas de busca e proponha índices em um documento. Não conecte a nenhum banco nem execute SQL.",
+      "dueDate": "2026-10-29T18:00:00-05:00",
+      "priority": "critical",
+      "status": "pending",
+      "criteria": [
+        "Justificativa dos índices",
+        "Discussão de custo e leitura"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-007",
+      "subjectId": "demo-edukmais-subject-014",
+      "offeringId": "demo-edukmais-offering-014",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-005",
+      "title": "Plano de testes de autenticação fictícia",
+      "description": "Defina cenários de sucesso, falha e acessibilidade para uma tela de acesso imaginária. Use credenciais apenas como marcadores textuais, sem senhas reais.",
+      "dueDate": "2026-10-30T23:00:00-05:00",
+      "priority": "medium",
+      "status": "pending",
+      "criteria": [
+        "Cobertura dos cenários",
+        "Resultados esperados claros"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-008",
+      "subjectId": "demo-edukmais-subject-012",
+      "offeringId": "demo-edukmais-offering-012",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-003",
+      "title": "Diagrama de componentes de agenda",
+      "description": "Descreva os componentes de uma agenda universitária imaginária, suas responsabilidades e dependências. Inclua uma análise de falha de comunicação.",
+      "dueDate": "2026-11-10T18:00:00-05:00",
+      "priority": "low",
+      "status": "pending",
+      "criteria": [
+        "Responsabilidades definidas",
+        "Análise da falha"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-009",
+      "subjectId": "demo-edukmais-subject-013",
+      "offeringId": "demo-edukmais-offering-013",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-004",
+      "title": "Diário de decisões do projeto",
+      "description": "Registre dúvidas e alternativas para o próximo incremento fictício. Material de estudo sem data de entrega definida; não representa atividade atrasada.",
+      "dueDate": null,
+      "priority": "low",
+      "status": "inProgress",
+      "criteria": [
+        "Registro de alternativas",
+        "Clareza da justificativa"
+      ],
+      "attachments": []
+    },
+    {
+      "id": "demo-edukmais-activity-010",
+      "subjectId": "demo-edukmais-subject-014",
+      "offeringId": "demo-edukmais-offering-014",
+      "periodId": "demo-edukmais-period-2026-2",
+      "teacherId": "demo-edukmais-teacher-005",
+      "title": "Checklist de revisão por pares",
+      "description": "Prepare um checklist de testes unitários e revisão para uma função imaginária de agendamento. Atividade de estudo sem prazo informado.",
+      "dueDate": null,
+      "priority": "medium",
+      "status": "pending",
+      "criteria": [
+        "Itens verificáveis",
+        "Organização do checklist"
+      ],
+      "attachments": []
+    }
+  ],
+  "evaluations": [
+    {
+      "id": "demo-edukmais-evaluation-001",
+      "subjectId": "demo-edukmais-subject-010",
+      "periodId": "demo-edukmais-period-2026-2",
+      "activityId": "demo-edukmais-activity-001",
+      "code": "AVL001",
+      "title": "Avaliação: Mapa de stakeholders do projeto biblioteca",
+      "grade": 7.8,
+      "maxGrade": 10,
+      "feedback": "Exemplo demonstrativo: necessidades bem organizadas; detalhe as exceções dos critérios.",
+      "assessedAt": "2026-10-21T16:00:00-05:00"
+    },
+    {
+      "id": "demo-edukmais-evaluation-002",
+      "subjectId": "demo-edukmais-subject-011",
+      "periodId": "demo-edukmais-period-2026-2",
+      "activityId": "demo-edukmais-activity-002",
+      "code": "AVL002",
+      "title": "Avaliação: Modelo relacional de acervo digital",
+      "grade": 8.6,
+      "maxGrade": 10,
+      "feedback": "Exemplo demonstrativo: relações coerentes; explicite a política de exclusão do acervo.",
+      "assessedAt": "2026-10-23T16:00:00-05:00"
+    },
+    {
+      "id": "demo-edukmais-evaluation-003",
+      "subjectId": "demo-edukmais-subject-012",
+      "periodId": "demo-edukmais-period-2026-2",
+      "activityId": "demo-edukmais-activity-003",
+      "code": "AVL003",
+      "title": "Avaliação: Decisão arquitetural para catálogo",
+      "grade": 9.0,
+      "maxGrade": 10,
+      "feedback": "Exemplo demonstrativo: decisão bem fundamentada; acrescente um cenário de crescimento.",
+      "assessedAt": "2026-10-25T16:00:00-05:00"
+    },
+    {
+      "id": "demo-edukmais-evaluation-004",
+      "subjectId": "demo-edukmais-subject-013",
+      "periodId": "demo-edukmais-period-2026-2",
+      "activityId": "demo-edukmais-activity-004",
+      "code": "AVL004",
+      "title": "Avaliação: Plano de evolução de produto acadêmico",
+      "grade": 7.4,
+      "maxGrade": 10,
+      "feedback": "Exemplo demonstrativo: incrementos claros; refine as dependências do segundo ciclo.",
+      "assessedAt": "2026-10-27T16:00:00-05:00"
+    },
+    {
+      "id": "demo-edukmais-evaluation-005",
+      "subjectId": "demo-edukmais-subject-014",
+      "periodId": "demo-edukmais-period-2026-2",
+      "activityId": null,
+      "code": "AVL005",
+      "title": "Avaliação conceitual de estratégias de teste",
+      "grade": 8.2,
+      "maxGrade": 10,
+      "feedback": "Exemplo demonstrativo: boa distinção entre níveis de teste; amplie os casos de fronteira.",
+      "assessedAt": "2026-10-27T17:00:00-05:00"
+    },
+    {
+      "id": "demo-edukmais-evaluation-006",
+      "subjectId": "demo-edukmais-subject-007",
+      "periodId": "demo-edukmais-period-2026-1",
+      "activityId": null,
+      "code": "AVL006",
+      "title": "Registro histórico demonstrativo de desenvolvimento web",
+      "grade": 8.8,
+      "maxGrade": 10,
+      "feedback": "Exemplo demonstrativo: boa organização das camadas; documente as decisões de interface.",
+      "assessedAt": "2026-07-10T17:00:00-05:00"
+    }
+  ]
+}

@@ -6,10 +6,11 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 
 class ApiException implements Exception {
-  const ApiException(this.message, {this.statusCode});
+  const ApiException(this.message, {this.statusCode, this.code});
 
   final String message;
   final int? statusCode;
+  final String? code;
 
   @override
   String toString() => message;
@@ -20,12 +21,15 @@ class ApiClient {
     http.Client? httpClient,
     String? baseUrl,
     this.timeout = const Duration(seconds: 12),
+    this.refreshAccessToken,
   })  : _httpClient = httpClient ?? http.Client(),
         baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final http.Client _httpClient;
   final String baseUrl;
   final Duration timeout;
+  final Future<String?> Function(String accessToken, String? tenantSlug)?
+      refreshAccessToken;
 
   Future<Map<String, dynamic>> get(
     String path, {
@@ -47,6 +51,7 @@ class ApiClient {
     Map<String, dynamic> body, {
     String? accessToken,
     String? tenantSlug,
+    Map<String, String>? headers,
   }) {
     return _send(
       'POST',
@@ -54,6 +59,7 @@ class ApiClient {
       body: body,
       accessToken: accessToken,
       tenantSlug: tenantSlug,
+      extraHeaders: headers,
     );
   }
 
@@ -87,14 +93,17 @@ class ApiClient {
     );
   }
 
-  Future<void> delete(
+  /// Returns the decoded body (empty for 204).
+  Future<Map<String, dynamic>> delete(
     String path, {
     String? accessToken,
     String? tenantSlug,
-  }) async {
-    await _send(
+    Map<String, String>? queryParams,
+  }) {
+    return _send(
       'DELETE',
       path,
+      queryParams: queryParams,
       accessToken: accessToken,
       tenantSlug: tenantSlug,
     );
@@ -107,12 +116,14 @@ class ApiClient {
     Map<String, dynamic>? body,
     String? accessToken,
     String? tenantSlug,
+    bool retrySession = true,
+    Map<String, String>? extraHeaders,
   }) async {
     final uri = _buildUri(path, queryParams);
-    final headers = _buildHeaders(
-      accessToken: accessToken,
-      tenantSlug: tenantSlug,
-    );
+    final headers = {
+      ..._buildHeaders(accessToken: accessToken, tenantSlug: tenantSlug),
+      ...?extraHeaders,
+    };
 
     late final http.Response response;
 
@@ -151,9 +162,30 @@ class ApiClient {
     final decoded = _decodeResponse(response.body);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      final error = decoded['error'];
+      final code = error is Map<String, dynamic> ? error['code'] : null;
+      final refresh = refreshAccessToken;
+      if (retrySession &&
+          !path.startsWith('/auth/') &&
+          accessToken != null &&
+          response.statusCode == 401 &&
+          code == 'INVALID_SESSION' &&
+          refresh != null) {
+        final replacement = await refresh(accessToken, tenantSlug);
+        if (replacement != null && replacement != accessToken) {
+          return _send(method, path,
+              queryParams: queryParams,
+              body: body,
+              accessToken: replacement,
+              tenantSlug: tenantSlug,
+              retrySession: false,
+              extraHeaders: extraHeaders);
+        }
+      }
       throw ApiException(
         _extractErrorMessage(decoded),
         statusCode: response.statusCode,
+        code: code is String ? code : null,
       );
     }
 

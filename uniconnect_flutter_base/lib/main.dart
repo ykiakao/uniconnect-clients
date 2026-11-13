@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/auth_loading_page.dart';
+import 'features/auth/providers/auth_provider.dart';
 
 void main() {
   GoogleFonts.config.allowRuntimeFetching = false;
@@ -16,12 +18,34 @@ class UniConnectApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    final renewal = ref.watch(authControllerProvider.notifier).renewal;
 
     return MaterialApp.router(
       title: 'UniConnect',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
+      builder: (context, child) => ValueListenableBuilder<SessionRenewal>(
+        valueListenable: renewal,
+        child: child,
+        builder: (context, status, child) {
+          final waiting = status != SessionRenewal.idle;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              ExcludeFocus(
+                excluding: waiting,
+                child: Offstage(
+                  offstage: waiting,
+                  child: TickerMode(enabled: !waiting, child: child!),
+                ),
+              ),
+              if (waiting)
+                AuthLoadingPage(showRetry: status == SessionRenewal.failed),
+            ],
+          );
+        },
+      ),
     );
   }
 }

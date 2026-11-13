@@ -1,42 +1,91 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
+import '../widgets/submission_attachments.dart';
+import '../providers/attachment_providers.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/academic_blocks.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/status_banner.dart';
+import '../widgets/activity_card.dart' show activityKind;
+import '../widgets/priority_badge.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../shared/widgets/error_state_widget.dart';
+import '../../../shared/widgets/academic_content.dart';
+import '../../../shared/widgets/academic_demo_frame.dart';
+import '../../academic/demo/synthetic_academic_providers.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../../shared/widgets/empty_state_widget.dart';
 import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
+import '../providers/student_submission_provider.dart';
+import '../widgets/student_submission_panel.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-class ActivityDetailPage extends ConsumerWidget {
+class ActivityDetailPage extends ConsumerStatefulWidget {
   const ActivityDetailPage({super.key, required this.activityId});
 
   final String activityId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final activityAsync = ref.watch(activityByIdProvider(activityId));
+  ConsumerState<ActivityDetailPage> createState() => _ActivityDetailPageState();
+}
 
+class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
+  (String, int, String?, String?, String?)? _lastVerifiedScope;
+
+  @override
+  Widget build(BuildContext context) {
+    final activityId = widget.activityId;
+    final user = ref.watch(currentUserProvider);
+    final controller = ref.watch(authControllerProvider.notifier);
+    final generation = ref.watch(
+        authControllerProvider.select((_) => controller.sessionGeneration));
+    final scope =
+        (activityId, generation, user?.id, user?.tenant.id, user?.tenant.slug);
+    final activityAsync = ref.watch(activityByIdProvider(activityId));
+    if (!activityAsync.isLoading && activityAsync.asData != null) {
+      _lastVerifiedScope = scope;
+    }
+
+    final sameScope = _lastVerifiedScope == scope;
+    final refreshError = activityAsync.error;
+    final preserveOnRefreshError = sameScope &&
+        refreshError is ApiException &&
+        ![401, 403, 404].contains(refreshError.statusCode);
     return activityAsync.when(
+      skipLoadingOnRefresh: sameScope,
+      skipError: preserveOnRefreshError,
       loading: () => const Scaffold(
         appBar: AppHeader(
           title: 'Atividade',
           fallbackRoute: AppRoutes.activities,
         ),
-        body: Center(child: CircularProgressIndicator()),
+        body: SafeArea(
+            child: AcademicDemoFrame(
+                child: Center(child: CircularProgressIndicator()))),
       ),
       error: (error, stack) => Scaffold(
         appBar: const AppHeader(
           title: 'Atividade',
           fallbackRoute: AppRoutes.activities,
         ),
-        body: ErrorStateWidget(
-          error: error.toString(),
-          onRetry: () => ref.invalidate(activityByIdProvider(activityId)),
-        ),
+        body: SafeArea(
+            child: AcademicDemoFrame(
+                child: ErrorStateWidget(
+          error: submissionErrorText(error),
+          onRetry: () {
+            invalidateSyntheticAcademicData(ref);
+            ref.invalidate(activitiesProvider);
+            ref.invalidate(activityByIdProvider(activityId));
+          },
+        ))),
       ),
       data: (activity) {
         if (activity == null) {
@@ -45,23 +94,42 @@ class ActivityDetailPage extends ConsumerWidget {
               title: 'Atividade',
               fallbackRoute: AppRoutes.activities,
             ),
-            body: Center(child: Text('Atividade nao encontrada.')),
+            body: SafeArea(
+                child: AcademicDemoFrame(
+                    child: EmptyStateWidget(
+              icon: LucideIcons.searchX,
+              title: 'Atividade não encontrada',
+              subtitle:
+                  'Volte à lista para consultar as atividades disponíveis.',
+            ))),
           );
         }
 
-        return _ActivityDetailContent(activity: activity);
+        return _ActivityDetailContent(
+            activity: activity,
+            activityIsCurrent:
+                !activityAsync.hasError && !activityAsync.isLoading,
+            refreshError: activityAsync.hasError
+                ? submissionErrorText(activityAsync.error!)
+                : null);
       },
     );
   }
 }
 
-class _ActivityDetailContent extends StatelessWidget {
-  const _ActivityDetailContent({required this.activity});
+class _ActivityDetailContent extends ConsumerWidget {
+  const _ActivityDetailContent(
+      {required this.activity,
+      required this.activityIsCurrent,
+      this.refreshError});
 
   final AcademicActivity activity;
+  final bool activityIsCurrent;
+  final String? refreshError;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = ref.watch(activityClockProvider);
     return Scaffold(
       appBar: const AppHeader(
         title: 'Detalhes da atividade',
@@ -69,19 +137,31 @@ class _ActivityDetailContent extends StatelessWidget {
       ),
       bottomNavigationBar: const UniBottomNav(currentIndex: 1),
       body: SafeArea(
-        child: ListView(
+          child: AcademicDemoFrame(
+        child: AcademicContent(
+            child: ListView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.xl,
+            AppSpacing.pageHorizontal,
+            AppSpacing.pageTop,
+            AppSpacing.pageHorizontal,
+            AppSpacing.pageBottom,
           ),
           children: [
+            if (refreshError != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: StatusBanner(
+                  title: 'Atualização indisponível',
+                  message:
+                      'Não foi possível atualizar a atividade. $refreshError',
+                  tone: AppBadgeTone.danger,
+                ),
+              ),
             Text(
               activity.subject.toUpperCase(),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: AppColors.primary,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: .8,
                   ),
             ),
@@ -89,27 +169,47 @@ class _ActivityDetailContent extends StatelessWidget {
             Text(
               activity.title,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                     height: 1.12,
                   ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.sm),
+            Builder(builder: (context) {
+              final (icon, label) = activityKind(activity);
+              return Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  AppBadge(
+                      label: label, tone: AppBadgeTone.primary, icon: icon),
+                  PriorityBadge(priority: activity.priorityAt(now)),
+                ],
+              );
+            }),
+            const SizedBox(height: AppSpacing.md),
             _InfoPill(
-              icon: Icons.event_outlined,
+              icon: LucideIcons.calendar,
               label: 'Prazo',
-              value: activity.dueLabel,
+              value: activity.dueDate == null
+                  ? activity.dueLabelAt(now)
+                  : '${DateFormat('dd/MM/yyyy • HH:mm').format(activity.displayDueDate!)}\n${activity.dueLabelAt(now)} • ${activity.timeZoneLabel}',
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
             AppCard(
+              icon: LucideIcons.fileText,
+              title: 'Instruções da atividade',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel('Instrucoes da atividade'),
-                  const SizedBox(height: AppSpacing.sm),
                   Text(
-                    activity.description.isEmpty
-                        ? 'Leia as orientacoes da disciplina antes de iniciar.'
-                        : activity.description,
+                    [activity.description, activity.instructions]
+                            .where((s) => s.isNotEmpty)
+                            .join('\n\n')
+                            .isEmpty
+                        ? 'Nenhuma instrução foi informada para esta atividade.'
+                        : [activity.description, activity.instructions]
+                            .where((s) => s.isNotEmpty)
+                            .join('\n\n'),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.muted,
                           height: 1.45,
@@ -127,58 +227,28 @@ class _ActivityDetailContent extends StatelessWidget {
               ),
             ),
             AppCard(
+              icon: LucideIcons.paperclip,
+              title: 'Material de apoio',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel('Material de apoio'),
-                  const SizedBox(height: AppSpacing.md),
-                  if (activity.attachments.isEmpty)
-                    const Text(
-                      'Nenhum material anexo para esta atividade.',
-                      style: TextStyle(color: AppColors.muted),
-                    )
-                  else
-                    ...activity.attachments.map(
-                      (attachment) => _MaterialItem(
-                        icon: Icons.insert_drive_file_outlined,
-                        title: attachment,
-                        subtitle: 'Material da atividade',
-                      ),
-                    ),
+                  _ActivityMaterials(activity: activity),
                 ],
               ),
             ),
+            StudentSubmissionPanel(
+                key: ValueKey(activity.id),
+                activity: activity,
+                activityIsCurrent: activityIsCurrent),
             AppCard(
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 26,
-                    backgroundColor: AppColors.primary,
-                    child: Icon(Icons.person_outline, color: Colors.white),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _SectionLabel('Professor responsavel'),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          activity.teacher,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: PersonTile(
+                name: activity.teacher,
+                subtitle: 'Professor responsável',
               ),
             ),
           ],
-        ),
-      ),
+        )),
+      )),
     );
   }
 }
@@ -215,9 +285,7 @@ class _InfoPill extends StatelessWidget {
                 ),
                 Text(
                   value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -253,7 +321,7 @@ class _MaterialItem extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 Text(
                   subtitle,
@@ -280,7 +348,7 @@ class _ChecklistItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle_outline, size: 18),
+          const Icon(LucideIcons.circleCheck, size: 18),
           const SizedBox(width: AppSpacing.sm),
           Expanded(child: Text(text)),
         ],
@@ -289,19 +357,38 @@ class _ChecklistItem extends StatelessWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.label);
+/// Materials from the attachments API; when the feature is unavailable it
+/// falls back to the names the activity carries (demo data).
+class _ActivityMaterials extends ConsumerWidget {
+  const _ActivityMaterials({required this.activity});
 
-  final String label;
+  final AcademicActivity activity;
 
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w900,
-            letterSpacing: .5,
-          ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    const empty = Text(
+      'Nenhum material anexo para esta atividade.',
+      style: TextStyle(color: AppColors.muted),
     );
+    final legacy = activity.attachments.isEmpty
+        ? empty
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final attachment in activity.attachments)
+                _MaterialItem(
+                  icon: LucideIcons.file,
+                  title: attachment,
+                  subtitle: 'Material da atividade',
+                ),
+            ],
+          );
+    return ref.watch(activityMaterialsProvider(activity.id)).when(
+          loading: () => const LinearProgressIndicator(
+              semanticsLabel: 'Carregando materiais'),
+          error: (_, __) => legacy,
+          data: (files) =>
+              files.isEmpty ? legacy : AttachmentList(files: files),
+        );
   }
 }

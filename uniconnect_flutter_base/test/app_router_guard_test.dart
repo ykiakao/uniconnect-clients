@@ -4,7 +4,77 @@ import 'package:uniconnect/core/router/app_router.dart';
 import 'package:uniconnect/features/auth/models/app_user.dart';
 
 void main() {
-  test('sessao em restauracao nao redireciona', () {
+  test('all registered routes enforce the navigation roles', () {
+    const studentOnly = [
+      AppRoutes.studentDashboard,
+      AppRoutes.activities,
+      '/atividades/activity-1',
+      AppRoutes.chat,
+      AppRoutes.grades,
+      AppRoutes.academic,
+    ];
+    const teacherOnly = [
+      AppRoutes.teacherDashboard,
+      AppRoutes.teacherActivities,
+      AppRoutes.teacherChat,
+      AppRoutes.teacherCreateActivity,
+      AppRoutes.teacherGrades,
+    ];
+    for (final path in [...studentOnly, ...teacherOnly, AppRoutes.profile]) {
+      expect(
+        computeRedirect(
+          isRestoring: false,
+          isAuthenticated: false,
+          userRole: null,
+          location: path,
+        ),
+        AppRoutes.login,
+        reason: path,
+      );
+      for (final role in UserRole.values) {
+        final otherRole = role == UserRole.teacher
+            ? studentOnly.contains(path)
+            : teacherOnly.contains(path);
+        expect(
+          computeRedirect(
+            isRestoring: false,
+            isAuthenticated: true,
+            userRole: role,
+            location: path,
+          ),
+          otherRole
+              ? role == UserRole.teacher
+                  ? AppRoutes.teacherDashboard
+                  : AppRoutes.studentDashboard
+              : null,
+          reason: '${role.name} at $path',
+        );
+      }
+    }
+  });
+
+  test('authenticated routing requires an explicit supported role', () {
+    expect(
+        computeRedirect(
+          isRestoring: false,
+          isAuthenticated: true,
+          userRole: null,
+          location: AppRoutes.studentDashboard,
+        ),
+        AppRoutes.login);
+  });
+  test('professor cannot enter concrete student activity detail routes', () {
+    expect(
+      computeRedirect(
+        isRestoring: false,
+        isAuthenticated: true,
+        userRole: UserRole.teacher,
+        location: '/atividades/activity-1',
+      ),
+      AppRoutes.teacherDashboard,
+    );
+  });
+  test('sessao em restauracao redireciona para a tela neutra', () {
     final redirect = computeRedirect(
       isRestoring: true,
       isAuthenticated: false,
@@ -12,7 +82,7 @@ void main() {
       location: AppRoutes.studentDashboard,
     );
 
-    expect(redirect, isNull);
+    expect(redirect, AppRoutes.authLoading);
   });
 
   test('nao autenticado em rota privada vai para login', () {
@@ -101,5 +171,41 @@ void main() {
     );
 
     expect(redirect, AppRoutes.teacherDashboard);
+  });
+
+  test('recovery is public and the notice form is only for teachers', () {
+    expect(
+        computeRedirect(
+          isRestoring: false,
+          isAuthenticated: false,
+          userRole: null,
+          location: AppRoutes.forgotPassword,
+        ),
+        isNull);
+    expect(
+        computeRedirect(
+          isRestoring: false,
+          isAuthenticated: true,
+          userRole: UserRole.student,
+          location: AppRoutes.noticeNew,
+        ),
+        AppRoutes.studentDashboard);
+    for (final role in UserRole.values) {
+      for (final path in [
+        AppRoutes.notices,
+        '/avisos/notice-1',
+        AppRoutes.notifications,
+      ]) {
+        expect(
+            computeRedirect(
+              isRestoring: false,
+              isAuthenticated: true,
+              userRole: role,
+              location: path,
+            ),
+            isNull,
+            reason: '$role $path');
+      }
+    }
   });
 }

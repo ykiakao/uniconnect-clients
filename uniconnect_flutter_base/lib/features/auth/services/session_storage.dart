@@ -1,23 +1,33 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/app_user.dart';
 import 'api_auth_service.dart';
+
+const sessionStorageUnavailableMessage =
+    'Não foi possível substituir ou limpar a sessão salva. Tente novamente.';
 
 class StoredAuthSession {
   const StoredAuthSession({
     required this.accessToken,
     required this.refreshToken,
     required this.expiresAt,
+    this.tenantSlug,
+    this.userId,
   });
 
   final String accessToken;
   final String refreshToken;
   final int? expiresAt;
+  final String? tenantSlug;
+  final String? userId;
 }
 
 class SessionStorage {
   const SessionStorage(this._storage);
 
+  static const _sessionKey = 'auth.session';
   static const _accessTokenKey = 'auth.accessToken';
   static const _refreshTokenKey = 'auth.refreshToken';
   static const _expiresAtKey = 'auth.expiresAt';
@@ -32,18 +42,52 @@ class SessionStorage {
   final FlutterSecureStorage _storage;
 
   Future<void> save(AuthSession session) async {
-    await Future.wait([
-      _storage.write(key: _accessTokenKey, value: session.accessToken),
-      _storage.write(key: _refreshTokenKey, value: session.refreshToken),
-      _storage.write(
-        key: _expiresAtKey,
-        value: session.expiresAt?.toString(),
-      ),
-    ]);
+    await _storage.write(
+        key: _sessionKey,
+        value: jsonEncode({
+          'accessToken': session.accessToken,
+          'refreshToken': session.refreshToken,
+          'expiresAt': session.expiresAt,
+          'tenantSlug': session.user.tenant.slug,
+          'userId': session.user.id,
+        }));
+    await _clearLegacySession();
   }
 
   Future<StoredAuthSession?> read() async {
     await clearLegacyCredentials();
+
+    final encoded = await _storage.read(key: _sessionKey);
+    if (encoded != null) {
+      if (encoded.isEmpty) return null;
+      try {
+        final record = jsonDecode(encoded);
+        if (record is! Map<String, dynamic>) return null;
+        final access = record['accessToken'];
+        final refresh = record['refreshToken'];
+        final tenant = record['tenantSlug'];
+        final userId = record['userId'];
+        if (access is! String ||
+            access.trim().isEmpty ||
+            refresh is! String ||
+            refresh.trim().isEmpty ||
+            tenant is! String ||
+            tenant.trim().isEmpty ||
+            userId is! String ||
+            userId.trim().isEmpty) {
+          return null;
+        }
+        final expiry = record['expiresAt'];
+        return StoredAuthSession(
+            accessToken: access,
+            refreshToken: refresh,
+            expiresAt: expiry is int ? expiry : null,
+            tenantSlug: tenant,
+            userId: userId);
+      } on FormatException {
+        return null;
+      }
+    }
 
     final accessToken = await _storage.read(key: _accessTokenKey);
     final refreshToken = await _storage.read(key: _refreshTokenKey);
@@ -59,12 +103,23 @@ class SessionStorage {
     );
   }
 
-  Future<void> clear() {
+  Future<void> clear() async {
+    // An empty record blocks legacy fallback even if deletion is interrupted.
+    try {
+      await _storage.write(key: _sessionKey, value: '');
+    } catch (_) {
+      // Some storage failures affect writes but still allow deleting the keys.
+    }
+    await _clearLegacySession();
+    await _storage.delete(key: _sessionKey);
+    await clearLegacyCredentials();
+  }
+
+  Future<void> _clearLegacySession() {
     return Future.wait([
       _storage.delete(key: _accessTokenKey),
       _storage.delete(key: _refreshTokenKey),
       _storage.delete(key: _expiresAtKey),
-      clearLegacyCredentials(),
     ]);
   }
 
@@ -88,11 +143,17 @@ class AuthState {
     this.user,
     this.accessToken,
     this.errorMessage,
+    this.canRetryRestore = false,
   });
 
   const AuthState.restoring() : this(status: AuthStatus.restoring);
 
-  const AuthState.unauthenticated() : this(status: AuthStatus.unauthenticated);
+  const AuthState.unauthenticated(
+      {String? message, bool canRetryRestore = false})
+      : this(
+            status: AuthStatus.unauthenticated,
+            errorMessage: message,
+            canRetryRestore: canRetryRestore);
 
   const AuthState.authenticated(AppUser user, {required String accessToken})
       : this(
@@ -108,6 +169,7 @@ class AuthState {
   final AppUser? user;
   final String? accessToken;
   final String? errorMessage;
+  final bool canRetryRestore;
 
   bool get isRestoring => status == AuthStatus.restoring;
   bool get isAuthenticated =>

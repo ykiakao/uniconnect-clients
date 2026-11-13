@@ -29,8 +29,8 @@ class AppRouteTransitionPage<T> extends CustomTransitionPage<T> {
           transitionsBuilder: _buildFadeTransition,
         );
 
-  static const _duration = Duration(milliseconds: 260);
-  static const _reverseDuration = Duration(milliseconds: 190);
+  static const _duration = Duration(milliseconds: 220);
+  static const _reverseDuration = Duration(milliseconds: 180);
 
   static Widget _buildSlideFromRightTransition(
     BuildContext context,
@@ -40,7 +40,7 @@ class AppRouteTransitionPage<T> extends CustomTransitionPage<T> {
   ) {
     return _FadeSlideTransition(
       animation: animation,
-      begin: const Offset(.08, 0),
+      begin: const Offset(.02, 0),
       child: child,
     );
   }
@@ -53,7 +53,7 @@ class AppRouteTransitionPage<T> extends CustomTransitionPage<T> {
   ) {
     return _FadeSlideTransition(
       animation: animation,
-      begin: const Offset(0, .08),
+      begin: const Offset(0, .025),
       child: child,
     );
   }
@@ -64,6 +64,10 @@ class AppRouteTransitionPage<T> extends CustomTransitionPage<T> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    if (MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context)) {
+      return child;
+    }
     final fadeAnimation = animation.drive(
       CurveTween(curve: Curves.easeOutCubic),
     );
@@ -85,6 +89,10 @@ class _FadeSlideTransition extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context)) {
+      return child;
+    }
     final curvedAnimation = animation.drive(
       CurveTween(curve: Curves.easeOutCubic),
     );

@@ -1,28 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../academic/providers/academic_records_providers.dart';
 import '../models/academic_activity.dart';
 import 'priority_badge.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-class ActivityCard extends StatelessWidget {
+class ActivityCard extends ConsumerWidget {
   const ActivityCard({
     super.key,
     required this.activity,
+    required this.now,
     this.onTap,
     this.compact = false,
   });
 
   final AcademicActivity activity;
+  final DateTime now;
   final VoidCallback? onTap;
   final bool compact;
 
   @override
-  Widget build(BuildContext context) {
-    final priorityColor = switch (activity.priority) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final priority = activity.priorityAt(now);
+    final grade = ref.watch(publishedGradesProvider)[activity.id];
+    final priorityColor = switch (priority) {
       ActivityPriority.critical => AppColors.danger,
       ActivityPriority.medium => AppColors.warning,
       ActivityPriority.low => AppColors.success,
+      ActivityPriority.expired ||
+      ActivityPriority.noDeadline =>
+        AppColors.muted,
     };
 
     return AppCard(
@@ -39,20 +51,46 @@ class ActivityCard extends StatelessWidget {
                   activity.subject,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
               ),
-              PriorityBadge(priority: activity.priority),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      PriorityBadge(priority: priority),
+                      if (activity.publicationState == 'closed')
+                        const AppBadge(
+                            label: 'Encerrada', tone: AppBadgeTone.neutral),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             activity.title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
           ),
+          const SizedBox(height: 6),
+          _KindLabel(activity: activity),
+          if (grade != null) ...[
+            const SizedBox(height: 6),
+            AppBadge(
+              label:
+                  'Nota publicada: ${grade.toStringAsFixed(1).replaceAll('.', ',')}',
+              tone: AppBadgeTone.success,
+              icon: LucideIcons.award,
+            ),
+          ],
           if (!compact) ...[
             const SizedBox(height: 6),
             Text(
@@ -67,19 +105,63 @@ class ActivityCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.event_outlined, size: 18, color: priorityColor),
+              Icon(LucideIcons.calendar, size: 18, color: priorityColor),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(
-                  activity.dueLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(activity.dueLabelAt(now),
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      if (activity.dueDate != null)
+                        Text(
+                            DateFormat('dd/MM/yyyy • HH:mm')
+                                .format(activity.displayDueDate!),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: AppColors.muted)),
+                    ]),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.muted),
+              const Icon(LucideIcons.chevronRight, color: AppColors.muted),
             ],
           ),
         ],
       ),
     );
   }
+}
+
+/// Kind of assessment with icon and text, so it never relies on color:
+/// exams and in-person assessments have no digital submission.
+class _KindLabel extends StatelessWidget {
+  const _KindLabel({required this.activity});
+
+  final AcademicActivity activity;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, label) = activityKind(activity);
+    final style = Theme.of(context)
+        .textTheme
+        .bodySmall
+        ?.copyWith(color: AppColors.inkMuted, fontWeight: FontWeight.w600);
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppColors.inkMuted),
+        const SizedBox(width: 4),
+        Flexible(child: Text(label, style: style)),
+      ],
+    );
+  }
+}
+
+(IconData, String) activityKind(AcademicActivity activity) {
+  if (activity.assessmentCategory == 'exam') {
+    return (LucideIcons.fileCheck, 'Prova • sem entrega digital');
+  }
+  if (!activity.workflowEnabled) {
+    return (LucideIcons.school, 'Avaliação presencial • sem entrega digital');
+  }
+  return (LucideIcons.send, 'Atividade • entrega digital');
 }

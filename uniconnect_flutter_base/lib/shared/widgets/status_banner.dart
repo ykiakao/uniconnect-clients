@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_tokens.dart';
 import 'app_badge.dart';
 
+/// Kit alert: a status always pairs color with an icon and words.
 class StatusBanner extends StatelessWidget {
   const StatusBanner({
     super.key,
@@ -23,7 +25,8 @@ class StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = _toneColors(tone);
+    final (foreground, background) = badgeColors(tone);
+    final text = Theme.of(context).textTheme;
 
     return Semantics(
       liveRegion: tone == AppBadgeTone.danger,
@@ -31,33 +34,27 @@ class StatusBanner extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: colors.$2,
+          color: background,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: colors.$1.withValues(alpha: .26)),
+          border: Border.all(color: foreground.withValues(alpha: .24)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon ?? _defaultIcon(tone), color: colors.$1, size: 22),
-            const SizedBox(width: AppSpacing.md),
+            Icon(icon ?? _defaultIcon(tone), color: foreground, size: 20),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: colors.$1,
-                          fontWeight: FontWeight.w900,
-                        ),
+                    style: text.titleSmall?.copyWith(color: foreground),
                   ),
-                  const SizedBox(height: AppSpacing.xxs),
+                  const SizedBox(height: 2),
                   Text(
                     message,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colors.$1,
-                          height: 1.35,
-                        ),
+                    style: text.bodySmall?.copyWith(color: AppColors.ink),
                   ),
                   if (action != null) ...[
                     const SizedBox(height: AppSpacing.sm),
@@ -74,23 +71,12 @@ class StatusBanner extends StatelessWidget {
 
   IconData _defaultIcon(AppBadgeTone tone) {
     return switch (tone) {
-      AppBadgeTone.success => Icons.check_circle_outline,
-      AppBadgeTone.warning => Icons.warning_amber_outlined,
-      AppBadgeTone.danger => Icons.error_outline,
-      AppBadgeTone.info => Icons.info_outline,
-      AppBadgeTone.primary => Icons.school_outlined,
-      AppBadgeTone.neutral => Icons.notes_outlined,
-    };
-  }
-
-  (Color, Color) _toneColors(AppBadgeTone tone) {
-    return switch (tone) {
-      AppBadgeTone.primary => (AppColors.primary, AppColors.primarySoft),
-      AppBadgeTone.success => (AppColors.success, AppColors.successSoft),
-      AppBadgeTone.warning => (AppColors.warning, AppColors.warningSoft),
-      AppBadgeTone.danger => (AppColors.danger, AppColors.dangerSoft),
-      AppBadgeTone.info => (AppColors.info, AppColors.infoSoft),
-      AppBadgeTone.neutral => (AppColors.muted, AppColors.background),
+      AppBadgeTone.success => LucideIcons.circleCheck,
+      AppBadgeTone.warning => LucideIcons.triangleAlert,
+      AppBadgeTone.danger => LucideIcons.circleAlert,
+      AppBadgeTone.info => LucideIcons.info,
+      AppBadgeTone.primary => LucideIcons.graduationCap,
+      AppBadgeTone.neutral => LucideIcons.fileText,
     };
   }
 }

@@ -1,280 +1,265 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/app_badge.dart';
-import '../../../shared/widgets/app_buttons.dart';
-import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/academic_content.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/bottom_nav.dart';
+import '../../auth/models/app_user.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../providers/teacher_activity_provider.dart';
+import '../providers/teacher_review_provider.dart';
+import '../providers/teacher_offering_selection.dart';
+import '../services/teacher_activity_service.dart';
+import '../widgets/teacher_exam_panel.dart';
+import '../widgets/teacher_offering_picker.dart';
+import '../widgets/teacher_report_panel.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-class TeacherGradesPage extends StatelessWidget {
-  const TeacherGradesPage({super.key});
+enum _NotesMode {
+  entry('Lançar notas'),
+  report('Consultar boletim');
+
+  const _NotesMode(this.title);
+  final String title;
+}
+
+class TeacherGradesPage extends ConsumerWidget {
+  const TeacherGradesPage({super.key, this.openExams = false});
+
+  final bool openExams;
 
   @override
-  Widget build(BuildContext context) {
-    const rows = [
-      ('AC', 'Ana Clara Oliveira', '2024001', '8.5', '--', 'CURSANDO'),
-      ('BS', 'Bruno Santos', '2024012', '4.2', '--', 'ALERTA'),
-      ('DM', 'Daniela Martins', '2024045', '9.8', '10.0', 'APROVADO'),
-      ('EP', 'Eduardo Pereira', '2024098', '7.0', '--', 'CURSANDO'),
-    ];
-
-    return Scaffold(
-      appBar: const AppHeader(
-        title: 'Lançamento de notas',
-        fallbackRoute: AppRoutes.teacherDashboard,
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.xl,
-          ),
-          children: [
-            Text(
-              'GESTÃO ACADÊMICA',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: .9,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Lançamento de Notas',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            const Text(
-              'Disciplina: Engenharia de Software II (Turma A)',
-              style: TextStyle(color: AppColors.muted),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            const _DistributionCard(),
-            const SizedBox(height: AppSpacing.md),
-            const TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar aluno...',
-                prefixIcon: Icon(Icons.search),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            PrimaryButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Notas publicadas com sucesso.')),
-                );
-              },
-              icon: Icons.cloud_upload_outlined,
-              label: 'Publicar Notas',
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            AppCard(
-              child: Column(
-                children: [
-                  const _TableHeader(),
-                  const Divider(height: AppSpacing.lg),
-                  ...rows.map((row) => _StudentGradeRow(row: row)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(currentUserProvider)?.role != UserRole.teacher) {
+      return const Scaffold(
+        appBar: AppHeader(
+            title: 'Notas', fallbackRoute: AppRoutes.teacherDashboard),
+        body: Center(child: Text('Área exclusiva do professor')),
+      );
+    }
+    return _NotesWorkspace(
+        key: ValueKey((ref.watch(teacherNotesSessionProvider), openExams)),
+        openExams: openExams);
   }
 }
 
-class _DistributionCard extends StatelessWidget {
-  const _DistributionCard();
+class _NotesWorkspace extends ConsumerStatefulWidget {
+  const _NotesWorkspace({super.key, required this.openExams});
+
+  final bool openExams;
+
+  @override
+  ConsumerState<_NotesWorkspace> createState() => _NotesWorkspaceState();
+}
+
+class _NotesWorkspaceState extends ConsumerState<_NotesWorkspace> {
+  late _NotesMode? _mode = widget.openExams ? _NotesMode.entry : null;
+  late final TeacherDraftGuard _guard;
+  late final bool Function() _exitCallback;
+
+  @override
+  void initState() {
+    super.initState();
+    _guard = ref.read(teacherDraftGuardProvider);
+    _exitCallback =
+        () => !mounted || ModalRoute.of(context)?.isCurrent != false;
+    _guard.canExitNotes = _exitCallback;
+  }
+
+  @override
+  void dispose() {
+    if (identical(_guard.canExitNotes, _exitCallback)) {
+      _guard.canExitNotes = null;
+    }
+    super.dispose();
+  }
+
+  void _back() => setState(() => _mode = null);
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      backgroundColor: AppColors.primary,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Distribuição',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
+    final offers = ref.watch(teacherOfferingsProvider);
+    final classId = ref.watch(selectedTeacherClassIdProvider);
+    final selected =
+        offers.value?.where((offering) => offering.id == classId).firstOrNull;
+    ref.listen(teacherOfferingSelectionProvider, (previous, next) {
+      if (_mode != null && previous?.classId != next.classId) _back();
+    });
+    final mode = selected == null && !offers.isLoading ? null : _mode;
+    return PopScope(
+      canPop: mode == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _mode != null) _back();
+      },
+      child: Scaffold(
+        appBar: mode == null
+            ? const AppHeader(
+                title: 'Notas',
+                fallbackRoute: AppRoutes.teacherDashboard,
+                showProfile: true,
+              )
+            : AppBar(
+                title: Text(mode.title),
+                leading: IconButton(
+                  tooltip: 'Retornar',
+                  icon: const Icon(LucideIcons.arrowLeft),
+                  onPressed: _back,
                 ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Row(
-            children: [
-              Expanded(child: _Metric(label: '0-5', value: '2')),
-              Expanded(child: _Metric(label: '5-7', value: '5')),
-              Expanded(child: _Metric(label: '7-9', value: '18')),
-              Expanded(child: _Metric(label: '9-10', value: '8')),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const Row(
-            children: [
-              Expanded(
-                child: _SummaryMetric(label: 'Média da Turma', value: '7.8'),
               ),
-              Expanded(
-                child: _SummaryMetric(label: 'Alunos Aprovados', value: '84%'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(color: Colors.white)),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(label, style: const TextStyle(color: Colors.white70)),
-      ],
-    );
-  }
-}
-
-class _SummaryMetric extends StatelessWidget {
-  const _SummaryMetric({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-              ),
-        ),
-        Text(label, style: const TextStyle(color: Colors.white70)),
-      ],
-    );
-  }
-}
-
-class _TableHeader extends StatelessWidget {
-  const _TableHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        Expanded(flex: 3, child: _HeaderCell('ESTUDANTE')),
-        Expanded(child: _HeaderCell('P1')),
-        Expanded(child: _HeaderCell('P2')),
-        Expanded(flex: 2, child: _HeaderCell('STATUS')),
-      ],
-    );
-  }
-}
-
-class _StudentGradeRow extends StatelessWidget {
-  const _StudentGradeRow({required this.row});
-
-  final (String, String, String, String, String, String) row;
-
-  @override
-  Widget build(BuildContext context) {
-    final warning = row.$6 == 'ALERTA';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Row(
+        bottomNavigationBar: mode == null
+            ? const UniBottomNav(currentIndex: 3, isTeacher: true)
+            : null,
+        body: SafeArea(
+          child: AcademicContent(
+            child: ListView(
+              key: ValueKey(mode),
+              padding: const EdgeInsets.all(AppSpacing.pageHorizontal),
               children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor:
-                      warning ? AppColors.secondary : AppColors.primarySoft,
-                  child: Text(
-                    row.$1,
-                    style: TextStyle(
-                      color: warning ? Colors.white : AppColors.primary,
-                      fontWeight: FontWeight.w900,
+                if (mode == null)
+                  const TeacherOfferingPicker()
+                else if (offers.isLoading)
+                  const _LoadingNotes('Carregando disciplinas...')
+                else if (offers.hasError)
+                  Text(_academicError(offers.error!)),
+                if (mode == null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  FilledButton(
+                    onPressed: selected == null
+                        ? null
+                        : () => setState(() => _mode = _NotesMode.entry),
+                    child: Text(_NotesMode.entry.title),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  OutlinedButton(
+                    onPressed: selected == null
+                        ? null
+                        : () => setState(() => _mode = _NotesMode.report),
+                    child: Text(_NotesMode.report.title),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => ref.invalidate(teacherOfferingsProvider),
+                    icon: const Icon(LucideIcons.refreshCw),
+                    label: const Text('Atualizar disciplinas'),
+                  ),
+                ] else if (selected != null) ...[
+                  Text(selected.label,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.md),
+                  if (mode == _NotesMode.entry)
+                    _GradeEntry(
+                        key: ValueKey(selected.id), classId: selected.id)
+                  else
+                    TeacherReportPanel(
+                      key: ValueKey(selected.id),
+                      classId: selected.id,
+                      service: ref.watch(teacherAcademicServiceProvider),
                     ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        row.$2,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      Text(
-                        row.$3,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ],
             ),
           ),
-          Expanded(child: Text(row.$4, textAlign: TextAlign.center)),
-          Expanded(child: Text(row.$5, textAlign: TextAlign.center)),
-          Expanded(
-            flex: 2,
-            child: AppBadge(
-              label: row.$6,
-              tone: warning ? AppBadgeTone.warning : AppBadgeTone.primary,
-              compact: true,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(this.text);
+class _GradeEntry extends ConsumerStatefulWidget {
+  const _GradeEntry({super.key, required this.classId});
+  final String classId;
 
-  final String text;
+  @override
+  ConsumerState<_GradeEntry> createState() => _GradeEntryState();
+}
+
+class _GradeEntryState extends ConsumerState<_GradeEntry> {
+  String? _activityId;
+
+  void _refresh() {
+    ref.invalidate(teacherActivitiesProvider(widget.classId));
+  }
+
+  String _activityLabel(TeacherActivity activity) {
+    final assessment = activity.assessment;
+    if (assessment == null) return '${activity.title} • ${activity.stateLabel}';
+    final category = assessment.isExam ? 'Prova' : 'Atividade';
+    return '${activity.title} — ${assessment.stage} • $category • ${activity.stateLabel}';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w900,
-          ),
-    );
+    final activities = ref.watch(teacherActivitiesProvider(widget.classId));
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const Text('Provas N1/N2'),
+      TextButton.icon(
+        onPressed: _refresh,
+        icon: const Icon(LucideIcons.refreshCw),
+        label: const Text('Atualizar avaliações'),
+      ),
+      activities.when(
+        skipLoadingOnRefresh: false,
+        skipLoadingOnReload: false,
+        loading: () => const _LoadingNotes('Carregando avaliações...'),
+        error: (error, _) => Text(_academicError(error)),
+        data: (activities) {
+          final rows = activities.where((activity) => activity.isExam).toList();
+          if (rows.isEmpty) {
+            return const Text('Nenhuma prova nesta disciplina.');
+          }
+          final selected =
+              rows.where((activity) => activity.id == _activityId).firstOrNull;
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButtonFormField<String>(
+                  key: ValueKey(selected?.id),
+                  initialValue: selected?.id,
+                  isExpanded: true,
+                  itemHeight: null,
+                  decoration: const InputDecoration(labelText: 'Avaliação'),
+                  items: [
+                    for (final activity in rows)
+                      DropdownMenuItem(
+                        value: activity.id,
+                        child: Text(_activityLabel(activity),
+                            maxLines: 2, overflow: TextOverflow.ellipsis),
+                      ),
+                  ],
+                  onChanged: (id) => setState(() => _activityId = id),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (selected == null)
+                  const Text('Selecione uma avaliação para consultar as notas.')
+                else
+                  TeacherExamPanel(
+                    key: ValueKey(selected.id),
+                    examId: selected.id,
+                    service: ref.watch(teacherAcademicServiceProvider),
+                  )
+              ]);
+        },
+      ),
+    ]);
   }
+}
+
+String _academicError(Object error) {
+  if (error is ApiException && [403, 404].contains(error.statusCode)) {
+    return 'Acesso negado. Confira seu vínculo com a disciplina.';
+  }
+  return teacherReviewError(error);
+}
+
+class _LoadingNotes extends StatelessWidget {
+  const _LoadingNotes(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        const LinearProgressIndicator(),
+        Text(label),
+      ]);
 }
