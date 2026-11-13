@@ -1,4 +1,4 @@
-﻿class ApiConfig {
+class ApiConfig {
   const ApiConfig._();
 
   static const _configuredBaseUrl = String.fromEnvironment(
