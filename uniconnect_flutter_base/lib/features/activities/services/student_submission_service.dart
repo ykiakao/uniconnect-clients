@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import '../models/academic_attachment.dart';
 
 class PublishedSubmissionResult {
   const PublishedSubmissionResult({this.grade, this.feedback});
@@ -16,7 +17,8 @@ class StudentSubmission {
       required this.submittedAt,
       required this.isLate,
       required this.status,
-      this.result});
+      this.result,
+      this.attachments = const []});
   final String id;
   final String activityId;
   final int version;
@@ -25,6 +27,9 @@ class StudentSubmission {
   final bool isLate;
   final String status;
   final PublishedSubmissionResult? result;
+
+  /// Files of this version; empty when the API sends none.
+  final List<AcademicAttachment> attachments;
   bool get canRevise =>
       ['submitted', 'late'].contains(status) && version <= 2147483646;
   String get statusLabel => switch (status) {
@@ -73,7 +78,8 @@ class StudentSubmissionService {
         status: row['status'] as String,
         result: row['status'] == 'result_published'
             ? _publishedResult(row['result'])
-            : null);
+            : null,
+        attachments: AcademicAttachment.listFrom(row['attachments']));
   }
 
   PublishedSubmissionResult? _publishedResult(Object? row) {
@@ -106,19 +112,31 @@ class StudentSubmissionService {
     return _receipt(row, activityId);
   }
 
+  /// [attachmentIds] is the whole set of files of the new version; it is
+  /// only sent when not empty, so text-only clients keep the old contract.
   Future<StudentSubmission> submit(String activityId,
-      {required String answer, required int expectedVersion}) async {
+      {required String answer,
+      required int expectedVersion,
+      List<String> attachmentIds = const []}) async {
     final text = answer.trim();
     if (text.isEmpty ||
         text.length > 20000 ||
         expectedVersion < 0 ||
-        expectedVersion > 2147483646) {
+        expectedVersion > 2147483646 ||
+        attachmentIds.length > attachmentMaxFiles ||
+        attachmentIds.toSet().length != attachmentIds.length) {
       throw const ApiException(
           'Informe uma resposta de 1 a 20000 caracteres e uma versão válida.');
     }
     final row = await client.post(
-        _path(activityId), {'answer': text, 'expectedVersion': expectedVersion},
-        accessToken: accessToken, tenantSlug: tenantSlug);
+        _path(activityId),
+        {
+          'answer': text,
+          'expectedVersion': expectedVersion,
+          if (attachmentIds.isNotEmpty) 'attachmentIds': attachmentIds,
+        },
+        accessToken: accessToken,
+        tenantSlug: tenantSlug);
     final result = _receipt(row, activityId);
     if (result.version != expectedVersion + 1 ||
         result.answer != text ||

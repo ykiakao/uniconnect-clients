@@ -1,0 +1,186 @@
+import 'dart:async';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:http/http.dart' as http;
+
+import '../../../core/config/realtime_config.dart';
+import '../../../core/network/api_client.dart';
+import '../models/academic_attachment.dart';
+
+const _completeAttempts = 10;
+const _storageTimeout = Duration(minutes: 2);
+
+/// Academic attachments (phase A): reserve → PUT to Storage → complete,
+/// then use the file id in the academic operation. The UniConnect token is
+/// only sent to the API, never to the Storage URL.
+class AttachmentService {
+  AttachmentService(
+    this.client, {
+    required this.accessToken,
+    required this.tenantSlug,
+    http.Client? storageClient,
+    String? storageHost,
+    this.retryDelay = const Duration(seconds: 2),
+  })  : _storage = storageClient ?? http.Client(),
+        _storageHost =
+            storageHost ?? Uri.parse(RealtimeConfig.supabaseUrl).host;
+
+  final ApiClient client;
+  final String accessToken;
+  final String tenantSlug;
+  final Duration retryDelay;
+  final http.Client _storage;
+  final String _storageHost;
+
+  String get _base => '/tenants/${Uri.encodeComponent(tenantSlug)}';
+  String _activity(String id) => '$_base/activities/${Uri.encodeComponent(id)}';
+  String _upload(String id) =>
+      '$_base/attachment-uploads/${Uri.encodeComponent(id)}';
+
+  /// Reserves a file for the next version of the student's submission.
+  Future<UploadReservation> reserveSubmissionFile(
+    String activityId, {
+    required String fileName,
+    required int sizeBytes,
+    required int expectedVersion,
+    required String idempotencyKey,
+  }) async {
+    final contentType = attachmentContentType(fileName);
+    final problem = attachmentValidationError(fileName, sizeBytes);
+    if (contentType == null || problem != null) {
+      throw ApiException(problem ?? 'Formato não aceito.');
+    }
+    return UploadReservation.fromJson(await client.post(
+      '${_activity(activityId)}/submissions/attachment-uploads',
+      {
+        'fileName': fileName,
+        'sizeBytes': sizeBytes,
+        'contentType': contentType,
+        'expectedVersion': expectedVersion,
+      },
+      accessToken: accessToken,
+      tenantSlug: tenantSlug,
+      headers: {'Idempotency-Key': idempotencyKey},
+    ));
+  }
+
+  /// Sends the bytes to the signed Storage URL, with exactly the method and
+  /// headers of the descriptor. A Storage 200 is not an accepted attachment.
+  Future<void> uploadBytes(UploadTicket ticket, Uint8List bytes) async {
+    final url = ticket.url;
+    if (url.scheme != 'https' || url.host != _storageHost) {
+      throw const ApiException('Destino de upload não autorizado.');
+    }
+    if (ticket.method != 'PUT') {
+      throw const ApiException('Método de upload não suportado.');
+    }
+    final http.Response response;
+    try {
+      response = await _storage
+          .put(url, headers: ticket.headers, body: bytes)
+          .timeout(_storageTimeout);
+    } on TimeoutException {
+      throw const ApiException('O envio do arquivo demorou demais.');
+    } on http.ClientException {
+      throw const ApiException('Não foi possível enviar o arquivo.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException('O armazenamento recusou o arquivo.',
+          statusCode: response.statusCode);
+    }
+  }
+
+  /// Asks the API to verify the bytes; waits while another validation holds
+  /// the file (202) and returns the confirmed attachment.
+  Future<AcademicAttachment> complete(String fileId) async {
+    var row = await client.post('${_upload(fileId)}/complete', const {},
+        accessToken: accessToken, tenantSlug: tenantSlug);
+    for (var attempt = 0; attempt < _completeAttempts; attempt++) {
+      final state = row['state'];
+      if (state == 'ready') {
+        return AcademicAttachment.fromJson(row['attachment']);
+      }
+      if (state != 'pending' && state != 'validating') {
+        throw ApiException('O arquivo não foi aceito ($state).',
+            code: 'ATTACHMENT_UPLOAD_INELIGIBLE');
+      }
+      await Future<void>.delayed(retryDelay);
+      row = await client.get(_upload(fileId),
+          accessToken: accessToken, tenantSlug: tenantSlug);
+      if (row['state'] == 'pending') {
+        row = await client.post('${_upload(fileId)}/complete', const {},
+            accessToken: accessToken, tenantSlug: tenantSlug);
+      }
+    }
+    throw const ApiException(
+        'A validação do arquivo está demorando. Tente novamente em instantes.');
+  }
+
+  /// Cancels a reservation that is not linked to anything.
+  Future<void> cancel(String fileId) => client.delete(_upload(fileId),
+      accessToken: accessToken, tenantSlug: tenantSlug);
+
+  /// Files of one version of a submission.
+  Future<List<AcademicAttachment>> versionFiles(
+      String submissionId, int version) async {
+    final row = await client.get(
+        '$_base/submissions/${Uri.encodeComponent(submissionId)}/versions/$version/attachments',
+        accessToken: accessToken,
+        tenantSlug: tenantSlug);
+    return AcademicAttachment.listFrom(row['data']);
+  }
+
+  /// Short-lived signed download link, requested at click time.
+  Future<Uri> downloadUrl(String fileId) async {
+    final row = await client.post(
+        '$_base/attachments/${Uri.encodeComponent(fileId)}/download-url',
+        const {},
+        accessToken: accessToken,
+        tenantSlug: tenantSlug);
+    final url = Uri.tryParse(row['url'] as String? ?? '');
+    if (url == null || url.scheme != 'https') {
+      throw const ApiException('A API retornou um link de download inválido.');
+    }
+    return url;
+  }
+}
+
+/// Idempotency key for one reservation intent (ASCII, 8–128 chars).
+String newIdempotencyKey() {
+  final random = Random.secure();
+  final hex = List.generate(16, (_) => random.nextInt(256))
+      .map((b) => b.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return 'att-$hex';
+}
+
+/// Message for attachment failures, including the disabled feature.
+String attachmentErrorText(Object error) {
+  if (error is ApiException) {
+    return switch (error.code) {
+      'ACADEMIC_ATTACHMENTS_UNAVAILABLE' ||
+      'ATTACHMENT_STORAGE_UNAVAILABLE' ||
+      'DATABASE_MIGRATION_REQUIRED' =>
+        'O envio de arquivos ainda não está disponível nesta instituição. A resposta em texto continua funcionando.',
+      'ATTACHMENT_FORMAT_REJECTED' =>
+        'Arquivo recusado: inválido, protegido ou com recursos não permitidos.',
+      'ATTACHMENT_SIZE_MISMATCH' =>
+        'O tamanho enviado não confere. Selecione o arquivo novamente.',
+      'ATTACHMENT_TOO_LARGE' => 'O arquivo passa de 10 MB.',
+      'ATTACHMENT_LIMIT_EXCEEDED' => 'Limite de arquivos atingido.',
+      'ATTACHMENT_RATE_LIMIT' ||
+      'RATE_LIMIT_EXCEEDED' ||
+      'ATTACHMENT_PROCESSING_LIMIT' =>
+        'Muitos envios em sequência. Aguarde um pouco e tente novamente.',
+      _ => switch (error.statusCode) {
+          503 =>
+            'O envio de arquivos está indisponível no momento. A resposta em texto continua funcionando.',
+          403 || 404 => 'Envio de arquivos não autorizado para esta atividade.',
+          409 => 'A entrega mudou. Atualize antes de anexar arquivos.',
+          _ => error.message,
+        },
+    };
+  }
+  return 'Não foi possível enviar o arquivo. Tente novamente.';
+}

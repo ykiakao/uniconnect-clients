@@ -51,6 +51,7 @@ class ApiClient {
     Map<String, dynamic> body, {
     String? accessToken,
     String? tenantSlug,
+    Map<String, String>? headers,
   }) {
     return _send(
       'POST',
@@ -58,6 +59,7 @@ class ApiClient {
       body: body,
       accessToken: accessToken,
       tenantSlug: tenantSlug,
+      extraHeaders: headers,
     );
   }
 
@@ -112,12 +114,13 @@ class ApiClient {
     String? accessToken,
     String? tenantSlug,
     bool retrySession = true,
+    Map<String, String>? extraHeaders,
   }) async {
     final uri = _buildUri(path, queryParams);
-    final headers = _buildHeaders(
-      accessToken: accessToken,
-      tenantSlug: tenantSlug,
-    );
+    final headers = {
+      ..._buildHeaders(accessToken: accessToken, tenantSlug: tenantSlug),
+      ...?extraHeaders,
+    };
 
     late final http.Response response;
 
@@ -172,7 +175,8 @@ class ApiClient {
               body: body,
               accessToken: replacement,
               tenantSlug: tenantSlug,
-              retrySession: false);
+              retrySession: false,
+              extraHeaders: extraHeaders);
         }
       }
       throw ApiException(

@@ -8,8 +8,11 @@ import '../../auth/providers/auth_provider.dart';
 import '../../grades/providers/grades_provider.dart';
 import '../models/academic_activity.dart';
 import '../providers/activity_provider.dart';
+import '../providers/attachment_providers.dart';
 import '../providers/student_submission_provider.dart';
+import '../services/attachment_service.dart';
 import '../services/student_submission_service.dart';
+import 'submission_attachments.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class StudentSubmissionPanel extends ConsumerWidget {
@@ -67,6 +70,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
   @override
   bool get wantKeepAlive => true;
   final _answer = TextEditingController();
+  final _drafts = AttachmentDraftController();
   final _form = GlobalKey<FormState>();
   int? _seededVersion;
   bool _dirty = false;
@@ -79,7 +83,40 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
   String get _id => widget.activity.id;
 
   @override
+  void initState() {
+    super.initState();
+    _drafts.addListener(_onDraftsChanged);
+  }
+
+  void _onDraftsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  AttachmentService? get _attachments {
+    try {
+      return ref.read(attachmentServiceProvider);
+    } on Object {
+      return null;
+    }
+  }
+
+  void _pickFiles(StudentSubmission? previous) {
+    final service = _attachments;
+    if (service == null) return;
+    _dirty = true;
+    _drafts.pickAndUpload(
+      pick: ref.read(attachmentPickerProvider),
+      service: service,
+      activityId: _id,
+      expectedVersion: previous?.version ?? 0,
+    );
+  }
+
+  @override
   void dispose() {
+    _drafts
+      ..removeListener(_onDraftsChanged)
+      ..dispose();
     _answer.dispose();
     super.dispose();
   }
@@ -132,9 +169,10 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
       _confirmation = null;
     });
     try {
-      await ref
-          .read(studentSubmissionServiceProvider)
-          .submit(_id, answer: text, expectedVersion: previous?.version ?? 0);
+      await ref.read(studentSubmissionServiceProvider).submit(_id,
+          answer: text,
+          expectedVersion: previous?.version ?? 0,
+          attachmentIds: _drafts.readyIds);
       if (!mounted) return;
       setState(() {
         _confirmation = 'Resposta enviada e confirmada pela API.';
@@ -212,6 +250,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
             final version = submission?.version ?? 0;
             if (_seededVersion != version && !_dirty) {
               _answer.text = submission?.answer ?? '';
+              _drafts.seed(submission?.attachments ?? const []);
               _seededVersion = version;
             }
             final closed = activity.publicationState != 'published';
@@ -232,6 +271,19 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                     const SizedBox(height: AppSpacing.sm),
                     const Text('Resposta registrada:'),
                     Text(submission.answer),
+                    if (submission.attachments.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text('Arquivos enviados',
+                          style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: AppSpacing.xxs),
+                      AttachmentList(files: submission.attachments),
+                    ],
+                    if (submission.version > 1) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      VersionFilesHistory(
+                          submissionId: submission.id,
+                          currentVersion: submission.version),
+                    ],
                     if (result != null) ...[
                       const SizedBox(height: AppSpacing.sm),
                       Text(result.grade == null
@@ -289,9 +341,22 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                                         }
                                         return null;
                                       })),
+                              const SizedBox(height: AppSpacing.md),
+                              AttachmentDraftSection(
+                                controller: _drafts,
+                                enabled: !_busy &&
+                                    !_mustRefresh &&
+                                    widget.activityIsCurrent,
+                                onPick: () => _pickFiles(submission),
+                                onRemove: (file) {
+                                  _dirty = true;
+                                  _drafts.remove(file, _attachments);
+                                },
+                              ),
                               const SizedBox(height: AppSpacing.sm),
                               ElevatedButton.icon(
                                   onPressed: _busy ||
+                                          _drafts.busy ||
                                           _mustRefresh ||
                                           !widget.activityIsCurrent
                                       ? null

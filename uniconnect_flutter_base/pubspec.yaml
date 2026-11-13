@@ -18,6 +18,8 @@ dependencies:
   flutter_secure_storage: ^10.3.0
   lucide_icons_flutter: ^4.0.3
   realtime_client: ^2.13.2
+  file_picker: ^13.3.3
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
