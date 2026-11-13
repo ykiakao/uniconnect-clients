@@ -390,20 +390,21 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                                         return null;
                                       })),
                               const SizedBox(height: AppSpacing.md),
-                              AttachmentDraftSection(
-                                controller: _drafts,
-                                enabled: !_busy &&
-                                    !_mustRefresh &&
-                                    widget.activityIsCurrent,
-                                onPick: () => _pickFiles(submission),
-                                allowPicking: !_attachmentsUnavailable,
-                                onRecover: (file) =>
-                                    _drafts.recover(file, _attachments),
-                                onRemove: (file) {
-                                  _dirty = true;
-                                  _drafts.remove(file, _attachments);
-                                },
-                              ),
+                              if (!_attachmentsUnavailable)
+                                AttachmentDraftSection(
+                                  controller: _drafts,
+                                  enabled: !_busy &&
+                                      !_mustRefresh &&
+                                      widget.activityIsCurrent,
+                                  onPick: () => _pickFiles(submission),
+                                  allowPicking: !_attachmentsUnavailable,
+                                  onRecover: (file) =>
+                                      _drafts.recover(file, _attachments),
+                                  onRemove: (file) {
+                                    _dirty = true;
+                                    _drafts.remove(file, _attachments);
+                                  },
+                                ),
                               const SizedBox(height: AppSpacing.sm),
                               ElevatedButton.icon(
                                   onPressed: _busy ||

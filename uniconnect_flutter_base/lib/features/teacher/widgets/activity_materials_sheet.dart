@@ -154,6 +154,14 @@ class _ActivityMaterialsSheetState
     await _confirmAndLink(upload);
   }
 
+  /// Drops a file whose confirmation stays pending. An unlinked
+  /// reservation is cancelled; a linked one is refused by the API (409).
+  void _dismiss(_Upload upload) {
+    final id = upload.fileId;
+    if (id != null) unawaited(_cancelQuietly(id));
+    setState(() => _uploads.remove(upload));
+  }
+
   Future<void> _recover(_Upload upload) async {
     if (_working || !upload.confirmationPending) return;
     setState(() => _working = true);
@@ -283,7 +291,7 @@ class _ActivityMaterialsSheetState
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: upload.confirmationPending
-                  ? const Icon(Icons.hourglass_empty, color: AppColors.inkMuted)
+                  ? const Icon(LucideIcons.hourglass, color: AppColors.inkMuted)
                   : upload.error == null
                       ? const SizedBox(
                           width: 20,
@@ -299,9 +307,19 @@ class _ActivityMaterialsSheetState
                       ? muted
                       : muted?.copyWith(color: AppColors.danger)),
               trailing: upload.confirmationPending
-                  ? TextButton(
-                      onPressed: _working ? null : () => _recover(upload),
-                      child: const Text('Verificar arquivo'),
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton(
+                          onPressed: _working ? null : () => _recover(upload),
+                          child: const Text('Verificar arquivo'),
+                        ),
+                        IconButton(
+                          tooltip: 'Dispensar ${upload.name}',
+                          onPressed: _working ? null : () => _dismiss(upload),
+                          icon: const Icon(LucideIcons.x, size: 18),
+                        ),
+                      ],
                     )
                   : upload.error == null
                       ? null
