@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../services/teacher_assessment.dart';
 
 class AssessmentFields extends StatefulWidget {
@@ -31,6 +32,20 @@ class _AssessmentFieldsState extends State<AssessmentFields> {
         : null);
   }
 
+  /// Label above the field with a fixed gap below, like the rest of the
+  /// activity form: floating labels clipped on the border of stacked fields.
+  Widget _labeled(String label, Widget field) => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(label, style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: AppSpacing.xs),
+            Semantics(label: label, child: field),
+          ],
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -46,49 +61,56 @@ class _AssessmentFieldsState extends State<AssessmentFields> {
             : null,
       ),
       if (_linked) ...[
-        DropdownButtonFormField<String>(
-          initialValue: _stage,
-          decoration: const InputDecoration(labelText: 'Etapa acadêmica'),
-          items: const [
-            DropdownMenuItem(value: 'N1', child: Text('N1')),
-            DropdownMenuItem(value: 'N2', child: Text('N2')),
-          ],
-          onChanged: widget.enabled
-              ? (value) {
-                  setState(() => _stage = value!);
-                  _emit();
-                }
-              : null,
-        ),
-        DropdownButtonFormField<String>(
-          initialValue: _category,
-          decoration:
-              const InputDecoration(labelText: 'Categoria da avaliação'),
-          items: const [
-            DropdownMenuItem(value: 'activity', child: Text('Atividade')),
-            DropdownMenuItem(value: 'exam', child: Text('Prova')),
-          ],
-          onChanged: widget.enabled
-              ? (value) {
-                  setState(() => _category = value!);
-                  _emit();
-                }
-              : null,
-        ),
-        TextFormField(
-          key: const ValueKey('assessment-max-points'),
-          initialValue: _points,
-          enabled: widget.enabled,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: 'Pontuação máxima',
-            helperText: 'Até $_maximum pontos por item',
+        const SizedBox(height: AppSpacing.sm),
+        _labeled(
+          'Etapa acadêmica',
+          DropdownButtonFormField<String>(
+            initialValue: _stage,
+            items: const [
+              DropdownMenuItem(value: 'N1', child: Text('N1')),
+              DropdownMenuItem(value: 'N2', child: Text('N2')),
+            ],
+            onChanged: widget.enabled
+                ? (value) {
+                    setState(() => _stage = value!);
+                    _emit();
+                  }
+                : null,
           ),
-          onChanged: (value) {
-            _points = value;
-            _emit();
-          },
-          validator: (value) => academicPointsError(value ?? '', _maximum),
+        ),
+        _labeled(
+          'Categoria da avaliação',
+          DropdownButtonFormField<String>(
+            initialValue: _category,
+            items: const [
+              DropdownMenuItem(value: 'activity', child: Text('Atividade')),
+              DropdownMenuItem(value: 'exam', child: Text('Prova')),
+            ],
+            onChanged: widget.enabled
+                ? (value) {
+                    setState(() => _category = value!);
+                    _emit();
+                  }
+                : null,
+          ),
+        ),
+        _labeled(
+          'Pontuação máxima',
+          TextFormField(
+            key: const ValueKey('assessment-max-points'),
+            initialValue: _points,
+            enabled: widget.enabled,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              hintText: 'Ex.: $_maximum',
+              helperText: 'Até $_maximum pontos por item',
+            ),
+            onChanged: (value) {
+              _points = value;
+              _emit();
+            },
+            validator: (value) => academicPointsError(value ?? '', _maximum),
+          ),
         ),
       ],
     ]);
