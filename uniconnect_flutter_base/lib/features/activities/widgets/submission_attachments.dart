@@ -217,6 +217,7 @@ class AttachmentDraftSection extends StatelessWidget {
     required this.onPick,
     required this.onRemove,
     this.onRecover,
+    this.allowPicking = true,
   });
 
   final AttachmentDraftController controller;
@@ -224,6 +225,7 @@ class AttachmentDraftSection extends StatelessWidget {
   final VoidCallback onPick;
   final void Function(DraftFile file) onRemove;
   final void Function(DraftFile file)? onRecover;
+  final bool allowPicking;
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +287,10 @@ class AttachmentDraftSection extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               style: AppButtonStyles.link,
-              onPressed: enabled && !controller.busy && !controller.isFull
+              onPressed: enabled &&
+                      allowPicking &&
+                      !controller.busy &&
+                      !controller.isFull
                   ? onPick
                   : null,
               icon: const Icon(LucideIcons.paperclip, size: 18),

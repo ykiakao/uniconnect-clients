@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../academic/demo/synthetic_academic_providers.dart';
@@ -75,11 +76,13 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
   int? _seededVersion;
   bool _dirty = false;
   bool _sending = false;
+  bool _confirmingTextOnly = false;
+  bool _attachmentsUnavailable = false;
   bool _refreshing = false;
   bool _mustRefresh = false;
   String? _error;
   String? _confirmation;
-  bool get _busy => _sending || _refreshing;
+  bool get _busy => _sending || _refreshing || _confirmingTextOnly;
   String get _id => widget.activity.id;
 
   @override
@@ -101,6 +104,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
   }
 
   void _pickFiles(StudentSubmission? previous) {
+    if (_attachmentsUnavailable) return;
     final service = _attachments;
     if (service == null) return;
     _dirty = true;
@@ -148,7 +152,37 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
     }
   }
 
-  Future<void> _submit(StudentSubmission? previous) async {
+  Future<void> _confirmTextOnly(StudentSubmission? previous) async {
+    setState(() => _confirmingTextOnly = true);
+    var confirmed = false;
+    try {
+      confirmed = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Enviar versão sem anexos?'),
+              content: const Text(
+                  'Esta nova versão não incluirá arquivos. Os anexos já enviados continuarão disponíveis nas versões anteriores do histórico. Confirma o envio somente do texto?'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Voltar')),
+                FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Enviar só o texto')),
+              ],
+            ),
+          ) ??
+          false;
+    } finally {
+      if (mounted) setState(() => _confirmingTextOnly = false);
+    }
+    if (mounted && confirmed) {
+      await _submit(previous, textOnlyConfirmed: true);
+    }
+  }
+
+  Future<void> _submit(StudentSubmission? previous,
+      {bool textOnlyConfirmed = false}) async {
     if (_drafts.busy || _drafts.needsConfirmation) return;
     final activity = widget.activity;
     if (_busy ||
@@ -163,6 +197,10 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
       return;
     }
     if (!_form.currentState!.validate()) return;
+    if (_attachmentsUnavailable && !textOnlyConfirmed) {
+      await _confirmTextOnly(previous);
+      return;
+    }
     final text = _answer.text;
     setState(() {
       _sending = true;
@@ -173,7 +211,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
       await ref.read(studentSubmissionServiceProvider).submit(_id,
           answer: text,
           expectedVersion: previous?.version ?? 0,
-          attachmentIds: _drafts.readyIds);
+          attachmentIds: textOnlyConfirmed ? const [] : _drafts.readyIds);
       if (!mounted) return;
       setState(() {
         _confirmation = 'Resposta enviada e confirmada pela API.';
@@ -200,6 +238,12 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
     } catch (e) {
       if (mounted) {
         setState(() {
+          if (e is ApiException &&
+              e.statusCode == 503 &&
+              e.code == 'ACADEMIC_ATTACHMENTS_UNAVAILABLE' &&
+              _drafts.readyIds.isNotEmpty) {
+            _attachmentsUnavailable = true;
+          }
           _error =
               '${submissionErrorText(e)} Consulte sua entrega antes de repetir o envio.';
           _mustRefresh = true;
@@ -229,7 +273,10 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
       if (_error != null)
         Text(_error!,
             style: TextStyle(color: Theme.of(context).colorScheme.error)),
-      if (_busy) const LinearProgressIndicator(),
+      if (_attachmentsUnavailable)
+        const Text(
+            'Os anexos não podem ser reenviados neste momento. Atualize sua entrega e confirme o envio de uma nova versão só em texto. Os arquivos anteriores permanecerão no histórico.'),
+      if (_sending || _refreshing) const LinearProgressIndicator(),
       TextButton.icon(
           onPressed: _busy ? null : _reload,
           icon: const Icon(LucideIcons.refreshCw),
@@ -349,6 +396,7 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                                     !_mustRefresh &&
                                     widget.activityIsCurrent,
                                 onPick: () => _pickFiles(submission),
+                                allowPicking: !_attachmentsUnavailable,
                                 onRecover: (file) =>
                                     _drafts.recover(file, _attachments),
                                 onRemove: (file) {
@@ -368,9 +416,11 @@ class _SubmissionEditorState extends ConsumerState<_SubmissionEditor>
                                   icon: const Icon(LucideIcons.send),
                                   label: Text(_sending
                                       ? 'Enviando resposta...'
-                                      : submission == null
-                                          ? 'Enviar resposta'
-                                          : 'Reenviar resposta')),
+                                      : _attachmentsUnavailable
+                                          ? 'Enviar nova versão só em texto'
+                                          : submission == null
+                                              ? 'Enviar resposta'
+                                              : 'Reenviar resposta')),
                             ])),
                   ],
                 ]);
